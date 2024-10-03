@@ -1,0 +1,88 @@
+{% extends 'adminbase.html' %}
+
+
+{% block title %}Admin Products{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <!-- Sidebar -->
+        <div class="col-md-2 sidebar d-flex flex-column rounded-top-3">
+            <nav class="nav flex-column flex-grow-1 justify-content-around">
+                <a class="nav-link" href="#">Dashboard</a>
+                <a class="nav-link active" href="#">Products</a>
+                <a class="nav-link" href="#">Customers</a>
+                <a class="nav-link" href="#">Orders</a>
+                <a class="nav-link" href="#">Coupons</a>
+                <a class="nav-link" href="#">Banners</a>
+                <a class="nav-link" href="#">Logout</a>
+            </nav>
+        </div>
+
+        <!-- Main Content Area -->
+        <div class="col-md-10 ">
+            <div class="d-flex justify-content-between align-items-center mt-0 mb-4 dash-head py-2 rounded text-white px-2">
+                <h3>Products</h3>
+                <div class="d-flex align-items-center">
+                    <button class="btn btn-primary me-2 rounded" type="button">Add Category</button>
+                    <button class="btn btn-secondary me-2 rounded" type="button">Add Products</button>
+                    <form class="d-flex" role="search">
+                        <input class="form-control me-2" type="search" placeholder="Search For User" aria-label="Search">
+                        <button class="btn btn-outline-success" type="submit">Search</button>
+                    </form>
+                </div>
+            </div>
+            
+
+            <!-- Customer Table -->
+            <!-- <table class="table">
+                <thead class="custom-table-header">
+                    <tr >
+                        <th scope="col">Product</th>
+                        <th scope="col">Price</th>
+                        <th scope="col">Stock</th>
+                        <th scope="col">Category</th>
+                        <th scope="col">Edit</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>LEONIDAS</td>
+                        <td>$ 250</td>
+                        <td>20</td>
+                        <td>Milk Chocolate</td>
+                        <td>
+                            <button class="btn btn-primary btn-sm btn-del">Edit</button>
+                            <button class="btn btn-secondary btn-sm btn-blk">Remove</button>
+                        </td>
+                    </tr>
+                </tbody>
+            </table> -->
+            <!-- <div class="table-container"></div> -->
+                <table class="table">
+                    <thead>
+                        <tr class="product-table-head">
+                            <th scope="col">Product</th>
+                            <th scope="col">Price</th>
+                            <th scope="col">Stock</th>
+                            <th scope="col">Category</th>
+                            <th scope="col">Edit</th>
+                        </tr>
+                    </thead>
+                     <tbody>
+                    <tr>
+                        <td>LEONIDAS</td>
+                        <td>$ 250</td>
+                        <td>20</td>
+                        <td>Milk Chocolate</td>
+                        <td>
+                            <button class="btn btn-primary btn-sm btn-del">Edit</button>
+                            <button class="btn btn-secondary btn-sm btn-blk">Remove</button>
+                        </td>
+                    </tr>
+                </tbody>
+                </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

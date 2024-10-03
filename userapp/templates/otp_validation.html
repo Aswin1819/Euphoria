@@ -1,0 +1,44 @@
+{% extends "userbase.html" %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card p-5 shadow login-card">
+                <div class="card-body">
+                    <h3 class="text-center display-4">Enter the OTP</h3>
+                    <p class="text-center">Enter the 4-digit code sent to your email</p>
+                    <form method="POST" action="#">
+                        <!-- {% csrf_token %} -->
+                        <div class="d-flex justify-content-center mb-3">
+                            <input type="text" class="form-control otp-input mx-1" maxlength="1" required>
+                            <input type="text" class="form-control otp-input mx-1" maxlength="1" required>
+                            <input type="text" class="form-control otp-input mx-1" maxlength="1" required>
+                            <input type="text" class="form-control otp-input mx-1" maxlength="1" required>
+                        </div>
+                        <button type="submit" class="btn btn-login w-100">Validate</button>
+                    </form>
+                    <p class="text-center mt-3">Time remaining: <span id="time">02:00</span></p>
+                    <p class="text-center">Didn't get the code? 
+                        <a class="decoration-none" href="#">Resend</a>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Optional: Script to handle countdown timer -->
+<!-- <script>
+    var timeLeft = 120; // Time in seconds
+    var timer = setInterval(function() {
+        var minutes = Math.floor(timeLeft / 60);
+        var seconds = timeLeft % 60;
+        if (seconds < 10) seconds = '0' + seconds;
+        document.getElementById('time').textContent = minutes + ':' + seconds;
+        timeLeft--;
+        if (timeLeft < 0) clearInterval(timer);
+    }, 1000);
+</script> -->
+
+{% endblock %}

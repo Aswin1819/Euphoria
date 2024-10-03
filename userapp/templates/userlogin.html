@@ -1,0 +1,43 @@
+{% extends "userbase.html" %}
+
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6 ">
+            <div class="card p-4 shadow login-card">
+                <div class="card-body">
+                    <h3 class="text-center display-4">Log In</h3>
+                    <p class="text-center">Welcome Back!!!</p>
+                    <form method="POST" action="#">
+                        <!-- {% csrf_token %} -->
+                        <div class="mb-3">
+                            <label for="email">Email Address</label>
+                            <input type="email" class="form-control" id="email" name="email" placeholder="Enter your email" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="password">Password</label>
+                            <input type="password" class="form-control" id="password" name="password" placeholder="Enter your password" required>
+                        </div>
+                        <div class="mb-3 text-right">
+                            <a href="#" class="decoration-none">Forgot password?</a>
+                        </div>
+                        <button type="submit" class="btn btn-login w-100">Login</button>
+                    </form>
+                    <p class="text-center mt-3">New Customer? <a class="decoration-none" href="#">Start here</a></p>
+                    <hr>
+                    <p class="text-center">or continue with</p>
+                    <div class="text-center">
+                        <a href=# class="btn btn-light border w-100">
+                            <img src="https://developers.google.com/identity/images/g-logo.png" width="25" class="me-2"> Google
+                        </a>
+                    </div>
+                    <p class="text-center mt-3">
+                        By clicking continue, you agree to our <a class="decoration-none" href="#">Terms of Service</a> and <a class="decoration-none" href="#">Privacy Policy</a>.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
