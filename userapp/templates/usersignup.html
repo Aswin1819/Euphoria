@@ -1,39 +1,58 @@
 {% extends "userbase.html" %}
 
+{% load static %}
+
 {% block content %}
 <div class="container mt-5">
     <div class="row justify-content-center">
         <div class="col-md-6">
+            {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show  mx-auto text-center" role="alert"
+                id="alertBox">
+                <strong>{{message}}</strong>
+            </div>
+            {% endfor %}
             <div class="card p-4 shadow login-card">
                 <div class="card-body">
                     <h3 class="text-center display-4">Sign Up</h3>
                     <p class="text-center">Create your account</p>
-                    <form method="POST" action="#">
-                        <!-- {% csrf_token %} -->
+                    <form method="POST" action="{% url 'usersignup' %}" enctype="multipart/form-data">
+                        {% csrf_token %}
+
                         <div class="mb-3">
-                            <label for="fullname">Full Name</label>
-                            <input type="text" class="form-control" id="fullname" name="fullname" placeholder="Enter your full name" required>
+                            <label for="username">Full Name</label>
+                            <input type="text" class="form-control" id="username" name="username" placeholder="Enter your full name">
+                            <div id="username-error" class="text-danger"></div> <!-- Error message placeholder -->
                         </div>
+                        
                         <div class="mb-3">
                             <label for="email">Email Address</label>
-                            <input type="email" class="form-control" id="email" name="email" placeholder="Enter your email" required>
+                            <input type="email" class="form-control" id="email" name="email" placeholder="Enter your email">
+                            <div id="email-error" class="text-danger"></div> <!-- Error message placeholder -->
                         </div>
+                        
                         <div class="mb-3">
                             <label for="phone">Phone Number</label>
-                            <input type="tel" class="form-control" id="phone" name="phone" placeholder="Enter your phone number" required>
+                            <input type="tel" class="form-control" id="phone" name="phone" placeholder="Enter your phone number">
+                            <div id="phone-error" class="text-danger"></div> <!-- Error message placeholder -->
                         </div>
+                        
                         <div class="mb-3">
                             <label for="password">Password</label>
                             <input type="password" class="form-control" id="password" name="password" placeholder="Enter your password" required>
+                            <div id="password-error" class="text-danger"></div> <!-- Error message placeholder -->
                         </div>
+                        
                         <div class="mb-3">
                             <label for="confirm_password">Confirm Password</label>
                             <input type="password" class="form-control" id="confirm_password" name="confirm_password" placeholder="Confirm your password" required>
+                            <div id="confirm_password-error" class="text-danger"></div> <!-- Error message placeholder -->
                         </div>
+                        
                         <button type="submit" class="btn btn-login w-100">Sign Up</button>
                     </form>
                     <p class="text-center mt-3">
-                        Already have an account? 
+                        Already have an account?
                         <a class="decoration-none" href="">Login</a>
                     </p>
                 </div>

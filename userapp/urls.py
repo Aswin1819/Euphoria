@@ -2,9 +2,14 @@ from django.urls import path
 from .import views
 
 urlpatterns = [
-    path('userlogin/',views.userLogin,name = 'userlogin'),
-    path('usersignup/',views.userSignup,name = 'usersignup'),
-    path('forg_pass_email',views.forgPassEmailVerification,name = 'forg_pass_email'),
-    path('otp_validation',views.otpValidation,name = 'otp_validation'),
-    path('change_password',views.changePassword, name = 'change_password'),
+    path('userlogin/', views.userlogin, name = 'userlogin'),
+    path('usersignup/',views.usersignup,name = 'usersignup'),
+    path('forgPassEmailVerification/',views.forgPassEmailVerification,name = 'forgPassEmailVerification'),
+    path('otpValidationForPass/',views.otpValidationForPass,name ='otpValidationForPass'),
+    path('otpValidation/',views.otpValidation,name = 'otpValidation'),
+    path('changePassword/',views.changePassword, name = 'changePassword'),
+    path('resendotp/',views.resendotp,name = 'resendotp'),
+    path('',views.userhome,name = 'userhome'),
+    path('userlogout/',views.userlogout,name = 'userlogout'),
+    path('resendOtpForPass/',views.resendOtpForPass,name='resendOtpForPass'),
 ]

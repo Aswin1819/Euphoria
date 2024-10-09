@@ -13,7 +13,7 @@
                 <div class="card-body">
                     <h3 class="text-center display-4">Enter the OTP</h3>
                     <p class="text-center">Enter the 4-digit code sent to your email</p>
-                    <form method="POST" action="{% url 'otpValidation' %}" enctype="multipart/form-data">
+                    <form method="POST" action="{% url 'otpValidationForPass' %}" enctype="multipart/form-data">
                         {% csrf_token %}
                         <input type="hidden" name="email" value="{{ email }}">
                         <div class="d-flex justify-content-center mb-3">
@@ -26,10 +26,10 @@
                     </form>
                     <p class="text-center mt-3">Time remaining: <span id="time">01:00</span></p>
                     <p class="text-center">Didn't get the code? 
-                        <form method="POST" action="{% url 'resendotp' %}" style="display: inline;">
+                        <form method="POST" action="{% url 'resendOtpForPass' %}" style="display: inline;">
                             {% csrf_token %}
                             <input type="hidden" name="email" value="{{ email }}">
-                            <button id="resend" class="decoration-none" style="color: gray; cursor: not-allowed;" disabled>Resend</button>
+                            <button id="resend" class="decoration-none" style="color: gray; cursor: not-allowed; display: inline;" disabled>Resend</button>
                         </form>
                     </p>
                     

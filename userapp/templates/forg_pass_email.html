@@ -4,21 +4,27 @@
 <div class="container mt-5">
     <div class="row justify-content-center">
         <div class="col-md-6">
+            {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show  mx-auto text-center" role="alert"
+                id="alertBox">
+                <strong>{{message}}</strong>
+            </div>
+            {% endfor %}
             <div class="card p-5 shadow login-card">
                 <div class="card-body">
                     <h3 class="text-center display-4">Reset Password</h3>
                     <p class="text-center">Enter your email to reset the password</p>
                     <form method="POST" action="#">
-                        <!-- {% csrf_token %} -->
+                        {% csrf_token %}
                         <div class="mb-3">
                             <label for="email">Email Address</label>
                             <input type="email" class="form-control" id="email" name="email" placeholder="Enter your email" required>
                         </div>
                         <button type="submit" class="btn btn-login w-100">Send OTP</button>
                     </form>
-                    <p class="text-center mt-3">Didn't get the code? 
+                    <!-- <p class="text-center mt-3">Didn't get the code? 
                         <a class="decoration-none" href="#">Resend</a>
-                    </p>
+                    </p> -->
                 </div>
             </div>
         </div>
