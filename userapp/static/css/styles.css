@@ -1,6 +1,10 @@
 /* user navbar start here  */
 .custom-navbar {
     background-color:#e4d2b9;
+    padding: 1rem;
+}
+.navbar-nav .nav-item {
+    margin: 0 5px;
 }
 .navbar-brand {
     font-family: 'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif;
@@ -9,6 +13,22 @@
 .nav-components {
     font-family: Cambria, Cochin, Georgia, Times, 'Times New Roman', serif;
     font-size: 1.5rem;
+}
+@media (max-width: 768px) {
+    .navbar-nav {
+        text-align: center;
+    }
+    
+    /* Center icons below navbar links */
+    .navbar-nav.ms-auto {
+        justify-content: center;
+        margin-top: 10px;
+    }
+    
+    /* Adjusting padding for smaller screens */
+    .nav-item.nav-components {
+        padding: 5px 0;
+    }
 }
 
 /* user login starts here  */

@@ -7,7 +7,10 @@ from django.contrib import messages
 from userapp.userotp import generateAndSendOtp
 from django.conf import settings
 from .signals import userOtpVerified
+
 # Create your views here.
+
+
 
 def userlogin(request):
     if request.user.is_authenticated:

@@ -112,3 +112,5 @@ STATICFILES_DIRS = [
 ]
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+# Add this line to use the custom social adapter
+SOCIALACCOUNT_ADAPTER = 'adminapp.adapters.CustomSocialAccountAdapter'

@@ -1,41 +1,25 @@
-/*body {
-    background-color: #c4ac8b; 
-}
-*/
-
-.card {
-    background-color: #e4d2b9; /* Card background */
-    border: none;
+.login-card {
+    background-color: #EAD8C0;
+    border-radius: 2rem;
 }
 
-.btn {
-    background-color: #704d26;
-    color: white;
-}
 
-.navbar {
-    background-color: #e4d2b9;
+.admin-navbar,footer{
+    background-color: #EAD8C0;
+    color: black;
 }
-
-.footer {
-    background-color: #e4d2b9;
-}
-
 .navbar-brand {
-    font-family:'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif;
-    font-size: 36px;  /* Adjust the size as needed */
+    color: black;
+    font-family: 'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif;
+    font-size: 2.5rem;
 }
 
 
-
-/*admincustomers*/
-
-/* Sidebar styling */
-/* Sidebar styling */
 .sidebar {
     height: 75vh;
-    background-color: #7A5011 !important; /* Use !important to ensure it overrides other styles */
+    background-color: #7A5011; /* Use !important to ensure it overrides other styles */
     padding: 20px;
+    border-right: 1px solid #dee2e6;
     /* border-right: 1px solid red; */
 }
 
@@ -58,11 +42,29 @@
     background-color: #7A5011;
 }
 
-.custom-table-header tr {
-    background-color: #704d26!important ;
+.custom-table-header{
+    background-color: #704d26!important;
     color : white;
 }
+/* .table{
+    background-color: #613c1b;
+    color: white;
+}
+thead th {
+    background-color: #8d6038; 
+    padding: 15px;
+    text-align: left;
+    font-size: 1.2em;
+    font-weight: bold;
+}
+tbody tr {
+    border-bottom: 1px solid #fff; 
+}
 
+tbody td {
+    padding: 15px;
+    font-size: 1em;
+} */
 
 
 /* .table {
@@ -74,99 +76,11 @@
     color: white;
 } */
 
-.table td,
-.table th {
-    padding: 15px;
-}
-
-.btn-del,.btn-blk {
-    border-radius: 8px;
-}
-
-.btn-sm {
-    padding: 5px 10px;
-}
 
 
 /*--------------------- Table in admin page --------------------------*/
 
-.table-container {
-    width: 95%;
-    background: #232323;
-    padding: 10px;
-    box-shadow: 0 0 10px rgba(100, 98, 98, 0.5);
-    border-radius: 10px;
-    margin-bottom: 1rem;
-}
 
-.table {
-    width: 100%;
-    border-collapse: separate;
-    border-spacing: 0 15px;
-    margin: 20px 0;
-    font-size: 1em;
-    width: 100%;
-}
-
-.table thead th {
-    padding: 12px 15px;
-    background: #633B00;
-    color: #fefeeb;
-    border-style: none;   
-}
-.table thead tr {
-    border-top-left-radius: 1rem;
-}
-
-
-
-.table tbody tr {
-    background: #7A5011;
-    border-radius: 10px;
-    
-}
-
-.table tbody tr td {
-    padding: 12px 15px;
-    text-align: left;
-    background: #7A5011;
-    color: #fefeeb;
-}
-.product-table-first {
-    border-top-left-radius: 10px;
-    border-bottom-left-radius: 10px;
-}
-
-.product-table-last {
-    border-top-right-radius: 10px;
-    border-bottom-right-radius: 10px;
-}
-.products-icon {
-    display: flex;
-    gap: 20px;
-}
-
-.status.active {
-    color: #4CAF50;
-}
-
-.status.block {
-    color: #F44336;
-}
-
-.bi.bi-trash3 {
-    color: #FF0000;
-}
-
-.submit-btn {
-    color: #fefeeb;
-    background: #DB4444;
-    margin: 20px;
-}
-
-.submit-btn:hover {
-    background: #CE5252;
-}
 
 
 
@@ -201,5 +115,47 @@
         padding-left: 15px;
         font-weight: bold;
         text-align: left;
+    }
+}
+/* Media query for screens below 992px */
+@media (max-width: 992px) {
+    .dash-head {
+        flex-wrap: wrap;
+        justify-content: space-between;
+    }
+
+    /* Reduce button padding on smaller screens */
+    .btn {
+        padding: 8px 12px; 
+    }
+
+    /* Mobile Navbar adjustments */
+    .mobile-navbar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    /* Show the offcanvas button (menu icon) on smaller screens */
+    .mobile-navbar .offcanvas-btn {
+        display: block;
+    }
+
+    /* Hide the navbar content (buttons and search bar) on smaller screens */
+    .navbar-content {
+        display: none;
+    }
+}
+
+/* Media query for screens 992px and above */
+@media (min-width: 992px) {
+    /* Hide the offcanvas button (menu icon) on larger screens */
+    .mobile-navbar .offcanvas-btn {
+        display: none;
+    }
+
+    /* Show the navbar content (buttons and search bar) on larger screens */
+    .navbar-content {
+        display: flex;
     }
 }

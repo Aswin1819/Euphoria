@@ -7,25 +7,44 @@
   <div class="container mb-4">
     <div class="row d-flex justify-content-center align-items-center">
       <div class="col-12 col-md-8 col-lg-6 col-xl-5 ">
-        <div class="card text-dark" style="border-radius: 1rem;">
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show  mx-auto" role="alert" id="alertBox">
+                <strong>{{message}}</strong> 
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {% endfor %}
+        <div class="card text-dark login-card">
           <div class="card-body p-5 text-center ">
 
             <div class="mb-md-5 mt-md-4 pb-1">
 
               <h2 class="fw-bold mb-2 text-uppercase">Admin Login</h2>
-              <p class="text-dark-50 mb-5">Please enter your login and password!</p>
+              <p class="text-dark-50 mb-3">Please enter your Email and password!</p>
+              <form method="POST" action="{% url 'checkAdmin' %}" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div data-mdb-input-init class="form-outline form-white mb-3">
+                    <label for="email">Email Address</label>
+                    <input type="email" class="form-control form-control-lg" id="email" name="email" placeholder="Enter your email" required>
+                </div>
+                <div data-mdb-input-init class="form-outline form-white mb-3">
+                    <label for="password">Password</label>
+                    <input type="password" class="form-control form-control-lg" id="password" name="password" placeholder="Enter your password" required>
+                </div>
+        
+                <button type="submit" class="btn btn-outline-dark btn-lg px-5">Login</button>
+              </form>
 
-              <div data-mdb-input-init class="form-outline form-white mb-4">
-                <input type="email" id="typeEmailX" class="form-control form-control-lg" />
+              <!-- <div data-mdb-input-init class="form-outline form-white mb-4">
+                <input type="email" id="typeEmailX" class="form-control form-control-lg" placeholder="Email"/>
                 <label class="form-label" for="typeEmailX">Email</label>
               </div>
 
               <div data-mdb-input-init class="form-outline form-white mb-4">
-                <input type="password" id="typePasswordX" class="form-control form-control-lg" />
+                <input type="password" id="typePasswordX" class="form-control form-control-lg" placeholder="Password" />
                 <label class="form-label" for="typePasswordX">Password</label>
               </div>
 
-              <button data-mdb-button-init data-mdb-ripple-init class="btn btn-outline-light btn-lg px-5" type="submit">Login</button>
+              <button data-mdb-button-init data-mdb-ripple-init class="btn btn-outline-dark btn-lg px-5" type="submit">Login</button> -->
 
             </div>
 
