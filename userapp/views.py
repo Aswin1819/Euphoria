@@ -2,11 +2,12 @@ from django.shortcuts import render,redirect,get_object_or_404
 from django.contrib.auth import get_user_model
 from django.contrib.auth import login,logout,authenticate
 from django.contrib.auth.hashers import make_password
-from adminapp.models import EuphoUser,OTP
+from adminapp.models import EuphoUser,OTP,Products
 from django.contrib import messages
 from userapp.userotp import generateAndSendOtp
 from django.conf import settings
 from .signals import userOtpVerified
+from .forms import UserLoginForm,UserSignupForm
 
 # Create your views here.
 
@@ -15,80 +16,45 @@ from .signals import userOtpVerified
 def userlogin(request):
     if request.user.is_authenticated:
         return redirect('userhome')
-    if request.method == 'POST':
-        email = request.POST.get('email')
-        password = request.POST.get('password')
-        
-        if not email or not password:
-            messages.warning(request,"email and password are required")
-            return redirect('userlogin')
-        user = authenticate(request,username=email,password=password)
-        print(user)
-        # x = EuphoUser.objects.get(email=email)
-        # print(x.email)
-        # print(x.password)
-        if user:
-            login(request,user)
-            return redirect('userhome')
-        else:
-            messages.warning(request,"Invalid username or password")
-            return render(request,"userlogin.html")
-         
-    return render(request,"userlogin.html")
 
+    if request.method == 'POST':
+        form = UserLoginForm(request.POST or None)
+        if form.is_valid():
+            # Retrieve user from cleaned data
+            user = form.cleaned_data.get('user')  
+            if user:  # Ensure user is not None
+                # Authenticate and log the user in
+                login(request, user,backend='django.contrib.auth.backends.ModelBackend')
+                return redirect('userhome')
+        else:
+            print(form.errors)  # Log the errors for debugging
+            messages.warning(request, "Invalid email or password.")
+    else:
+        form = UserLoginForm()
+
+    return render(request, 'userlogin.html', {'form': form})
 
 def usersignup(request):
     if request.user.is_authenticated:
         return redirect('userhome')
     if request.method == 'POST':
-        username = request.POST.get('username')
-        email = request.POST.get('email')
-        phone = request.POST.get('phone')
-        password = request.POST.get('password')
-        confirm_password = request.POST.get('confirm_password')
-        
-        # Validation
-        if not username or not email or not password or not confirm_password:
-            messages.warning(request, 'All fields are required')
-            return redirect(usersignup)
-        
-        if EuphoUser.objects.filter(username=username).exists():
-            messages.warning(request, 'Username already exists')
-            return redirect(usersignup)
-        
-        if not (email.endswith('.com') and email[0].isalpha()):
-            messages.warning(request, 'Enter a valid email')
-            return redirect(usersignup)
-        
-        if EuphoUser.objects.filter(email=email).exists():
-            messages.warning(request, 'Email is already registered')
-            return redirect(usersignup)
-
-        if len(password) < 8:
-            messages.warning(request, 'Password must be at least 8 characters')
-            return redirect(usersignup)
-        
-        if password != confirm_password:
-            messages.warning(request, 'Passwords do not match')
-            return redirect(usersignup)
-
-        # Use EuphoUser to create a new user
-        new_user = EuphoUser.objects.create_user(
-            username=username,
-            email=email,
-            phone=phone,
-            password=password,
-        )
-        new_user.save()
-        
-        # Send OTP
-        otp = generateAndSendOtp(email)
-        OTP.objects.create(email=email, otp=otp)
-        
-        messages.success(request, 'OTP sent to your email. Please validate.')
-        return render(request, 'otp_validation.html', {'email': email})
+        form = UserSignupForm(request.POST)
+        if form.is_valid():
+            new_user = form.save(commit=False)
+            new_user.is_active = False #deactivate user untill otp verification
+            new_user.save()
+            
+            otp = generateAndSendOtp(new_user.email)
+            OTP.objects.create(email=new_user.email,otp=otp)
+            
+            messages.success(request, 'OTP sent to your email. Please validate.')
+            return render(request, 'otp_validation.html', {'email': new_user.email})
+        else:
+            messages.warning(request,"Please correct the errors below")
+    else:
+        form = UserSignupForm()
     
-    return render(request, 'usersignup.html')
+    return render(request, 'usersignup.html',{'form':form})
 
 
 
@@ -228,7 +194,8 @@ def changePassword(request):
     return render(request,'change_password.html')
 
 def userhome(request):
-    return render(request,'user_home.html')
+    products = Products.objects.all()
+    return render(request,'user_home.html',{'products':products})
 
 def userlogout(request):
     logout(request)

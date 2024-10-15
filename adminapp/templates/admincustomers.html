@@ -10,6 +10,7 @@
             <nav class="nav flex-column flex-grow-1 justify-content-around">
                 <a class="nav-link" href="#">Dashboard</a>
                 <a class="nav-link" href="#">Products</a>
+                <a class="nav-link" href="#">Category</a>
                 <a class="nav-link active" href="#">Customers</a>
                 <a class="nav-link" href="#">Orders</a>
                 <a class="nav-link" href="#">Coupons</a>
@@ -19,7 +20,7 @@
 
         <!-- Main Content Area -->
         <div class="col-md-10 ">
-            <div class="d-flex justify-content-between align-items-center mt-0 mb-4 dash-head py-2 rounded text-white px-2">
+            <div class="d-flex justify-content-between align-items-center mt-0 mb-0 dash-head py-2 rounded text-white px-2">
                 <h3>Customers</h3>
                 <form class="d-flex" role="search" method="POST" action="{% url 'customerSearch' %}">
                     {% csrf_token %}
@@ -30,9 +31,9 @@
 
             <!-- Customer Table -->
             <div class="table-responsive">
-                <table class="table customer-table">
-                    <thead class="custom-table-header">
-                        <tr class="custom-table-header" >
+                <table class="table">
+                    <thead>
+                        <tr>
                             <th scope="col">ID</th>
                             <th scope="col">Name</th>
                             <th scope="col">Email</th>
@@ -43,6 +44,7 @@
                     </thead>
                     <tbody>
                         {% for user in users %}
+                        {% if not user.is_superuser %}
                         {% comment %} {% if user.is_active %} {% endcomment %}
                         <tr>
                             <td>{{user.id}}</td>
@@ -64,7 +66,7 @@
                             </td>
                         </tr>
                         <!-- Additional rows can be added here -->
-                        {% comment %} {% endif %} {% endcomment %}
+                        {% endif %}
                         {% endfor %}
                     </tbody>
                 </table>

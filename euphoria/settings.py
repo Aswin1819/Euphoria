@@ -114,3 +114,7 @@ STATICFILES_DIRS = [
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # Add this line to use the custom social adapter
 SOCIALACCOUNT_ADAPTER = 'adminapp.adapters.CustomSocialAccountAdapter'
+
+# image uploading
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')

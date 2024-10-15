@@ -1,5 +1,28 @@
 {% extends 'userbase.html' %}
-{% block content %}
 
-    <h1>home</h1>
+{% block content %}
+<div class="container-fluid">
+    <h1 class="text-center my-4">Welcome to Euphoria</h1>
+    
+    <div class="text-center">
+        <h2>Best Sellers</h2>
+        <div class="row mb-4">
+            {% for product in products %}
+            <div class="col-md-3">
+                <div class="card">
+                    {% if product.images.all %}
+                        <img src="{{ product.product_images.first.images.url }}" class="card-img-top" alt="main-image">
+                    {% else %}
+                        <img src="/media/default.jpg" class="card-img-top" alt="Default Image">
+                    {% endif %}
+                    <div class="card-body">
+                        <h5 class="card-title">{{ product.name }}</h5>
+                        <p class="card-text">Price: &#8377; {{ product.price }}</p>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
 {% endblock %}

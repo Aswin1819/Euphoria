@@ -6,51 +6,54 @@
 <div class="container mt-5">
     <div class="row justify-content-center">
         <div class="col-md-6">
-            {% for message in messages %}
+            {% comment %} {% for message in messages %}
             <div class="alert alert-{{ message.tags }} alert-dismissible fade show  mx-auto text-center" role="alert"
                 id="alertBox">
                 <strong>{{message}}</strong>
             </div>
-            {% endfor %}
+            {% endfor %} {% endcomment %}
             <div class="card p-4 shadow login-card">
                 <div class="card-body">
                     <h3 class="text-center display-4">Sign Up</h3>
                     <p class="text-center">Create your account</p>
-                    <form method="POST" action="{% url 'usersignup' %}" enctype="multipart/form-data">
+
+                    <!-- Use Django form rendering with preserved attributes -->
+                    <form method="POST" action="{% url 'usersignup' %}">
                         {% csrf_token %}
 
                         <div class="mb-3">
-                            <label for="username">Full Name</label>
-                            <input type="text" class="form-control" id="username" name="username" placeholder="Enter your full name">
-                            <div id="username-error" class="text-danger"></div> <!-- Error message placeholder -->
+                            {{ form.username.label_tag }}
+                            {{ form.username }}
+                            <div id="username-error" class="text-danger">{{ form.username.errors }}</div>
                         </div>
-                        
+
                         <div class="mb-3">
-                            <label for="email">Email Address</label>
-                            <input type="email" class="form-control" id="email" name="email" placeholder="Enter your email">
-                            <div id="email-error" class="text-danger"></div> <!-- Error message placeholder -->
+                            {{ form.email.label_tag }}
+                            {{ form.email }}
+                            <div id="email-error" class="text-danger">{{ form.email.errors }}</div>
                         </div>
-                        
+
                         <div class="mb-3">
-                            <label for="phone">Phone Number</label>
-                            <input type="tel" class="form-control" id="phone" name="phone" placeholder="Enter your phone number">
-                            <div id="phone-error" class="text-danger"></div> <!-- Error message placeholder -->
+                            {{ form.phone.label_tag }}
+                            {{ form.phone }}
+                            <div id="phone-error" class="text-danger">{{ form.phone.errors }}</div>
                         </div>
-                        
+
                         <div class="mb-3">
-                            <label for="password">Password</label>
-                            <input type="password" class="form-control" id="password" name="password" placeholder="Enter your password" required>
-                            <div id="password-error" class="text-danger"></div> <!-- Error message placeholder -->
+                            {{ form.password1.label_tag }}
+                            {{ form.password1 }}
+                            <div id="password-error" class="text-danger">{{ form.password1.errors }}</div>
                         </div>
-                        
+
                         <div class="mb-3">
-                            <label for="confirm_password">Confirm Password</label>
-                            <input type="password" class="form-control" id="confirm_password" name="confirm_password" placeholder="Confirm your password" required>
-                            <div id="confirm_password-error" class="text-danger"></div> <!-- Error message placeholder -->
+                            {{ form.password2.label_tag }}
+                            {{ form.password2 }}
+                            <div id="confirm_password-error" class="text-danger">{{ form.password2.errors }}</div>
                         </div>
-                        
+
                         <button type="submit" class="btn btn-login w-100">Sign Up</button>
                     </form>
+
                     <p class="text-center mt-3">
                         Already have an account?
                         <a class="decoration-none" href="{% url 'userlogin' %}">Login</a>

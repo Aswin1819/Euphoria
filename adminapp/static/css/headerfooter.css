@@ -1,8 +1,7 @@
 .login-card {
     background-color: #EAD8C0;
-    border-radius: 2rem;
+   
 }
-
 
 .admin-navbar,footer{
     background-color: #EAD8C0;
@@ -42,7 +41,71 @@
     background-color: #7A5011;
 }
 
+.table td,
+.table th {
+    padding: 15px;
+}
+.table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0 15px;
+    margin: 20px 0;
+    font-size: 1em;
+    width: 100%;
+}
 
+.table thead th {
+    padding: 12px 15px;
+    background: #633B00;
+    color: #fefeeb;
+    border-style: none;   
+}
+.table thead tr {
+    border-top-left-radius: 1rem;
+}
+
+.table tbody tr {
+    background: #7A5011;
+    border-radius: 20px;
+    
+}
+
+.table tbody tr td {
+    padding: 12px 15px;
+    text-align: left;
+    background: #7A5011;
+    color: #fefeeb;
+}
+.table-responsive {
+    max-height: 64vh; /* Adjust based on your layout */
+    overflow-y: auto; /* Enable vertical scrolling */
+}
+
+/* adminproducts */
+.btn-add-Category {
+   background-color: #f4c2a1 ; 
+   color: brown; 
+   border-radius: 20px; 
+   margin-right: 10px;
+}
+/* Add Product Button Styles */
+/* .add-product-btn {
+    background-color: #b1bf37;
+    color: rgb(89, 242, 54);
+    border-radius: 20px;
+    margin-right: 10px;
+    padding: 10px 20px;
+    text-decoration: none;
+    display: inline-block;
+    text-align: center;
+    font-weight: bold;
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.add-product-btn:hover {
+    background-color: rgb(107, 222, 72);
+    color: #1a0b01;
+} */
 
 
 

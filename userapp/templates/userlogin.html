@@ -4,32 +4,64 @@
 {% block content %}
 <div class="container mt-5">
     <div class="row justify-content-center">
-        <div class="col-md-6 ">
+        <div class="col-md-6">
+            {% comment %} <!-- Messages for success or errors -->
             {% for message in messages %}
             <div class="alert alert-{{ message.tags }} alert-dismissible fade show  mx-auto" role="alert" id="alertBox">
                 <strong>{{message}}</strong> 
                 <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
             </div>
-            {% endfor %}
+            {% endfor %} {% endcomment %}
+
+            <!-- Card for the login form -->
             <div class="card p-4 shadow login-card">
                 <div class="card-body">
                     <h3 class="text-center display-4">Log In</h3>
                     <p class="text-center">Welcome Back!!!</p>
-                    <form method="POST" action="{% url 'userlogin' %}" enctype="multipart/form-data">
+
+                    <!-- Render the login form -->
+                    <form method="POST" action="{% url 'userlogin' %}">
                         {% csrf_token %}
-                        <div class="mb-3">
-                            <label for="email">Email Address</label>
-                            <input type="email" class="form-control" id="email" name="email" placeholder="Enter your email" required>
+                        <!-- Display non-field errors here -->
+                        {% if form.non_field_errors %}
+                        <div class="text-danger">
+                            {{ form.non_field_errors }}
                         </div>
+                        {% endif %}
+
+                        <!-- Render email field -->
                         <div class="mb-3">
-                            <label for="password">Password</label>
-                            <input type="password" class="form-control" id="password" name="password" placeholder="Enter your password" required>
+                            <label for="id_email">Email Address</label>
+                            {{ form.email }}
+                            {% comment %} {% for error in form.email.errors %}
+                            <div class="text-danger">{{ error }}</div>
+                            {% endfor %} {% endcomment %}
                         </div>
+
+                        <!-- Render password field -->
+                        <div class="mb-3">
+                            <label for="id_password">Password</label>
+                            {{ form.password }}
+                            {% comment %} {% for error in form.password.errors %}
+                            <div class="text-danger">{{ error }}</div>
+                            {% endfor %} {% endcomment %}
+                        </div>
+
+                        <!-- Forgot password link -->
                         <div class="mb-3 text-right">
                             <a href="{% url 'forgPassEmailVerification' %}" class="decoration-none">Forgot password?</a>
                         </div>
+
+                        <!-- Submit button -->
                         <button type="submit" class="btn btn-login w-100">Login</button>
                     </form>
+                    {% comment %} {% if form.errors %}
+                        <div class="error">
+                             {{ form.errors }}
+                        </div>
+                    {% endif %} {% endcomment %}
+
+                    <!-- Other options like signup or login via Google -->
                     <p class="text-center mt-3">New Customer? <a class="decoration-none" href="{% url 'usersignup' %}">Start here</a></p>
                     <hr>
                     <p class="text-center">or continue with</p>
@@ -38,6 +70,8 @@
                             <img src="https://developers.google.com/identity/images/g-logo.png" width="25" class="me-2"> Google
                         </a>
                     </div>
+
+                    <!-- Terms and Conditions -->
                     <p class="text-center mt-3">
                         By clicking continue, you agree to our <a class="decoration-none" href="#">Terms of Service</a> and <a class="decoration-none" href="#">Privacy Policy</a>.
                     </p>
