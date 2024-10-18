@@ -52,7 +52,16 @@
                     
                     <div class="col-md-6">
                         <label for="productBrand" class="form-label text-white">Product Brand*</label>
-                        <input type="text" id="productBrand" class="form-control" name="product_brand" value="{{ product.brand }}" required>
+                        <select id="productBrand" class="form-control" name="product_brand" required>
+                            <option value="" disabled>Select a category</option>
+                            {% for brand in brands %}
+                                {% if brand.is_active %}
+                                    <option value="{{ brand.id }}" {% if product.brand.id == brand.id %}selected{% endif %}>
+                                        {{ brand.name }}
+                                    </option>
+                                {% endif %}
+                            {% endfor %}
+                        </select>
                     </div>
                 </div>
 

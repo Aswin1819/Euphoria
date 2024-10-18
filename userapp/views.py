@@ -197,6 +197,10 @@ def userhome(request):
     products = Products.objects.all()
     return render(request,'user_home.html',{'products':products})
 
+def productView(request,id):
+    product = get_object_or_404(Products, id=id)
+    return render(request,'productview.html',{'product':product})
+
 def userlogout(request):
     logout(request)
     return redirect('userlogin')

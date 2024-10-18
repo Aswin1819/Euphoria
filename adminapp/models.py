@@ -74,6 +74,13 @@ class BaseModel(models.Model):
         abstract = True
 
 
+class Brand(BaseModel):
+    name = models.CharField(max_length=100)
+    
+    def __str__(self):
+        return self.name
+    
+
     
 class Category(BaseModel):
     name = models.CharField(max_length=50)
@@ -85,7 +92,7 @@ class Category(BaseModel):
 class Images(models.Model):
     images = models.ImageField(upload_to="product_Images/")
     alt_text = models.CharField( max_length=255,blank=True)
-    product = models.ForeignKey('Products',on_delete=models.CASCADE,related_name='product_images')
+    product = models.ForeignKey('Products',on_delete=models.CASCADE,related_name='product_images', null=True, blank=True)
     is_deleted = models.BooleanField(default=False)
     
     def __str__(self):
@@ -105,7 +112,8 @@ class Products(models.Model):
     description = models.TextField()
     price = models.DecimalField(max_digits=10, decimal_places=2)
     stock = models.PositiveIntegerField()
-    brand = models.CharField(max_length=255)
+    brand = models.ForeignKey(Brand, on_delete=models.CASCADE)
+    weight = models.IntegerField(null=True)
     category = models.ForeignKey(Category, on_delete=models.CASCADE)
     is_active = models.BooleanField(default=True)
     is_featured = models.BooleanField(default=False)

@@ -5,40 +5,24 @@
 
 {% block content %}
 {% if messages %}
-    <div class="alert-container" style="position: fixed; top: 0; left: 0; right: 0; z-index: 9999;">
-        {% for message in messages %}
-            <div class="alert alert-warning alert-dismissible fade show" role="alert">
-                {{ message }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-            </div>
-        {% endfor %}
-    </div>
-{% endif %}
-
-<div class="container-fluid">
-    <div class="row">
-        <!-- Sidebar -->
-        <div class="col-md-2 sidebar d-flex flex-column rounded-top-3">
-            <nav class="nav flex-column flex-grow-1 justify-content-around">
-                <a class="nav-link" href="#">Dashboard</a>
-                <a class="nav-link active" href="#">Products</a>
-                <a class="nav-link" href="#">Category</a>
-                <a class="nav-link" href="#">Brands</a>
-                <a class="nav-link" href="#">Customers</a>
-                <a class="nav-link" href="#">Orders</a>
-                <a class="nav-link" href="#">Coupons</a>
-                <a class="nav-link" href="#">Banners</a>
-            </nav>
+<div class="alert-container" style="position: fixed; top: 0; left: 0; right: 0; z-index: 9999;">
+    {% for message in messages %}
+        <div class="alert alert-warning alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
-
+    {% endfor %}
+</div>
+{% endif %}
         <!-- Main Content Area -->
         <div class="col-md-10 ">
             <div class="d-flex justify-content-between align-items-center mt-0 mb-4 dash-head py-2 rounded text-white px-2" style="background-color: #8b5e34;">
                 <h3>Products</h3>
                 <div class="d-flex align-items-center">
                     <a href="{% url 'addProducts' %}" class="btn btn-rounded btn-light me-3">Add Product +</a>
-                    <form class="d-flex" role="search">
-                        <input class="form-control me-2" type="search" placeholder="Search" aria-label="Search" style="border-radius: 20px;">
+                    <form class="d-flex" role="search" method="POST" action="{% url 'productSearch' %}">
+                        {% csrf_token %}
+                        <input class="form-control me-2" name="search" type="search" placeholder="Search" aria-label="Search" style="border-radius: 20px;">
                         <button class="btn btn-light" type="submit" style="border-radius: 20px;">Search</button>
                     </form>
                 </div>
@@ -60,6 +44,7 @@
                     </thead>
                     <tbody>
                         {% for product in products %}
+                        {% if product.is_active %}
                         <tr>
                             <td>{{ product.id }}</td>
                             <td>{{ product.name }}</td>
@@ -68,16 +53,14 @@
                             <td>{{ product.category }}</td>
                             <td>
                                 <a href="{% url 'editProducts' product.id %}" class="btn btn-sm btn-primary">Edit</a>
-
-                                <button class="btn btn-sm btn-danger">Delete</button>
+                                <a class="btn btn-sm btn-danger" href="{% url 'removeProducts' product.id %}">Delete</a>
                             </td>
                         </tr>
+                        {% endif %}
                         {% endfor %}
                     </tbody>
                 </table>
             </div>
-
         </div>
-    </div>
-</div>
+    
 {% endblock %}

@@ -1,0 +1,138 @@
+{% extends "userbase.html" %}
+
+{% load static %}
+{% block content %}
+<div class="container my-5">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="#">Home</a></li>
+            <li class="breadcrumb-item"><a href="#">Milk Chocolates</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Lindt Swiss Classic Milk Hazelnut Bar 100g</li>
+        </ol>
+    </nav>
+
+    <!-- Product Section -->
+    <div class="row">
+        <!-- Product Image and Thumbnails -->
+        <div class="col-md-4">
+            <!-- Main Product Image -->
+            <div class="product-main-img mb-4" id="zoom-container" style="position: relative; overflow: hidden;">
+                <img id="main-product-img" src="{{ product.product_images.first.url }}" alt="{{ product.name }}" class="img-fluid main-product-img" style="width: 100%; cursor: zoom-in;">
+            </div>
+            
+            
+            <!-- Thumbnail Images -->
+            <div class="row">
+                {% for image in product.product_images.all %}
+                <div class="col-3 sub-img"> 
+                    <img src="{{ image.url }}" alt="{{ image.alt_text }}" class="img-thumbnail thumb-img" style="height:80px; max-height:80px;" onclick="changeImage('{{ image.url }}')">
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        <div class="col-md-1"></div>
+    
+        <!-- Product Details -->
+        <div class="col-md-7">
+            
+            <h2>{{ product.name }}</h2>
+            <p class="ratings text-warning">&starf;&starf;&starf;&starf;({{ product_reviews.count}})</p>
+    
+            <p class="display-4 mt-5">&#8377; {{ product.price }}</p>
+            <p class="product-description">{{ product.description }}</p>
+            <a class="btn btn-light">{{ product.weight }}g</a>
+    
+            <!-- Quantity and Add to Cart -->
+            <div class="my-4">
+                <label for="quantity" class="form-label">Quantity</label>
+                <div class="input-group mb-3" style="max-width: 150px;">
+                    <button class="btn btn-outline-secondary" type="button">-</button>
+                    <input type="text" class="form-control text-center" id="quantity" value="1">
+                    <button class="btn btn-outline-secondary" type="button">+</button>
+                </div>
+                <button class="btn btn-primary btn-lg">Add to Cart</button>
+            </div>
+        </div>
+    </div>
+    
+
+    <!-- Related Products Section -->
+    {% comment %} <div class="mt-5">
+        <h4>Related Products</h4>
+        <div class="row">
+            <div class="col-md-3 col-sm-6 mb-4">
+                <div class="card h-100 text-center">
+                    <img src="{% static 'images/ferrero1.jpg' %}" class="card-img-top" alt="Ferrero Rocher">
+                    <div class="card-body">
+                        <h5 class="card-title">Ferrero Rocher 12pc</h5>
+                        <p class="card-text">295.00 Rs</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 col-sm-6 mb-4">
+                <div class="card h-100 text-center">
+                    <img src="{% static 'images/ferrero2.jpg' %}" class="card-img-top" alt="Ferrero Rocher 16pc">
+                    <div class="card-body">
+                        <h5 class="card-title">Ferrero Rocher 16pc</h5>
+                        <p class="card-text">395.00 Rs</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 col-sm-6 mb-4">
+                <div class="card h-100 text-center">
+                    <img src="{% static 'images/whittakers.jpg' %}" class="card-img-top" alt="Whittakers Chocolate">
+                    <div class="card-body">
+                        <h5 class="card-title">Whittakers Chocolate Bar</h5>
+                        <p class="card-text">105.00 Rs</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 col-sm-6 mb-4">
+                <div class="card h-100 text-center">
+                    <img src="{% static 'images/ferrero3.jpg' %}" class="card-img-top" alt="Ferrero Rocher 24pc">
+                    <div class="card-body">
+                        <h5 class="card-title">Ferrero Rocher 24pc</h5>
+                        <p class="card-text">595.00 Rs</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div> {% endcomment %}
+</div>
+<script>
+    
+const mainImage = document.getElementById("main-product-img");
+const zoomContainer = document.getElementById("zoom-container");
+
+function changeImage(src){
+    document.getElementById('main-product-img').src = src;
+}
+
+mainImage.addEventListener('mousemove', function (e) {
+    const rect = mainImage.getBoundingClientRect();
+    const x = e.clientX - rect.left; // Get mouse x position
+    const y = e.clientY - rect.top;  // Get mouse y position
+
+    // Calculate background position percentage based on mouse position
+    const xPercent = (x / rect.width) * 100;
+    const yPercent = (y / rect.height) * 100;
+
+    mainImage.style.transformOrigin = `${xPercent}% ${yPercent}%`;
+    mainImage.style.transform = "scale(2)"; // Increase scale for zoom
+});
+
+mainImage.addEventListener('mouseleave', function () {
+    mainImage.style.transform = "scale(1)"; // Reset scale on mouse leave
+});
+
+// Function to handle thumbnail click
+function changeImage(src) {
+    mainImage.src = src;
+    mainImage.style.transform = "scale(1)"; // Reset zoom when changing images
+}
+    
+</script>
+
+{% endblock %}
+

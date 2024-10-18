@@ -2,7 +2,7 @@ from django.shortcuts import render,redirect,get_object_or_404
 from django.contrib.auth import login,logout,authenticate
 from django.contrib import messages
 from django.contrib.auth import get_user_model
-from .models import EuphoUser,Category,Products,Images
+from .models import EuphoUser,Category,Products,Images,Brand
 
 # Create your views here.
 
@@ -142,17 +142,19 @@ def addProducts(request):
                 name = request.POST.get('product_name')
                 description = request.POST.get('description')
                 category_id = request.POST.get('category_name')
-                brand = request.POST.get('product_brand')
+                brand_id = request.POST.get('product_brand')
                 stock = request.POST.get('quantity')
                 price = request.POST.get('price')
+                weight = request.POST.get('weight')
                 
+                image_files = [
+                    request.FILES.get('image1'),
+                    request.FILES.get('image2'),
+                    request.FILES.get('image3'),
+                    request.FILES.get('image4')
+                ]
                 
-                image1 = request.FILES.get('image1')
-                image2 = request.FILES.get('image2')
-                image3 = request.FILES.get('image3')
-                image4 = request.FILES.get('image4')
-                
-                if not all([name,description,category_id,brand,stock,price]):
+                if not all([name,description,category_id,brand_id,stock,price,weight]+image_files):
                     messages.warning(request,"All fileds are reuired")
                     return render(request,'addproducts.html')
                 try:
@@ -163,6 +165,7 @@ def addProducts(request):
                     return render(request,'addproducts.html')
                     
                 category = Category.objects.get(id = category_id)
+                brand = Brand.objects.get(id = brand_id)
                 
                 product = Products.objects.create(
                     name = name,
@@ -171,67 +174,176 @@ def addProducts(request):
                     stock = stock,
                     brand = brand,
                     category = category,
+                    weight = weight,
                     
                  )
                 
-                for image_file in [image1,image2,image3,image4]:
+                for image_file in image_files:
                     if image_file:
-                        image_instance = Images.objects.create(images = image_file)
-                        product.images.add(image_instance) 
+                        Images.objects.create(images=image_file, product=product)
                 
                 messages.success(request,"Product added Successfully")
-                return redirect(adminProducts)
-                
-                                    
+                return redirect(adminProducts)     
+                               
             except Exception as e:
                 messages.warning(request,f"Error in adding products {str(e)}")
                 return render(request,'addproducts.html')
-    categories = Category.objects.all()     
-    return render(request,'addproducts.html',{'categories':categories})
-
-def editProducts(request,id):
-    if request.user.is_superuser:
-        product = get_object_or_404(Products,id=id)
-        if request.method=='POST':
-            name = request.POST.get('product_name')
-            description = request.POST.get('description')
-            category_id = request.POST.get('category_name')
-            brand = request.POST.get('product_brand')
-            stock = request.POST.get('quantity')
-            price = request.POST.get('price')
-                
-                
-            image1 = request.FILES.get('image1')
-            image2 = request.FILES.get('image2')
-            image3 = request.FILES.get('image3')
-            image4 = request.FILES.get('image4')
-                
-            category = Category.objects.get(id=category_id)
-                
-            product.name = name
-            product.description = description
-            product.price = price
-            product.stock = stock
-            product.category = category
-            product.brand = brand
-
-            product.save()
-            print("product saved successfully")   
             
-            uploaded_images = [image1, image2, image3, image4] 
-            for image_file in uploaded_images:
-                image = Images(images=image_file)
-                image.save()
-                product.images.add(image)
+    categories = Category.objects.all()     
+    brands = Brand.objects.all()
+    return render(request,'addproducts.html',{'categories':categories,'brands':brands})
+
+def editProducts(request, id):
+    if request.user.is_superuser:
+        product = get_object_or_404(Products, id=id)
+
+        if request.method == 'POST':
+            try:
+                name = request.POST.get('product_name')
+                description = request.POST.get('description')
+                category_id = request.POST.get('category_name')
+                brand_id = request.POST.get('product_brand')
+                stock = request.POST.get('quantity')
+                price = request.POST.get('price')
+                weight = request.POST.get('weight')
+
+                # Validate inputs
+                if not all([name, description, category_id, brand_id, stock, price]):
+                    messages.warning(request, "All fields except weight are required.")
+                    return render(request, 'editProducts.html', {'product': product})
+
+                try:
+                    price = float(price)
+                    stock = int(stock)
+                except ValueError:
+                    messages.warning(request, "Invalid price or stock value.")
+                    return render(request, 'editProducts.html', {'product': product})
+
+                category = Category.objects.get(id=category_id)
+                brand = Brand.objects.get(id=brand_id)
+
+                # Update product details
+                product.name = name
+                product.description = description
+                product.price = price
+                product.stock = stock
+                product.weight = weight
+                product.category = category
+                product.brand = brand
                 product.save()
-                
-            messages.success(request,"product edited successfully")
-            return redirect(adminProducts) 
+
+                # Handling image upload
+                uploaded_images = [
+                    request.FILES.get('image1'),
+                    request.FILES.get('image2'),
+                    request.FILES.get('image3'),
+                    request.FILES.get('image4')
+                ]
+
+                for index, image_file in enumerate(uploaded_images):
+                    if image_file:
+                        # If a new image is uploaded, create or replace it
+                        existing_image = product.product_images.all()[index] if product.product_images.all().count() > index else None
+                        if existing_image:
+                            existing_image.images = image_file
+                            existing_image.save()
+                        else:
+                            new_image = Images.objects.create(images=image_file, product=product)
+                            product.product_images.add(new_image)
+
+                messages.success(request, "Product edited successfully.")
+                return redirect(adminProducts)
+
+            except Exception as e:
+                messages.warning(request, f"Error in editing product: {str(e)}")
+                return render(request, 'editProducts.html', {'product': product})
+
+        # Render the edit page with product details
         categories = Category.objects.all()
-        images = product.images.all()
-        return render(request,'editProducts.html',{'categories':categories,'images':images,'product':product})
+        brands = Brand.objects.all()
+        images = product.product_images.all()  # Use the related name `product_images`
+
+        return render(request, 'editProducts.html', {
+            'categories': categories,
+            'images': images,
+            'product': product,
+            'brands': brands
+        })
+
     return redirect(adminLogin)
 
+
+def productSearch(request):
+    if request.user.is_superuser:
+        if request.method=='POST':
+            search = request.POST.get('search')
+            if search:
+                product = Products.objects.filter(name__icontains=search).order_by('name')
+            else:
+                product = Products.objects.all()
+            return render(request,'adminproducts.html',{'products':product})
+            
+def removeProducts(request,id):
+    if request.user.is_superuser:
+        product = Products.objects.get(id=id)
+        product.is_active = not product.is_active
+        product.save()
+        return redirect(adminProducts)
+    return redirect(adminLogin)
+
+
+
+def adminBrands(request):
+    if request.user.is_superuser:
+        brand = Brand.objects.all().order_by('id')
+        return render(request,'adminbrands.html',{'items':brand})
+    return redirect(adminLogin)
+
+
+def addBrands(request):
+    if request.user.is_superuser:
+        if request.method=='POST':
+            brand = request.POST.get('brand')
+            new_brand=Brand.objects.create(name=brand)
+            new_brand.save()
+            return redirect(adminBrands)
+    return redirect(adminLogin)
+
+
+def removeBrands(request,id):
+    if request.user.is_superuser:
+        brand = Brand.objects.get(id=id)
+        brand.is_active = not brand.is_active
+        brand.save()
+        return redirect(adminBrands)
+    return redirect(adminLogin)
+
+
+def editBrands(request,id):
+    if request.user.is_superuser:
+        if request.method=='POST':
+            new_name = request.POST.get('brand')
+            brand = Brand.objects.get(id=id)
+            brand.name=new_name
+            brand.save()
+            return redirect(adminBrands)
+    return redirect(adminLogin)
+        
+
+def brandSearch(request):
+    if request.user.is_superuser:
+        if request.method=='POST':
+            search = request.POST.get('search')
+            if search is not None:
+                item = Brand.objects.filter(name__icontains=search).order_by('name')
+            else:
+                item = Brand.objects.all()
+            return render(request,'adminbrands.html',{'items':item})
+
+
+
+
+ 
 def adminOrders(request):
     return render(request,'adminorders.html')
     

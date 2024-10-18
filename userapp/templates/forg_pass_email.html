@@ -14,7 +14,7 @@
                 <div class="card-body">
                     <h3 class="text-center display-4">Reset Password</h3>
                     <p class="text-center">Enter your email to reset the password</p>
-                    <form method="POST" action="#">
+                    <form method="POST" action="{% url 'forgPassEmailVerification' %}">
                         {% csrf_token %}
                         <div class="mb-3">
                             <label for="email">Email Address</label>

@@ -10,6 +10,7 @@ urlpatterns = [
     path('changePassword/',views.changePassword, name = 'changePassword'),
     path('resendotp/',views.resendotp,name = 'resendotp'),
     path('',views.userhome,name = 'userhome'),
+    path('productView/<int:id>',views.productView,name='productView'),
     path('userlogout/',views.userlogout,name = 'userlogout'),
     path('resendOtpForPass/',views.resendOtpForPass,name='resendOtpForPass'),
 ]

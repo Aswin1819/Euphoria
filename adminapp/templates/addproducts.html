@@ -14,21 +14,6 @@
     </div>
 {% endif %}
 
-<div class="container-fluid">
-    <div class="row">
-        <!-- Sidebar -->
-        <div class="col-md-2 sidebar d-flex flex-column rounded-top-3">
-            <nav class="nav flex-column flex-grow-1 justify-content-around">
-                <a class="nav-link" href="#">Dashboard</a>
-                <a class="nav-link active" href="#">Products</a>
-                <a class="nav-link" href="#">Category</a>
-                <a class="nav-link" href="#">Customers</a>
-                <a class="nav-link" href="#">Orders</a>
-                <a class="nav-link" href="#">Coupons</a>
-                <a class="nav-link" href="#">Banners</a>
-            </nav>
-        </div>
-
         <!-- Main Content Area -->
         <div class="col-md-10">
             <div class="d-flex justify-content-between align-items-center mt-0 mb-4 dash-head py-2 rounded text-white px-2">
@@ -64,8 +49,15 @@
                         </div>
                         
                         <div class="col-md-6">
-                            <label for="productBrand" class="form-label text-white">Product Brand*</label>
-                            <input type="text" id="productBrand" class="form-control" name="product_brand" required>
+                            <label for="brandName" class="form-label text-white">Brand Name*</label>
+                            <select id="brandName" class="form-control" name="product_brand" required>
+                                <option value="" disabled selected>Select a category</option>
+                                {% for brand in brands %}
+                                    {% if brand.is_active %}
+                                        <option value="{{ brand.id }}">{{ brand.name }}</option>
+                                    {% endif %}
+                                {% endfor %}
+                            </select>
                         </div>
                     </div>
 
@@ -111,7 +103,6 @@
                 </form>
             </div>
         </div>
-    </div>
-</div>
+    
 
 {% endblock %}

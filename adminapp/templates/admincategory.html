@@ -4,20 +4,6 @@
 {% block title %}Admin Category{% endblock %}
 
 {% block content %}
-<div class="container-fluid">
-    <div class="row">
-        <!-- Sidebar -->
-        <div class="col-md-2 sidebar d-flex flex-column rounded-top-3">
-            <nav class="nav flex-column flex-grow-1 justify-content-around">
-                <a class="nav-link" href="#">Dashboard</a>
-                <a class="nav-link" href="#">Products</a>
-                <a class="nav-link active" href="#">Category</a>
-                <a class="nav-link" href="#">Customers</a>
-                <a class="nav-link" href="#">Orders</a>
-                <a class="nav-link" href="#">Coupons</a>
-                <a class="nav-link" href="#">Banners</a>
-            </nav>
-        </div>
 
         <!-- Main Content Area -->
         <div class="col-md-10 ">
@@ -35,61 +21,65 @@
                 </div>
             </div>
 
-            <!-- Customer Table -->
-            <table class="table">
-                <thead id="table-head" class="custom-table-header">
-                    <tr>
-                        <th scope="col">Id</th>
-                        <th scope="col">Category Name</th>
-                        <th scope="col">Edit</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for item in items %}
-                    {% if  item.is_active %}
-                    <tr>
-                        <td>{{ item.id}}</td>
-                        <td>{{ item.name }}</td>
-                        <td>
-                            {% comment %} <button class="btn btn-primary btn-sm btn-del">Edit</button> {% endcomment %}
-                            <button type="button" class="btn btn-primary btn-sm" data-mdb-toggle="modal" data-mdb-target="#editCategory{{ item.id }}">
-                                Edit
-                            </button>
-                            <a href="{% url 'removeCategory' item.id %}" class="btn btn-danger btn-sm text-decoration-none text-white">Remove</a>
-                        </td>
-                    </tr>
-                    <!-- Edit Category Modal -->
-                    <div class="modal fade" id="editCategory{{ item.id }}" tabindex="-1" aria-labelledby="exampleModalLabel1" aria-hidden="true">
-                        <div class="modal-dialog d-flex justify-content-center">
-                            <div class="modal-content w-75">
-                                <div class="modal-header">
-                                    <h5 class="modal-title" id="exampleModalLabel1">Edit Category</h5>
-                                    <button type="button" class="btn-close" data-mdb-dismiss="modal" aria-label="Close"></button>
-                                </div>
-                                <div class="modal-body p-4">
-                                    <form method="POST" action="{% url 'editCategory' item.id %}">
-                                        {% csrf_token %}
-                                        <!-- Email input -->
-                                        <div class="form-outline mb-4">
-                                            <input type="text" id="category" class="form-control" name="category" value="{{ item.name }}" />
-                                            <label class="form-label" for="category">Category Name</label>
-                                        </div>
-                                        <!-- Submit button -->
-                                        <button type="submit" class="btn btn-primary btn-block">Save</button>
-                                    </form>
+            <!-- Category Table -->
+            <div class="table-responsive">
+                <table class="table">
+                    <thead id="table-head" class="custom-table-header">
+                        <tr>
+                            <th scope="col">Id</th>
+                            <th scope="col">Category Name</th>
+                            <th scope="col">Edit</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in items %}
+                        {% if  item.is_active %}
+                        <tr>
+                            <td>{{ item.id}}</td>
+                            <td>{{ item.name }}</td>
+                            <td>
+                                {% comment %} <button class="btn btn-primary btn-sm btn-del">Edit</button> {% endcomment %}
+                                <button type="button" class="btn btn-primary btn-sm" data-mdb-toggle="modal" data-mdb-target="#editCategory{{ item.id }}">
+                                    Edit
+                                </button>
+                                <a href="{% url 'removeCategory' item.id %}" class="btn btn-danger btn-sm text-decoration-none text-white">Remove</a>
+                            </td>
+                        </tr>
+                        <!-- Edit Category Modal -->
+                        <div class="modal fade" id="editCategory{{ item.id }}" tabindex="-1" aria-labelledby="exampleModalLabel1" aria-hidden="true">
+                            <div class="modal-dialog d-flex justify-content-center">
+                                <div class="modal-content w-75">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title" id="exampleModalLabel1">Edit Category</h5>
+                                        <button type="button" class="btn-close" data-mdb-dismiss="modal" aria-label="Close"></button>
+                                    </div>
+                                    <div class="modal-body p-4">
+                                        <form method="POST" action="{% url 'editCategory' item.id %}">
+                                            {% csrf_token %}
+                                            <!-- Email input -->
+                                            <div class="form-outline mb-4">
+                                                <input type="text" id="category" class="form-control" name="category" value="{{ item.name }}" />
+                                                <label class="form-label" for="category">Category Name</label>
+                                            </div>
+                                            <!-- Submit button -->
+                                            <button type="submit" class="btn btn-primary btn-block">Save</button>
+                                        </form>
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
+    
+                        <!-- Additional rows can be added here -->
+                        {% endif %}
+                        {% endfor %}
+                    </tbody>
+                </table>
 
-                    <!-- Additional rows can be added here -->
-                    {% endif %}
-                    {% endfor %}
-                </tbody>
-            </table>
+            </div>
+
+            
         </div>
-    </div>
-</div>
+    
 <!-- Button trigger modal -->
 
 
