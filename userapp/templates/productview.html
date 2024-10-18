@@ -1,14 +1,20 @@
 {% extends "userbase.html" %}
-
 {% load static %}
+{% load breadcrumbs %}
+
 {% block content %}
 <div class="container my-5">
     <!-- Breadcrumb -->
     <nav aria-label="breadcrumb">
         <ol class="breadcrumb">
-            <li class="breadcrumb-item"><a href="#">Home</a></li>
-            <li class="breadcrumb-item"><a href="#">Milk Chocolates</a></li>
-            <li class="breadcrumb-item active" aria-current="page">Lindt Swiss Classic Milk Hazelnut Bar 100g</li>
+            {% breadcrumb as crumbs %}
+            {% for name, url in crumbs %}
+                {% if forloop.last %}
+                    <li class="breadcrumb-item active" aria-current="page">{{ name }}</li>
+                {% else %}
+                    <li class="breadcrumb-item"><a href="{{ url }}">{{ name }}</a></li>
+                {% endif %}
+            {% endfor %}
         </ol>
     </nav>
 
@@ -40,6 +46,11 @@
             <p class="ratings text-warning">&starf;&starf;&starf;&starf;({{ product_reviews.count}})</p>
     
             <p class="display-4 mt-5">&#8377; {{ product.price }}</p>
+            {% if product.stock == 0 %}
+                <p class="text-danger">Stock Out</p>
+            {% elif product.stock < 10 %}
+                <p class="text-warning">Limited Stock</p>
+            {% endif %}
             <p class="product-description">{{ product.description }}</p>
             <a class="btn btn-light">{{ product.weight }}g</a>
     
@@ -58,48 +69,43 @@
     
 
     <!-- Related Products Section -->
-    {% comment %} <div class="mt-5">
-        <h4>Related Products</h4>
-        <div class="row">
-            <div class="col-md-3 col-sm-6 mb-4">
-                <div class="card h-100 text-center">
-                    <img src="{% static 'images/ferrero1.jpg' %}" class="card-img-top" alt="Ferrero Rocher">
-                    <div class="card-body">
-                        <h5 class="card-title">Ferrero Rocher 12pc</h5>
-                        <p class="card-text">295.00 Rs</p>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-3 col-sm-6 mb-4">
-                <div class="card h-100 text-center">
-                    <img src="{% static 'images/ferrero2.jpg' %}" class="card-img-top" alt="Ferrero Rocher 16pc">
-                    <div class="card-body">
-                        <h5 class="card-title">Ferrero Rocher 16pc</h5>
-                        <p class="card-text">395.00 Rs</p>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-3 col-sm-6 mb-4">
-                <div class="card h-100 text-center">
-                    <img src="{% static 'images/whittakers.jpg' %}" class="card-img-top" alt="Whittakers Chocolate">
-                    <div class="card-body">
-                        <h5 class="card-title">Whittakers Chocolate Bar</h5>
-                        <p class="card-text">105.00 Rs</p>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-3 col-sm-6 mb-4">
-                <div class="card h-100 text-center">
-                    <img src="{% static 'images/ferrero3.jpg' %}" class="card-img-top" alt="Ferrero Rocher 24pc">
-                    <div class="card-body">
-                        <h5 class="card-title">Ferrero Rocher 24pc</h5>
-                        <p class="card-text">595.00 Rs</p>
-                    </div>
-                </div>
-            </div>
+
+    <div class="text-center my-5">
+        <div>
+            <p class="display-4">People Also Bought</p>
         </div>
-    </div> {% endcomment %}
+        <div>
+            <p class="text-muted">Here’s some of our most similar products people are buying. Click to discover trending style.</p>
+        </div>
+    </div>
+
+    <div class="row">
+        {% for product in related_products %}
+        {% if product.is_active %}
+        <div class="col-sm-6 col-md-4 col-lg-3 mb-4">
+            <a href="{% url 'productView' product.id %}" class="productatag">
+                <div class="card h-100 product-card" style="width: 100%; max-width: 300px;">
+                    {% if product.product_images.all %}
+                        <img src="{{ product.product_images.first.images.url }}" class="card-img-top img-fluid" alt="{{ product.product_images.first.alt_text }}" style="height: 200px; object-fit: cover;">
+                    {% else %}
+                        <img src="/media/product_Images/default.jpg" class="card-img-top img-fluid" alt="Default Image" style="height: 200px; object-fit: cover;">
+                    {% endif %}
+                    <div class="card-body d-flex flex-column justify-content-between">
+                        <h5 class="card-title text-muted">{{ product.brand }}</h5>
+                        <h6 class="card-title">{{ product.name }}</h6>
+                        <p class="card-text">Price: <strong>&#8377; {{ product.price }}</strong></p>
+                    </div>
+                </div>
+            </a>
+        </div>
+        {% endif %}
+        {% endfor %}
+    </div>
 </div>
+
+
+
+
 <script>
     
 const mainImage = document.getElementById("main-product-img");

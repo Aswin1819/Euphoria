@@ -11,6 +11,7 @@ urlpatterns = [
     path('resendotp/',views.resendotp,name = 'resendotp'),
     path('',views.userhome,name = 'userhome'),
     path('productView/<int:id>',views.productView,name='productView'),
+    path('shopNow/',views.shopNow,name='shopNow'),
     path('userlogout/',views.userlogout,name = 'userlogout'),
     path('resendOtpForPass/',views.resendOtpForPass,name='resendOtpForPass'),
 ]

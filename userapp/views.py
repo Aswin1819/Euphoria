@@ -195,11 +195,18 @@ def changePassword(request):
 
 def userhome(request):
     products = Products.objects.all()
-    return render(request,'user_home.html',{'products':products})
+    latest_product = Products.objects.all().order_by('-id')[:4]
+    featured = Products.objects.filter(is_featured=True)
+    return render(request,'user_home.html',{'products':products,'latest_products':latest_product,'featured_products':featured})
+
+def shopNow(request):
+    products = Products.objects.all()
+    return render(request,'shopnow.html',{'products':products})
 
 def productView(request,id):
     product = get_object_or_404(Products, id=id)
-    return render(request,'productview.html',{'product':product})
+    related_products = Products.objects.filter(brand=product.brand).exclude(id=product.id)
+    return render(request,'productview.html',{'product':product,'related_products':related_products})
 
 def userlogout(request):
     logout(request)

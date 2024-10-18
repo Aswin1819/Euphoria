@@ -55,5 +55,65 @@
             <span class="visually-hidden">Next</span>
         </a>
     </div>
+
+    {% comment %} latest products  {% endcomment %}
+
+    <div class="text-center my-5">
+        <h1>LATEST PRODUCTS</h1>
+    </div>
+    <div class="row">
+        {% for product in latest_products %}
+        {% if product.is_active %}
+        <div class="col-sm-6 col-md-4 col-lg-3 mb-4">
+            <a href="{% url 'productView' product.id %}" class="productatag">
+                <div class="card h-100 product-card" style="width: 100%; max-width: 300px;">
+                    {% if product.product_images.all %}
+                        <img src="{{ product.product_images.first.images.url }}" class="card-img-top img-fluid" alt="{{ product.product_images.first.alt_text }}" style="height: 200px; object-fit: cover;">
+                    {% else %}
+                        <img src="/media/product_Images/default.jpg" class="card-img-top img-fluid" alt="Default Image" style="height: 200px; object-fit: cover;">
+                    {% endif %}
+                    <div class="card-body d-flex flex-column justify-content-between">
+                        <h5 class="card-title">{{ product.name }}</h5>
+                        <p class="card-text">Price: &#8377; {{ product.price }}</p>
+                    </div>
+                </div>
+            </a>
+        </div>
+        {% endif %}
+        {% endfor %}
+    </div>
+    <!-- userhome chocolate description -->
+     <div class="text-center my-5">
+        <h3><strong>WHEN CHOCOLATES ARE</strong></h3>
+        <P class="display-3">Most Loved</P>
+        <p class="text-muted">Our best-selling luxury chocolates are the ones that our customers<br> love the most. They come back to us time and time again for their<br> favorite flavors, and we're always happy to oblige</p>
+     </div>
+     <!-- is featured row -->
+     <div class="text-center my-5">
+        <h1>FEATURED PRODUCTS</h1>
+    </div>
+     <div class="row">
+        {% for product in featured_products %}
+        {% if product.is_active %}
+        {% if product.is_featured %}
+        <div class="col-sm-6 col-md-4 col-lg-3 mb-4">
+            <a href="{% url 'productView' product.id %}" class="productatag">
+                <div class="card h-100 product-card" style="width: 100%; max-width: 300px;">
+                    {% if product.product_images.all %}
+                        <img src="{{ product.product_images.first.images.url }}" class="card-img-top img-fluid" alt="{{ product.product_images.first.alt_text }}" style="height: 200px; object-fit: cover;">
+                    {% else %}
+                        <img src="/media/product_Images/default.jpg" class="card-img-top img-fluid" alt="Default Image" style="height: 200px; object-fit: cover;">
+                    {% endif %}
+                    <div class="card-body d-flex flex-column justify-content-between">
+                        <h5 class="card-title">{{ product.name }}</h5>
+                        <p class="card-text">Price: &#8377; {{ product.price }}</p>
+                    </div>
+                </div>
+            </a>
+        </div>
+        {% endif %}
+        {% endif %}
+        {% endfor %}
+    </div>
 </div>
 {% endblock %}
