@@ -8,11 +8,12 @@ from userapp.userotp import generateAndSendOtp
 from django.conf import settings
 from .signals import userOtpVerified
 from .forms import UserLoginForm,UserSignupForm
+from django.views.decorators.cache import never_cache
 
 # Create your views here.
 
 
-
+@never_cache
 def userlogin(request):
     if request.user.is_authenticated:
         return redirect('userhome')
@@ -20,14 +21,13 @@ def userlogin(request):
     if request.method == 'POST':
         form = UserLoginForm(request.POST or None)
         if form.is_valid():
-            # Retrieve user from cleaned data
             user = form.cleaned_data.get('user')  
-            if user:  # Ensure user is not None
-                # Authenticate and log the user in
+            if user: 
                 login(request, user,backend='django.contrib.auth.backends.ModelBackend')
+                print(user.username)
                 return redirect('userhome')
         else:
-            print(form.errors)  # Log the errors for debugging
+            print(form.errors)  
             messages.warning(request, "Invalid email or password.")
     else:
         form = UserLoginForm()
@@ -194,14 +194,13 @@ def changePassword(request):
     return render(request,'change_password.html')
 
 def userhome(request):
-    products = Products.objects.all()
+    products = Products.objects.all().prefetch_related('variants')
     latest_product = Products.objects.all().order_by('-id')[:4]
     featured = Products.objects.filter(is_featured=True)
-    variants = Variant.objects.all()
-    return render(request,'user_home.html',{'products':products,'latest_products':latest_product,'featured_products':featured,'variants':variants})
+    return render(request,'user_home.html',{'products':products,'latest_products':latest_product,'featured_products':featured})
 
 def shopNow(request):
-    products = Products.objects.all()
+    products = Products.objects.all().prefetch_related('variants')
     return render(request,'shopnow.html',{'products':products})
 
 def productView(request,id):
@@ -212,6 +211,7 @@ def productView(request,id):
 
 def userlogout(request):
     logout(request)
+    print("logout succeessfully")
     return redirect('userlogin')
     # if request.user.is_authenticated:
     #     logout(request)
