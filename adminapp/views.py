@@ -2,7 +2,8 @@ from django.shortcuts import render,redirect,get_object_or_404
 from django.contrib.auth import login,logout,authenticate
 from django.contrib import messages
 from django.contrib.auth import get_user_model
-from .models import EuphoUser,Category,Products,Images,Brand
+from .models import EuphoUser,Category,Products,Images,Brand,Variant
+from .forms import ProductForm, VariantForm
 
 # Create your views here.
 
@@ -130,109 +131,81 @@ def categorySearch(request):
 
 def adminProducts(request):
     if request.user.is_superuser:
-        product = Products.objects.all().order_by('id')
+        product = Products.objects.all().prefetch_related('variants').order_by('id')
         category = Category.objects.all()
         return render(request,'adminProducts.html',{'products':product,'categories':category})
     return redirect(adminLogin)
 
+
+
+
 def addProducts(request):
     if request.user.is_superuser:
-        if request.method=='POST':
-            try:
-                name = request.POST.get('product_name')
-                description = request.POST.get('description')
-                category_id = request.POST.get('category_name')
-                brand_id = request.POST.get('product_brand')
-                stock = request.POST.get('quantity')
-                price = request.POST.get('price')
-                weight = request.POST.get('weight')
-                
-                image_files = [
+        if request.method == 'POST':
+            product_form = ProductForm(request.POST, request.FILES)  # Include request.FILES for file uploads
+            variant1_form = VariantForm(request.POST)
+
+            image_files = [
                     request.FILES.get('image1'),
                     request.FILES.get('image2'),
                     request.FILES.get('image3'),
-                    request.FILES.get('image4')
-                ]
+                    request.FILES.get('image4'),
+                 ]
+            
+            if product_form.is_valid():
+                product = product_form.save()
                 
-                if not all([name,description,category_id,brand_id,stock,price,weight]+image_files):
-                    messages.warning(request,"All fileds are reuired")
-                    return render(request,'addproducts.html')
-                try:
-                    price = float(price)
-                    stock = int(stock)
-                except ValueError:
-                    messages.warning(request,"Invalid price or stock value")
-                    return render(request,'addproducts.html')
-                    
-                category = Category.objects.get(id = category_id)
-                brand = Brand.objects.get(id = brand_id)
-                
-                product = Products.objects.create(
-                    name = name,
-                    description = description,
-                    price = price,
-                    stock = stock,
-                    brand = brand,
-                    category = category,
-                    weight = weight,
-                    
-                 )
                 
                 for image_file in image_files:
-                    if image_file:
+                     if image_file:
                         Images.objects.create(images=image_file, product=product)
+
                 
-                messages.success(request,"Product added Successfully")
-                return redirect(adminProducts)     
-                               
-            except Exception as e:
-                messages.warning(request,f"Error in adding products {str(e)}")
-                return render(request,'addproducts.html')
-            
-    categories = Category.objects.all()     
+
+                # Save first variant if valid
+                if variant1_form.is_valid():
+                    variant1 = variant1_form.save(commit=False)
+                    variant1.product = product
+                    variant1.save()
+                else:
+                    print(variant1_form.errors)
+
+                messages.success(request, "Product and variants added successfully")
+                return redirect('adminProducts')
+            else:
+                messages.warning(request, "Please correct the errors below.")
+        else:
+            product_form = ProductForm()
+            variant1_form = VariantForm()
+
+    categories = Category.objects.all()
     brands = Brand.objects.all()
-    return render(request,'addproducts.html',{'categories':categories,'brands':brands})
+    return render(request, 'addproducts.html', {
+        'product_form': product_form,
+        'variant1_form': variant1_form,
+        'categories': categories,
+        'brands': brands,
+    })
+
+
+
 
 def editProducts(request, id):
     if request.user.is_superuser:
         product = get_object_or_404(Products, id=id)
+        variant =   product.variants.first()
+        # Prepopulate the form with the existing product data
+        product_form = ProductForm(instance=product)
+        variant1_form = VariantForm(instance=variant)  # Assuming there's only one variant for simplicity
 
         if request.method == 'POST':
-            try:
-                name = request.POST.get('product_name')
-                description = request.POST.get('description')
-                category_id = request.POST.get('category_name')
-                brand_id = request.POST.get('product_brand')
-                stock = request.POST.get('quantity')
-                price = request.POST.get('price')
-                weight = request.POST.get('weight')
+            product_form = ProductForm(request.POST, request.FILES, instance=product)  # Bind data to the form
+            variant1_form = VariantForm(request.POST,instance=variant)
+            
+            if product_form.is_valid() and variant1_form.is_valid():
+                product = product_form.save()
 
-                # Validate inputs
-                if not all([name, description, category_id, brand_id, stock, price]):
-                    messages.warning(request, "All fields except weight are required.")
-                    return render(request, 'editProducts.html', {'product': product})
-
-                try:
-                    price = float(price)
-                    stock = int(stock)
-                except ValueError:
-                    messages.warning(request, "Invalid price or stock value.")
-                    return render(request, 'editProducts.html', {'product': product})
-
-                category = Category.objects.get(id=category_id)
-                brand = Brand.objects.get(id=brand_id)
-
-                # Update product details
-                product.name = name
-                product.description = description
-                product.price = price
-                product.stock = stock
-                product.weight = weight
-                product.category = category
-                product.brand = brand
-                product.save()
-
-                # Handling image upload
+                # Handle image uploads
                 uploaded_images = [
                     request.FILES.get('image1'),
                     request.FILES.get('image2'),
@@ -249,28 +222,33 @@ def editProducts(request, id):
                             existing_image.save()
                         else:
                             new_image = Images.objects.create(images=image_file, product=product)
-                            product.product_images.add(new_image)
+                            product.product_images.add(new_image)  
+
+                # Save the variant if the form is valid (assuming you have a variant form)
+                
+                variant1 = variant1_form.save(commit=False)
+                variant1.product = product
+                variant1.save()
 
                 messages.success(request, "Product edited successfully.")
-                return redirect(adminProducts)
-
-            except Exception as e:
-                messages.warning(request, f"Error in editing product: {str(e)}")
-                return render(request, 'editProducts.html', {'product': product})
+                return redirect('adminProducts')
+            else:
+                messages.warning(request, "Please correct the errors below.")
+                print(product_form.errors)
+                print(variant1_form.errors)
 
         # Render the edit page with product details
         categories = Category.objects.all()
         brands = Brand.objects.all()
         images = product.product_images.all()  # Use the related name `product_images`
-
         return render(request, 'editProducts.html', {
+            'product_form': product_form,
+            'variant1_form': variant1_form,
             'categories': categories,
+            'brands': brands,
             'images': images,
-            'product': product,
-            'brands': brands
         })
-
-    return redirect(adminLogin)
+    return redirect('adminLogin')
 
 
 def productSearch(request):

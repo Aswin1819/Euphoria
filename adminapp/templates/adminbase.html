@@ -32,6 +32,7 @@
                 {% if not request.resolver_match.url_name == 'adminLogin'%}
                 {% if not request.resolver_match.url_name == 'checkAdmin' %}
                 {% if not request.resolver_match.url_name == 'editProducts' %}
+                {% if not request.resolver_match.url_name == 'addProducts' %}
                 <div class="col-md-2 sidebar d-flex flex-column rounded-top-3">
                     <nav class="nav flex-column flex-grow-1 justify-content-around">
                         <a class="nav-link" href="#">Dashboard</a>
@@ -44,6 +45,7 @@
                         <a class="nav-link" href="#">Banners</a>
                     </nav>
                 </div>
+                {% endif %}
                 {% endif %}
                 {% endif %}
                 {% endif %}

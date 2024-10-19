@@ -45,14 +45,14 @@
             <h2>{{ product.name }}</h2>
             <p class="ratings text-warning">&starf;&starf;&starf;&starf;({{ product_reviews.count}})</p>
     
-            <p class="display-4 mt-5">&#8377; {{ product.price }}</p>
-            {% if product.stock == 0 %}
+            <p class="display-4 mt-5">&#8377; {{ variants.price }}</p>
+            {% if variants.stock == 0 %}
                 <p class="text-danger">Stock Out</p>
-            {% elif product.stock < 10 %}
+            {% elif variants.stock < 10 %}
                 <p class="text-warning">Limited Stock</p>
             {% endif %}
             <p class="product-description">{{ product.description }}</p>
-            <a class="btn btn-light">{{ product.weight }}g</a>
+            <a class="btn btn-light">{{ variants.weight }}g</a>
     
             <!-- Quantity and Add to Cart -->
             <div class="my-4">

@@ -2,7 +2,7 @@ from django.shortcuts import render,redirect,get_object_or_404
 from django.contrib.auth import get_user_model
 from django.contrib.auth import login,logout,authenticate
 from django.contrib.auth.hashers import make_password
-from adminapp.models import EuphoUser,OTP,Products
+from adminapp.models import EuphoUser,OTP,Products,Variant
 from django.contrib import messages
 from userapp.userotp import generateAndSendOtp
 from django.conf import settings
@@ -197,7 +197,8 @@ def userhome(request):
     products = Products.objects.all()
     latest_product = Products.objects.all().order_by('-id')[:4]
     featured = Products.objects.filter(is_featured=True)
-    return render(request,'user_home.html',{'products':products,'latest_products':latest_product,'featured_products':featured})
+    variants = Variant.objects.all()
+    return render(request,'user_home.html',{'products':products,'latest_products':latest_product,'featured_products':featured,'variants':variants})
 
 def shopNow(request):
     products = Products.objects.all()
@@ -206,7 +207,8 @@ def shopNow(request):
 def productView(request,id):
     product = get_object_or_404(Products, id=id)
     related_products = Products.objects.filter(brand=product.brand).exclude(id=product.id)
-    return render(request,'productview.html',{'product':product,'related_products':related_products})
+    variants = get_object_or_404(Variant,product_id=product.id)
+    return render(request,'productview.html',{'product':product,'related_products':related_products,'variants':variants})
 
 def userlogout(request):
     logout(request)

@@ -1,4 +1,138 @@
 {% extends 'adminbase.html' %}
+{% block title %}Admin Edit Product{% endblock %}
+{% block content %}
+
+{% if messages %}
+    <div class="alert-container" style="position: fixed; top: 0; left: 0; right: 0; z-index: 9999;">
+        {% for message in messages %}
+            <div class="alert alert-warning alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {% endfor %}
+    </div>
+{% endif %}
+
+<!-- Edit Product Form -->
+<div class="col-md-12">
+    <div class="d-flex justify-content-between align-items-center mt-0 mb-4 dash-head py-2 rounded text-white px-2">
+        <h3>Edit Product</h3>
+    </div>
+
+    <div class="card p-4" style="background-color: #633B00;">
+        <form method="POST" action="{% url 'editProducts' product_form.instance.id %}" enctype="multipart/form-data">
+            
+            {% csrf_token %}
+            {{ product_form.management_form }}  <!-- Ensure management form is included for file uploads -->
+
+            <!-- Product Form Fields -->
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <label class="form-label text-white">Product Name*</label>
+                    {{ product_form.name }}
+                    {{ product_form.name.errors }}
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label text-white">Description*</label>
+                    {{ product_form.description }}
+                    {{ product_form.description.errors }}
+                </div>
+            </div>
+
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <label class="form-label text-white">Category Name*</label>
+                    {{ product_form.category }}
+                    {{ product_form.category.errors }}
+                </div>
+                
+                <div class="col-md-6">
+                    <label class="form-label text-white">Brand Name*</label>
+                    {{ product_form.brand }}
+                    {{ product_form.brand.errors }}
+                </div>
+            </div>
+
+            <div class="row mb-4">
+                <div class="col-md-12">
+                    <label class="form-label text-white">Product Images (max 4)*</label>
+                    <div class="row">
+                        <div class="col-md-3">
+                            <input type="file" class="form-control" name="image1" accept="image/*">
+                            {% if images|length > 0 %}<img src="{{ images.0.images.url }}" style="width: 100%; height: auto;" alt="Image 1">{% endif %}
+                        </div>
+                        <div class="col-md-3">
+                            <input type="file" class="form-control" name="image2" accept="image/*">
+                            {% if images|length > 1 %}<img src="{{ images.1.images.url }}" style="width: 100%; height: auto;" alt="Image 2">{% endif %}
+                        </div>
+                        <div class="col-md-3">
+                            <input type="file" class="form-control" name="image3" accept="image/*">
+                            {% if images|length > 2 %}<img src="{{ images.2.images.url }}" style="width: 100%; height: auto;" alt="Image 3">{% endif %}
+                        </div>
+                        <div class="col-md-3">
+                            <input type="file" class="form-control" name="image4" accept="image/*">
+                            {% if images|length > 3 %}<img src="{{ images.3.images.url }}" style="width: 100%; height: auto;" alt="Image 4">{% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Variant 1 -->
+            <div class="row mb-4">
+                <h4 class="text-white">Variant 1</h4>
+                <div class="col-md-4">
+                    {{ variant1_form.weight.label_tag }} {{ variant1_form.weight }}
+                    {{ variant1_form.weight.errors }}
+                </div>
+                <div class="col-md-4">
+                    {{ variant1_form.price.label_tag }} {{ variant1_form.price }}
+                    {{ variant1_form.price.errors }}
+                </div>
+                <div class="col-md-4">
+                    {{ variant1_form.stock.label_tag }} {{ variant1_form.stock }}
+                    {{ variant1_form.stock.errors }}
+                </div>
+            </div>
+
+            <div class="d-flex justify-content-center mb-2">
+                <button type="submit" class="btn btn-danger w-25">Update Product</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% endblock %}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+{% comment %} 
+
+{% extends 'adminbase.html' %}
 
 {% block title %}Edit Product{% endblock %}
 
@@ -74,7 +208,7 @@
                         <label for="price" class="form-label text-white">Price*</label>
                         <input type="text" id="price" class="form-control" name="price" value="{{ product.price }}" required>
                     </div> {% endcomment %}
-                    <div class="col-md-6">
+                    {% comment %} <div class="col-md-6">
                         <div class="row">
                             <div class="col-md-6">
                                 <label for="price" class="form-label text-white">Price*</label>
@@ -120,4 +254,4 @@
     </div>
 </div>
 
-{% endblock %}
+{% endblock %} {% endcomment %}

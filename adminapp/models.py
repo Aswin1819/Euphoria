@@ -110,10 +110,10 @@ class Images(models.Model):
 class Products(models.Model):
     name = models.CharField( max_length=255)
     description = models.TextField()
-    price = models.DecimalField(max_digits=10, decimal_places=2)
-    stock = models.PositiveIntegerField()
+    # price = models.DecimalField(max_digits=10, decimal_places=2)
+    # stock = models.PositiveIntegerField()
     brand = models.ForeignKey(Brand, on_delete=models.CASCADE)
-    weight = models.IntegerField(null=True)
+    # weight = models.IntegerField(null=True)
     category = models.ForeignKey(Category, on_delete=models.CASCADE)
     is_active = models.BooleanField(default=True)
     is_featured = models.BooleanField(default=False)
@@ -122,3 +122,15 @@ class Products(models.Model):
     def __str__(self):
         return self.name
         
+        
+class Variant(models.Model):
+    product = models.ForeignKey(Products, related_name='variants', on_delete=models.CASCADE)
+    weight = models.PositiveIntegerField()  # In grams (g)
+    price = models.DecimalField(max_digits=10, decimal_places=2)  # Price for this specific variant
+    stock = models.PositiveIntegerField()  # Stock specific to this variant
+    
+    class Meta:
+        unique_together = ('product', 'weight')  # Ensure uniqueness for weight per product
+
+    def __str__(self):
+        return f"{self.product.name} - {self.weight}g"

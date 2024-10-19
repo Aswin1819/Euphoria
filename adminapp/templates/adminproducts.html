@@ -48,8 +48,20 @@
                         <tr>
                             <td>{{ product.id }}</td>
                             <td>{{ product.name }}</td>
-                            <td>{{ product.price }}</td>
-                            <td>{{ product.stock }}</td>
+                            <td>
+                                {% if product.variants.exists %}
+                                    {{ product.variants.first.price }}
+                                {% else %}
+                                    Price not available
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if product.variants.exists %}
+                                    {{ product.variants.first.stock }}
+                                {% else %}
+                                    Stock not available
+                                {% endif %}
+                            </td>
                             <td>{{ product.category }}</td>
                             <td>
                                 <a href="{% url 'editProducts' product.id %}" class="btn btn-sm btn-primary">Edit</a>

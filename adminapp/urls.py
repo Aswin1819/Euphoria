@@ -11,7 +11,7 @@ urlpatterns = [
     
     path('adminproducts/',views.adminProducts,name = 'adminProducts'),
     path('addProducts/',views.addProducts,name='addProducts'),
-    path('editProducts/<int:id>',views.editProducts,name='editProducts'),
+    path('editProducts/<int:id>/',views.editProducts,name='editProducts'),
     path('productSearch/',views.productSearch,name='productSearch'),
     path('removeProducts/<int:id>',views.removeProducts,name='removeProducts'),
     
