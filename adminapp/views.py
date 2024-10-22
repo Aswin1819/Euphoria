@@ -4,7 +4,7 @@ from django.contrib import messages
 from django.contrib.auth import get_user_model
 from .models import EuphoUser,Category,Products,Images,Brand,Variant
 from .forms import ProductForm, VariantForm
-
+from django.forms import modelformset_factory
 # Create your views here.
 
                                 #########           #########
@@ -164,9 +164,13 @@ def adminProducts(request):
 
 def addProducts(request):
     if request.user.is_superuser:
+        VariantFormSet = modelformset_factory(Variant,form=VariantForm,extra=2)
         if request.method == 'POST':
             product_form = ProductForm(request.POST, request.FILES) 
-            variant1_form = VariantForm(request.POST)
+            # variant1_form = VariantForm(request.POST)
+            variant_formset = VariantFormSet(request.POST)
+            print("Product Form is bound:", product_form.is_bound)
+            print("Variant Formset is bound:", variant_formset.is_bound)
 
             image_files = [
                     request.FILES.get('image1'),
@@ -175,33 +179,44 @@ def addProducts(request):
                     request.FILES.get('image4'),
                  ]
             
-            if product_form.is_valid():
+            if product_form.is_valid() and variant_formset.is_valid():
+                print("form and variants are valid ")
                 product = product_form.save()
                 
                 for image_file in image_files:
                      if image_file:
                         Images.objects.create(images=image_file, product=product)
+                
+                #saving each variant in formset
+                
+                variants = variant_formset.save(commit=False)
+                for variant in variants:
+                    variant.product = product
+                    variant.save()
  
-                if variant1_form.is_valid():
-                    variant1 = variant1_form.save(commit=False)
-                    variant1.product = product
-                    variant1.save()
-                else:
-                    print(variant1_form.errors)
+                # if variant1_form.is_valid():
+                #     variant1 = variant1_form.save(commit=False)
+                #     variant1.product = product
+                #     variant1.save()
+                # else:
+                #     print(variant1_form.errors)
 
                 messages.success(request, "Product and variants added successfully")
                 return redirect('adminProducts')
-            else:
+            else: 
+                print("Product Form Errors:", product_form.errors)
+                print("Variant Formset Errors:", variant_formset.errors)
                 messages.warning(request, "Please correct the errors below.")
         else:
             product_form = ProductForm()
-            variant1_form = VariantForm()
+            # variant1_form = VariantForm()
+            variant_formset = VariantFormSet(queryset=Variant.objects.none())
 
     categories = Category.objects.all()
     brands = Brand.objects.all()
     return render(request, 'addproducts.html', {
         'product_form': product_form,
-        'variant1_form': variant1_form,
+        'variant_formset': variant_formset,
         'categories': categories,
         'brands': brands,
     })

@@ -22,6 +22,8 @@
     <div class="card p-4" style="background-color: #633B00;">
         <form method="POST" action="{% url 'addProducts' %}" enctype="multipart/form-data">
             {% csrf_token %}
+            {{ variant_formset.management_form }}
+
             <!-- Product Form Fields -->
             <div class="row mb-4">
                 <div class="col-md-6">
@@ -49,6 +51,7 @@
                     {{ product_form.brand.errors }}
                 </div>
             </div>
+
             <div class="row mb-4">
                 <div class="col-md-12">
                     <label class="form-label text-white">Product Images (max 4)*</label>
@@ -68,25 +71,39 @@
                     </div>
                 </div>
             </div>
-            
 
-            <!-- Variant 1 -->
-            <div class="row mb-4">
-                <h4 class="text-white">Variant 1</h4>
-                <div class="col-md-4">
-                    {{ variant1_form.weight.label_tag }} {{ variant1_form.weight }}
-                    {{ variant1_form.weight.errors }}
+            <!-- Variants Section -->
+            <h4 class="text-white">Product Variants</h4>
+
+            <!-- Variant Formset -->
+            <div id="variants-container">
+                {% for form in variant_formset %}
+                <div class="row variant-form mb-3">
+                    <div class="col-md-4">
+                        {{ form.weight.label_tag }} {{ form.weight }}
+                        {{ form.weight.errors }}
+                    </div>
+                    <div class="col-md-4">
+                        {{ form.price.label_tag }} {{ form.price }}
+                        {{ form.price.errors }}
+                    </div>
+                    <div class="col-md-4">
+                        {{ form.stock.label_tag }} {{ form.stock }}
+                        {{ form.stock.errors }}
+                    </div>
+                    <div class="col-md-12 text-end">
+                        <button type="button" class="btn btn-danger remove-variant">Remove Variant</button>
+                    </div>
                 </div>
-                <div class="col-md-4">
-                    {{ variant1_form.price.label_tag }} {{ variant1_form.price }}
-                    {{ variant1_form.price.errors }}
-                </div>
-                <div class="col-md-4">
-                    {{ variant1_form.stock.label_tag }} {{ variant1_form.stock }}
-                    {{ variant1_form.stock.errors }}
-                </div>
+                {% endfor %}
             </div>
 
+            <!-- Add Variant Button -->
+            <div class="text-center mb-4">
+                <button type="button" class="btn btn-primary" id="add-variant">Add Variant</button>
+            </div>
+
+            <!-- Submit Button -->
             <div class="d-flex justify-content-center mb-2">
                 <button type="submit" class="btn btn-danger w-25">Add Product</button>
             </div>
@@ -94,5 +111,52 @@
     </div>
 </div>
 
-{% endblock %}
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        var formIdx = {{ variant_formset.total_form_count }};
+        var variantsContainer = document.getElementById('variants-container');
+        var addVariantButton = document.getElementById('add-variant');
 
+        // Add new variant form
+        addVariantButton.addEventListener('click', function () {
+            var newForm = `
+            <div class="row variant-form mb-3">
+                <div class="col-md-4">
+                    <label for="id_form-${formIdx}-weight">Weight:</label>
+                    <input type="number" name="form-${formIdx}-weight" class="form-control" required id="id_form-${formIdx}-weight">
+                </div>
+                <div class="col-md-4">
+                    <label for="id_form-${formIdx}-price">Price:</label>
+                    <input type="number" name="form-${formIdx}-price" class="form-control" required id="id_form-${formIdx}-price">
+                </div>
+                <div class="col-md-4">
+                    <label for="id_form-${formIdx}-stock">Stock:</label>
+                    <input type="number" name="form-${formIdx}-stock" class="form-control" required id="id_form-${formIdx}-stock">
+                </div>
+                <div class="col-md-12 text-end">
+                    <button type="button" class="btn btn-danger remove-variant">Remove Variant</button>
+                </div>
+            </div>`;
+            variantsContainer.insertAdjacentHTML('beforeend', newForm);
+
+            formIdx++;
+
+            attachRemoveVariantEvent();
+        });
+
+        // Attach remove event to the dynamically added forms
+        function attachRemoveVariantEvent() {
+            var removeButtons = document.querySelectorAll('.remove-variant');
+            removeButtons.forEach(function (btn) {
+                btn.addEventListener('click', function () {
+                    this.closest('.variant-form').remove();
+                });
+            });
+        }
+
+        // Initial attachment of the remove event for the initial variants
+        attachRemoveVariantEvent();
+    });
+</script>
+
+{% endblock %}

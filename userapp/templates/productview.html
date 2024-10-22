@@ -41,18 +41,31 @@
     
         <!-- Product Details -->
         <div class="col-md-7">
-            
             <h2>{{ product.name }}</h2>
-            <p class="ratings text-warning">&starf;&starf;&starf;&starf;({{ product_reviews.count}})</p>
+            <p class="ratings text-warning">&starf;&starf;&starf;&starf;({{ product_reviews.count }})</p>
     
-            <p class="display-4 mt-5">&#8377; {{ variants.price }}</p>
-            {% if variants.stock == 0 %}
+            <!-- Display default variant price -->
+            <p id="variant-price" class="display-4 mt-5">&#8377; {{ default_variant.price }}</p>
+    
+            {% if default_variant.stock == 0 %}
                 <p class="text-danger">Stock Out</p>
-            {% elif variants.stock < 10 %}
+            {% elif default_variant.stock < 10 %}
                 <p class="text-warning">Limited Stock</p>
             {% endif %}
+    
             <p class="product-description">{{ product.description }}</p>
-            <a class="btn btn-light">{{ variants.weight }}g</a>
+    
+            <!-- Variant Weight Selection -->
+            <div class="variant-selection">
+                <label for="variant-weight" class="form-label">Select Weight:</label>
+                <select id="variant-weight" class="form-control" onchange="updateVariant()">
+                    {% for variant in variants %}
+                        <option value="{{ variant.id }}" data-price="{{ variant.price }}" data-stock="{{ variant.stock }}">
+                            {{ variant.weight }}g
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
     
             <!-- Quantity and Add to Cart -->
             <div class="my-4">
@@ -138,6 +151,26 @@ function changeImage(src) {
     mainImage.style.transform = "scale(1)"; // Reset zoom when changing images
 }
     
+function updateVariant() {
+    var variantSelect = document.getElementById('variant-weight');
+    var selectedOption = variantSelect.options[variantSelect.selectedIndex];
+    var price = selectedOption.getAttribute('data-price');
+    var stock = selectedOption.getAttribute('data-stock');
+
+    // Update price
+    document.getElementById('variant-price').innerText = `₹ ${price}`;
+
+    // Update stock message
+    var stockMessage = '';
+    if (stock == 0) {
+        stockMessage = '<p class="text-danger">Stock Out</p>';
+    } else if (stock < 10) {
+        stockMessage = '<p class="text-warning">Limited Stock</p>';
+    }
+    document.getElementById('stock-status').innerHTML = stockMessage;
+}
+
+
 </script>
 
 {% endblock %}

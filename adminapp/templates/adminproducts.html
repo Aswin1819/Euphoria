@@ -66,6 +66,7 @@
                             <td>
                                 <form method="POST" action="{% url 'removeProducts' product.id %}">
                                     {% csrf_token %}
+                                    <a href="{% url 'editProducts' product.id %}" class="btn btn-sm btn-primary">Edit</a>
                                     {% if product.is_active %}
                                         <button type="submit" class="btn btn-sm btn-danger">Remove</button>
                                     {% else %}

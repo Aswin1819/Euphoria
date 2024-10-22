@@ -198,9 +198,10 @@ def shopNow(request):
 
 def productView(request,id):
     product = get_object_or_404(Products, id=id)
+    variants = Variant.objects.filter(product=product)
+    default_variant = variants.first() if variants else None
     related_products = Products.objects.filter(brand=product.brand,category__is_active=True,brand__is_active=True).exclude(id=product.id)
-    variants = get_object_or_404(Variant,product_id=product.id)
-    return render(request,'productview.html',{'product':product,'related_products':related_products,'variants':variants})
+    return render(request,'productview.html',{'product':product,'related_products':related_products,'variants':variants,'default_variant':default_variant})
 
 
 def userProfile(request):
