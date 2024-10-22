@@ -8,12 +8,11 @@ from userapp.userotp import generateAndSendOtp
 from django.conf import settings
 from .signals import userOtpVerified
 from .forms import UserLoginForm,UserSignupForm
-from django.views.decorators.cache import never_cache
 
 # Create your views here.
 
 
-@never_cache
+
 def userlogin(request):
     if request.user.is_authenticated:
         return redirect('userhome')
@@ -22,10 +21,13 @@ def userlogin(request):
         form = UserLoginForm(request.POST or None)
         if form.is_valid():
             user = form.cleaned_data.get('user')  
-            if user: 
-                login(request, user,backend='django.contrib.auth.backends.ModelBackend')
-                print(user.username)
-                return redirect('userhome')
+            if user:
+                if user.is_active: 
+                    login(request, user,backend='django.contrib.auth.backends.ModelBackend')
+                    print(user.username)
+                    return redirect('userhome')
+                else:
+                    messages.warning(request,"Your account is not active.")
         else:
             print(form.errors)  
             messages.warning(request, "Invalid email or password.")
@@ -120,6 +122,8 @@ def forgPassEmailVerification(request):
                 OTP.objects.create(email=email,otp=otp)
                 # return render(request,'forg_pass_otp.html',{'email':email})
                 return render(request,'forg_pass_otp.html',{'email':email})
+            else:
+                messages.warning(request,'email not exist')
         except:
             messages.warning(request,"Enter your email")
             return render(request,'forg_pass_email.html')        
@@ -140,22 +144,12 @@ def otpValidationForPass(request):
         if not all([otp1, otp2, otp3, otp4]):
             messages.warning(request, "OTP is incomplete")
             return render(request, 'forg_pass_otp.html', {'email': email})
-        print("zero")
 
         try:
-            # Get the OTP record associated with the email and the full OTP
-            print("hello")
             otpRecord = OTP.objects.get(email=email,otp=otp)
-            print("one")
-            # Assuming `is_valid()` checks for expiry
-            if otpRecord.is_valid():
-                # Trigger OTP verified signal
-                print("two")
-                
+         
+            if otpRecord.is_valid(): 
                 userOtpVerified.send(sender=OTP, email=email)
-                print("three")
-                
-                # Delete only OTPs for this email (safer than deleting all)
                 OTP.objects.filter(email=email).delete()
                 
                 messages.success(request, "OTP verified. Create New Password")
@@ -163,7 +157,6 @@ def otpValidationForPass(request):
             else:
                 messages.warning(request, "OTP has expired")
         except OTP.DoesNotExist:
-            print("out")
             messages.warning(request, "Invalid OTP")
 
         return render(request, 'forg_pass_otp.html', {'email': email})
@@ -194,20 +187,41 @@ def changePassword(request):
     return render(request,'change_password.html')
 
 def userhome(request):
-    products = Products.objects.all().prefetch_related('variants')
-    latest_product = Products.objects.all().order_by('-id')[:4]
-    featured = Products.objects.filter(is_featured=True)
+    products = Products.objects.filter(category__is_active=True,brand__is_active=True).prefetch_related('variants')
+    latest_product = Products.objects.filter(category__is_active=True,brand__is_active=True).order_by('-id')[:4]
+    featured = Products.objects.filter(is_featured=True,category__is_active=True,brand__is_active=True)
     return render(request,'user_home.html',{'products':products,'latest_products':latest_product,'featured_products':featured})
 
 def shopNow(request):
-    products = Products.objects.all().prefetch_related('variants')
+    products = Products.objects.filter(category__is_active=True,brand__is_active=True).prefetch_related('variants')
     return render(request,'shopnow.html',{'products':products})
 
 def productView(request,id):
     product = get_object_or_404(Products, id=id)
-    related_products = Products.objects.filter(brand=product.brand).exclude(id=product.id)
+    related_products = Products.objects.filter(brand=product.brand,category__is_active=True,brand__is_active=True).exclude(id=product.id)
     variants = get_object_or_404(Variant,product_id=product.id)
     return render(request,'productview.html',{'product':product,'related_products':related_products,'variants':variants})
+
+
+def userProfile(request):
+    if request.user.is_authenticated:
+        return render(request,'userprofile.html')
+    else:
+        return redirect(userlogin)
+    
+    
+        
+    
+        
+
+
+
+
+
+
+
+
+
 
 def userlogout(request):
     logout(request)

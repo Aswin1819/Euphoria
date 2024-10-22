@@ -14,4 +14,5 @@ urlpatterns = [
     path('shopNow/',views.shopNow,name='shopNow'),
     path('userlogout/',views.userlogout,name = 'userlogout'),
     path('resendOtpForPass/',views.resendOtpForPass,name='resendOtpForPass'),
+    path('userProfile/',views.userProfile,name='userProfile'),
 ]

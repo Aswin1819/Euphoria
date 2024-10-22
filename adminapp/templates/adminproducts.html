@@ -44,7 +44,7 @@
                     </thead>
                     <tbody>
                         {% for product in products %}
-                        {% if product.is_active %}
+                        
                         <tr>
                             <td>{{ product.id }}</td>
                             <td>{{ product.name }}</td>
@@ -64,11 +64,17 @@
                             </td>
                             <td>{{ product.category }}</td>
                             <td>
-                                <a href="{% url 'editProducts' product.id %}" class="btn btn-sm btn-primary">Edit</a>
-                                <a class="btn btn-sm btn-danger" href="{% url 'removeProducts' product.id %}">Delete</a>
+                                <form method="POST" action="{% url 'removeProducts' product.id %}">
+                                    {% csrf_token %}
+                                    {% if product.is_active %}
+                                        <button type="submit" class="btn btn-sm btn-danger">Remove</button>
+                                    {% else %}
+                                        <button type="submit" class="btn btn-sm btn-success">Active</button>
+                                    {% endif %}
+                                </form>
                             </td>
                         </tr>
-                        {% endif %}
+                        
                         {% endfor %}
                     </tbody>
                 </table>

@@ -1,4 +1,5 @@
 from django import forms
+import re
 from django.contrib.auth import get_user_model
 from django.contrib.auth.forms import UserCreationForm
 
@@ -61,7 +62,7 @@ class UserSignupForm(UserCreationForm):
         widgets = {
             'username': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Enter your full name',
+                'placeholder': 'Enter your username',
                 'required': True,
             }),
             'email': forms.EmailInput(attrs={
@@ -76,9 +77,28 @@ class UserSignupForm(UserCreationForm):
             }),
         }
 
+    def clean_username(self):
+        username = self.cleaned_data.get('username')
+        if not username.isalpha():
+            raise forms.ValidationError('Username can only contain alphabetic characters')
+        return username
+    
     def clean_email(self):
         email = self.cleaned_data.get('email')
         if EuphoUser.objects.filter(email=email).exists():
             raise forms.ValidationError('Email is already registered')
         return email
     
+    def clean_phone(self):
+        phone = self.cleaned_data.get('phone')
+        if not phone.isdigit():
+            raise forms.ValidationError('Phone number must contain only digits')
+        if len(phone) != 10:
+            raise forms.ValidationError('Phone number must be exactly 10 digits')
+        return phone
+    
+    def clean_password1(self):
+        password1 = self.cleaned_data.get('password1')
+        if len(password1) < 6:
+            raise forms.ValidationError('Password must be at least 6 characters long')
+        return password1

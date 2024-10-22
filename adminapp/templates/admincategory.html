@@ -33,16 +33,22 @@
                     </thead>
                     <tbody>
                         {% for item in items %}
-                        {% if  item.is_active %}
+                       
                         <tr>
                             <td>{{ item.id}}</td>
                             <td>{{ item.name }}</td>
-                            <td>
-                                {% comment %} <button class="btn btn-primary btn-sm btn-del">Edit</button> {% endcomment %}
-                                <button type="button" class="btn btn-primary btn-sm" data-mdb-toggle="modal" data-mdb-target="#editCategory{{ item.id }}">
-                                    Edit
-                                </button>
-                                <a href="{% url 'removeCategory' item.id %}" class="btn btn-danger btn-sm text-decoration-none text-white">Remove</a>
+                            <td>                                
+                                <form method="POST" action="{% url 'removeCategory' item.id %}">
+                                    {% csrf_token %}
+                                    <button type="button" class="btn btn-primary btn-sm" data-mdb-toggle="modal" data-mdb-target="#editCategory{{ item.id }}">
+                                        Edit
+                                    </button> 
+                                    {% if item.is_active %}
+                                        <button type="submit" class="btn btn-sm btn-danger">Remove</button>
+                                    {% else %}
+                                        <button type="submit" class="btn btn-sm btn-success">Active</button>
+                                    {% endif %}
+                                </form>
                             </td>
                         </tr>
                         <!-- Edit Category Modal -->
@@ -70,7 +76,7 @@
                         </div>
     
                         <!-- Additional rows can be added here -->
-                        {% endif %}
+                        
                         {% endfor %}
                     </tbody>
                 </table>

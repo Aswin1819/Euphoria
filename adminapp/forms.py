@@ -18,17 +18,10 @@ class ProductForm(forms.ModelForm):
             'category': forms.Select(attrs={'class': 'form-control', 'required': True}),
         }
 
-    # Optional: You can add custom validation to check the number of images if required
-    # def clean(self):
-    #     cleaned_data = super().clean()
-    #     images = [cleaned_data.get('image1'), cleaned_data.get('image2'),
-    #               cleaned_data.get('image3'), cleaned_data.get('image4')]
-    #     # Optionally check the number of images
-    #     if not any(images):
-    #         raise forms.ValidationError("At least one image is required.")
+    
         
 
-
+#modelform_factory is used in the view
 class VariantForm(forms.ModelForm):
     class Meta:
         model = Variant

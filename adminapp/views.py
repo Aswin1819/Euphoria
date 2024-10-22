@@ -7,7 +7,9 @@ from .forms import ProductForm, VariantForm
 
 # Create your views here.
 
-
+                                #########           #########
+                                #########ADMIN LOGIN#########
+                                #########           #########
 
 def adminLogin(request):
     if request.user.is_authenticated:
@@ -52,7 +54,13 @@ def adminLogout(request):
     return redirect(adminLogin)
                 
         
-
+        
+                                #########           #########
+                                #########ADMIN CUSTOMERS#####
+                                #########           #########    
+        
+        
+        
 def adminCustomers(request):
     if request.user.is_superuser:
         user = EuphoUser.objects.all().order_by('id')
@@ -83,6 +91,12 @@ def customerSearch(request):
         return render(request,'adminCustomers.html',{'users':user})
 
 
+                    #########           #########
+                    #########ADMIN CATEGORY######
+                    #########           #########
+
+
+
 def adminCategory(request):
     if request.user.is_superuser:
         category = Category.objects.all().order_by('id')
@@ -101,10 +115,12 @@ def addCategory(request):
 
 def removeCategory(request,id):
     if request.user.is_superuser:
-        item = Category.objects.get(id=id)
-        item.is_active = not item.is_active
-        item.save()
-        return redirect(adminCategory)
+        if request.user.is_authenticated:            
+            item = Category.objects.get(id=id)
+            item.is_active = not item.is_active
+            item.save()
+            return redirect(adminCategory)
+        
     return redirect(adminLogin)
 
 def editCategory(request,id):
@@ -129,6 +145,15 @@ def categorySearch(request):
             return render(request,'admincategory.html',{'items':item})
 
 
+
+                            #########           #########
+                            #########ADMIN PRODUCTS######
+                            #########           #########
+
+
+
+
+
 def adminProducts(request):
     if request.user.is_superuser:
         product = Products.objects.all().prefetch_related('variants').order_by('id')
@@ -137,12 +162,10 @@ def adminProducts(request):
     return redirect(adminLogin)
 
 
-
-
 def addProducts(request):
     if request.user.is_superuser:
         if request.method == 'POST':
-            product_form = ProductForm(request.POST, request.FILES)  # Include request.FILES for file uploads
+            product_form = ProductForm(request.POST, request.FILES) 
             variant1_form = VariantForm(request.POST)
 
             image_files = [
@@ -155,14 +178,10 @@ def addProducts(request):
             if product_form.is_valid():
                 product = product_form.save()
                 
-                
                 for image_file in image_files:
                      if image_file:
                         Images.objects.create(images=image_file, product=product)
-
-                
-
-                # Save first variant if valid
+ 
                 if variant1_form.is_valid():
                     variant1 = variant1_form.save(commit=False)
                     variant1.product = product
@@ -194,12 +213,11 @@ def editProducts(request, id):
     if request.user.is_superuser:
         product = get_object_or_404(Products, id=id)
         variant =   product.variants.first()
-        # Prepopulate the form with the existing product data
         product_form = ProductForm(instance=product)
-        variant1_form = VariantForm(instance=variant)  # Assuming there's only one variant for simplicity
+        variant1_form = VariantForm(instance=variant) 
 
         if request.method == 'POST':
-            product_form = ProductForm(request.POST, request.FILES, instance=product)  # Bind data to the form
+            product_form = ProductForm(request.POST, request.FILES, instance=product)  
             variant1_form = VariantForm(request.POST,instance=variant)
             
             if product_form.is_valid() and variant1_form.is_valid():
@@ -215,7 +233,7 @@ def editProducts(request, id):
 
                 for index, image_file in enumerate(uploaded_images):
                     if image_file:
-                        # If a new image is uploaded, create or replace it
+                       
                         existing_image = product.product_images.all()[index] if product.product_images.all().count() > index else None
                         if existing_image:
                             existing_image.images = image_file
@@ -224,7 +242,6 @@ def editProducts(request, id):
                             new_image = Images.objects.create(images=image_file, product=product)
                             product.product_images.add(new_image)  
 
-                # Save the variant if the form is valid (assuming you have a variant form)
                 
                 variant1 = variant1_form.save(commit=False)
                 variant1.product = product
@@ -236,11 +253,10 @@ def editProducts(request, id):
                 messages.warning(request, "Please correct the errors below.")
                 print(product_form.errors)
                 print(variant1_form.errors)
-
-        # Render the edit page with product details
+                
         categories = Category.objects.all()
         brands = Brand.objects.all()
-        images = product.product_images.all()  # Use the related name `product_images`
+        images = product.product_images.all()  
         return render(request, 'editProducts.html', {
             'product_form': product_form,
             'variant1_form': variant1_form,
@@ -263,11 +279,22 @@ def productSearch(request):
             
 def removeProducts(request,id):
     if request.user.is_superuser:
-        product = Products.objects.get(id=id)
-        product.is_active = not product.is_active
-        product.save()
-        return redirect(adminProducts)
-    return redirect(adminLogin)
+        if request.user.is_authenticated:
+            if request.method=='POST':
+                product = get_object_or_404(Products,id=id)
+                product.is_active = not product.is_active
+                product.save()
+                return redirect(adminProducts)
+            else:
+                print("request method is not post")
+        else:
+            print("user is not authenticated")    
+    return redirect(adminLogout)
+
+
+                    #########           #########
+                    #########ADMIN BRANDS########
+                    #########           #########
 
 
 
@@ -317,6 +344,11 @@ def brandSearch(request):
             else:
                 item = Brand.objects.all()
             return render(request,'adminbrands.html',{'items':item})
+
+
+
+
+
 
 
 
