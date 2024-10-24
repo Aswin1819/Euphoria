@@ -5,6 +5,9 @@ from django.contrib.auth import get_user_model
 from .models import EuphoUser,Category,Products,Images,Brand,Variant
 from .forms import ProductForm, VariantForm
 from django.forms import modelformset_factory
+#imagecropping modules
+from django.core.files.base import ContentFile
+import base64
 # Create your views here.
 
                                 #########           #########
@@ -166,26 +169,41 @@ def addProducts(request):
     if request.user.is_superuser:
         VariantFormSet = modelformset_factory(Variant,form=VariantForm,extra=2)
         if request.method == 'POST':
+            # print("Form Data:", request.POST) 
             product_form = ProductForm(request.POST, request.FILES) 
             # variant1_form = VariantForm(request.POST)
             variant_formset = VariantFormSet(request.POST)
-            print("Product Form is bound:", product_form.is_bound)
-            print("Variant Formset is bound:", variant_formset.is_bound)
+            # print("Product Form is bound:", product_form.is_bound)
+            # print("Variant Formset is bound:", variant_formset.is_bound)
 
             image_files = [
-                    request.FILES.get('image1'),
-                    request.FILES.get('image2'),
-                    request.FILES.get('image3'),
-                    request.FILES.get('image4'),
+                    request.POST.get('image1'),
+                    request.POST.get('image2'),
+                    request.POST.get('image3'),
+                    request.POST.get('image4'),
                  ]
+            # print(image_files[0])
             
             if product_form.is_valid() and variant_formset.is_valid():
                 print("form and variants are valid ")
                 product = product_form.save()
                 
-                for image_file in image_files:
-                     if image_file:
-                        Images.objects.create(images=image_file, product=product)
+                # for image_file in image_files:
+                #      if image_file:
+                #         Images.objects.create(images=image_file, product=product)
+                
+                for image_data in image_files:
+                    if image_data:  # Ensure that there is base64 data
+                        try:
+                            format, imgstr = image_data.split(';base64,')
+                            ext = format.split('/')[-1]  # Extract file extension
+                            image_file = ContentFile(base64.b64decode(imgstr), name=f'product_image.{ext}')
+                            Images.objects.create(images=image_file, product=product)
+                        except Exception as e:
+                            print(f"Error processing image: {e}")
+                    else:
+                        print("No image provided or invalid image.")
+
                 
                 #saving each variant in formset
                 
@@ -224,62 +242,80 @@ def addProducts(request):
 
 
 
-def editProducts(request, id):
+def editProducts(request,id):
     if request.user.is_superuser:
-        product = get_object_or_404(Products, id=id)
-        variant =   product.variants.first()
-        product_form = ProductForm(instance=product)
-        variant1_form = VariantForm(instance=variant) 
-
+        # Retrieve the product to be edited
+        product = Products.objects.get(id=id)
+        VariantFormSet = modelformset_factory(Variant, form=VariantForm, extra=0)  # No extra forms unless necessary
+        
         if request.method == 'POST':
-            product_form = ProductForm(request.POST, request.FILES, instance=product)  
-            variant1_form = VariantForm(request.POST,instance=variant)
+            product_form = ProductForm(request.POST,instance=product)
+            variant_formset = VariantFormSet(request.POST, queryset=Variant.objects.filter(product=product))
+            image_files = [
+                request.POST.get('image1'),
+                request.POST.get('image2'),
+                request.POST.get('image3'),
+                request.POST.get('image4'),
+            ]
+            # print(image_files[0])
             
-            if product_form.is_valid() and variant1_form.is_valid():
-                product = product_form.save()
+            if product_form.is_valid() and variant_formset.is_valid():
+                updated_product = product_form.save()
 
-                # Handle image uploads
-                uploaded_images = [
-                    request.FILES.get('image1'),
-                    request.FILES.get('image2'),
-                    request.FILES.get('image3'),
-                    request.FILES.get('image4')
-                ]
-
-                for index, image_file in enumerate(uploaded_images):
-                    if image_file:
-                       
-                        existing_image = product.product_images.all()[index] if product.product_images.all().count() > index else None
-                        if existing_image:
-                            existing_image.images = image_file
-                            existing_image.save()
-                        else:
-                            new_image = Images.objects.create(images=image_file, product=product)
-                            product.product_images.add(new_image)  
-
+                # Update or replace images if new ones are uploaded
+                for index, image_data in enumerate(image_files):
+                    if image_data:
+                        try:
+                            format, imgstr = image_data.split(';base64,')
+                            ext = format.split('/')[-1]
+                            image_file = ContentFile(base64.b64decode(imgstr), name=f'product_image_{index+1}.{ext}')
+                            
+                            # Update existing image or create new if no image exists at that index
+                            if index < updated_product.product_images.count():
+                                existing_image = updated_product.product_images.all()[index]
+                                existing_image.images = image_file
+                                existing_image.save()
+                            else:
+                                Images.objects.create(images=image_file, product=updated_product)
+                        except Exception as e:
+                            print(f"Error processing image: {e}")
+                    else:
+                        print(f"No image provided for image{index+1}")
                 
-                variant1 = variant1_form.save(commit=False)
-                variant1.product = product
-                variant1.save()
+                # Update the variants
+                variants = variant_formset.save(commit=False)
+                for variant in variants:
+                    variant.product = updated_product
+                    variant.save()
 
-                messages.success(request, "Product edited successfully.")
+                # Delete removed variants if necessary
+                for variant in variant_formset.deleted_objects:
+                    variant.delete()
+
+                messages.success(request, "Product and variants updated successfully")
                 return redirect('adminProducts')
             else:
-                messages.warning(request, "Please correct the errors below.")
                 print(product_form.errors)
-                print(variant1_form.errors)
-                
+                print(variant_formset.errors)
+                print('inside the else of validation')
+                messages.warning(request, "Please correct the errors below.")
+        else:
+            product_form = ProductForm(instance=product)
+            variant_formset = VariantFormSet(queryset=Variant.objects.filter(product=product))
+
         categories = Category.objects.all()
         brands = Brand.objects.all()
-        images = product.product_images.all()  
-        return render(request, 'editProducts.html', {
+
+        return render(request, 'editproducts.html', {
             'product_form': product_form,
-            'variant1_form': variant1_form,
+            'variant_formset': variant_formset,
             'categories': categories,
             'brands': brands,
-            'images': images,
+            'product': product,  # Pass the product to prepopulate the form
         })
-    return redirect('adminLogin')
+
+    return redirect(adminLogin)
+
 
 
 def productSearch(request):

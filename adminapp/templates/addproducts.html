@@ -51,26 +51,21 @@
                     {{ product_form.brand.errors }}
                 </div>
             </div>
-
+            <!--image cropping -->
             <div class="row mb-4">
                 <div class="col-md-12">
                     <label class="form-label text-white">Product Images (max 4)*</label>
                     <div class="row">
+                        {% for i in "1234" %}
                         <div class="col-md-3">
-                            <input type="file" class="form-control" name="image1" accept="image/*">
+                            <input type="file" class="form-control image-input" id="imageInput{{ i }}" accept="image/*">
+                            <input type="hidden" name="image{{ i }}" id="croppedImage{{ i }}">
                         </div>
-                        <div class="col-md-3">
-                            <input type="file" class="form-control" name="image2" accept="image/*">
-                        </div>
-                        <div class="col-md-3">
-                            <input type="file" class="form-control" name="image3" accept="image/*">
-                        </div>
-                        <div class="col-md-3">
-                            <input type="file" class="form-control" name="image4" accept="image/*">
-                        </div>
+                        {% endfor %}
                     </div>
                 </div>
             </div>
+
 
             <!-- Variants Section -->
             <h4 class="text-white">Product Variants</h4>
@@ -110,6 +105,12 @@
         </form>
     </div>
 </div>
+<!-- Modal for cropping -->
+<div id="cropModal" style="display:none;">
+    <img id="imagePreview" style="max-width: 100%;">
+    <button id="cropButton">Crop</button>
+</div>
+
 
 <script>
     document.addEventListener('DOMContentLoaded', function () {
@@ -156,7 +157,72 @@
 
         // Initial attachment of the remove event for the initial variants
         attachRemoveVariantEvent();
+
+        // Image cropping logic
+        var cropper;
+        var currentImageInput, currentCroppedInput;
+
+        document.querySelectorAll('.image-input').forEach((input, index) => {
+            input.addEventListener('change', function (event) {
+                const file = event.target.files[0];
+                if (!file) return;
+
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    document.getElementById('imagePreview').src = e.target.result;
+                    document.getElementById('cropModal').style.display = 'block';
+
+                    currentImageInput = input;
+                    currentCroppedInput = document.getElementById('croppedImage' + (index + 1));
+
+                    if (cropper) cropper.destroy(); // Destroy previous instance if exists
+                    cropper = new Cropper(document.getElementById('imagePreview'), {
+                        aspectRatio: 1, // Adjust as needed
+                        viewMode: 1
+                    });
+                };
+                reader.readAsDataURL(file);
+            });
+        });
+
+        // Ensure crop button assigns the cropped image data to the correct hidden input field
+        document.getElementById('cropButton').addEventListener('click', () => {
+            if (cropper) {
+                const canvas = cropper.getCroppedCanvas({
+                    width: 300, // Adjust as needed
+                    height: 300,
+                });
+
+                canvas.toBlob((blob) => {
+                    const reader = new FileReader();
+                    reader.readAsDataURL(blob);
+                    reader.onloadend = () => {
+                        currentCroppedInput.value = reader.result; // Set Base64 image string
+                        console.log(`Cropped image saved in hidden input: ${reader.result}`);
+                        document.getElementById('cropModal').style.display = 'none'; // Close crop modal
+                    };
+                });
+            }
+        });
+
+        // Ensure all cropped images are present before submitting the form
+        document.querySelector('form').addEventListener('submit', function (event) {
+            let allImagesCropped = true;
+            for (let i = 1; i <= 4; i++) {
+                const croppedImageValue = document.getElementById('croppedImage' + i).value;
+                if (!croppedImageValue) {
+                    allImagesCropped = false;
+                    console.log(`Image ${i} not cropped or missing.`);
+                }
+            }
+
+            if (!allImagesCropped) {
+                event.preventDefault();
+                alert('Please crop all images before submitting the form.');
+            }
+        });
     });
 </script>
+
 
 {% endblock %}

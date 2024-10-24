@@ -21,7 +21,6 @@
 
     <div class="card p-4" style="background-color: #633B00;">
         <form method="POST" action="{% url 'editProducts' product_form.instance.id %}" enctype="multipart/form-data">
-            
             {% csrf_token %}
             {{ product_form.management_form }}  <!-- Ensure management form is included for file uploads -->
 
@@ -45,7 +44,6 @@
                     {{ product_form.category }}
                     {{ product_form.category.errors }}
                 </div>
-                
                 <div class="col-md-6">
                     <label class="form-label text-white">Brand Name*</label>
                     {{ product_form.brand }}
@@ -53,7 +51,7 @@
                 </div>
             </div>
 
-            <div class="row mb-4">
+            {% comment %} <div class="row mb-4">
                 <div class="col-md-12">
                     <label class="form-label text-white">Product Images (max 4)*</label>
                     <div class="row">
@@ -75,23 +73,52 @@
                         </div>
                     </div>
                 </div>
+            </div> {% endcomment %}
+            <div class="row mb-4">
+                <div class="col-md-12">
+                    <label class="form-label text-white">Product Images (max 4)*</label>
+                    <div class="row">
+                        {% for i in "1234" %}
+                        <div class="col-md-3">
+                            <input type="file" class="form-control image-input" id="imageInput{{ i }}" accept="image/*">
+                            <input type="hidden" name="image{{ i }}" id="croppedImage{{ i }}">
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
             </div>
 
-            <!-- Variant 1 -->
+            <!-- Dynamic Variant Formset -->
             <div class="row mb-4">
-                <h4 class="text-white">Variant 1</h4>
-                <div class="col-md-4">
-                    {{ variant1_form.weight.label_tag }} {{ variant1_form.weight }}
-                    {{ variant1_form.weight.errors }}
+                <h4 class="text-white">Product Variants</h4>
+                
+                <!-- Loop through each form in the formset -->
+                {% for form in variant_formset %}
+                <div class="variant-row">
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            {{ form.weight.label_tag }} {{ form.weight }}
+                            {{ form.weight.errors }}
+                        </div>
+                        <div class="col-md-4">
+                            {{ form.price.label_tag }} {{ form.price }}
+                            {{ form.price.errors }}
+                        </div>
+                        <div class="col-md-4">
+                            {{ form.stock.label_tag }} {{ form.stock }}
+                            {{ form.stock.errors }}
+                        </div>
+                    </div>
+                    {{ form.id }}
                 </div>
-                <div class="col-md-4">
-                    {{ variant1_form.price.label_tag }} {{ variant1_form.price }}
-                    {{ variant1_form.price.errors }}
+                {% endfor %}
+                
+                <!-- Display any formset errors -->
+                {% comment %} {% if variant_formset.non_form_errors %}
+                <div class="alert alert-danger">
+                    {{ variant_formset.non_form_errors }}
                 </div>
-                <div class="col-md-4">
-                    {{ variant1_form.stock.label_tag }} {{ variant1_form.stock }}
-                    {{ variant1_form.stock.errors }}
-                </div>
+                {% endif %} {% endcomment %}
             </div>
 
             <div class="d-flex justify-content-center mb-2">
@@ -100,6 +127,80 @@
         </form>
     </div>
 </div>
+<!-- Modal for cropping -->
+<div id="cropModal" style="display:none;">
+    <img id="imagePreview" style="max-width: 100%;">
+    <button id="cropButton">Crop</button>
+</div>
+
+<script>
+
+        // Image cropping logic
+        var cropper;
+        var currentImageInput, currentCroppedInput;
+
+        document.querySelectorAll('.image-input').forEach((input, index) => {
+            input.addEventListener('change', function (event) {
+                const file = event.target.files[0];
+                if (!file) return;
+
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    document.getElementById('imagePreview').src = e.target.result;
+                    document.getElementById('cropModal').style.display = 'block';
+
+                    currentImageInput = input;
+                    currentCroppedInput = document.getElementById('croppedImage' + (index + 1));
+
+                    if (cropper) cropper.destroy(); // Destroy previous instance if exists
+                    cropper = new Cropper(document.getElementById('imagePreview'), {
+                        aspectRatio: 1, // Adjust as needed
+                        viewMode: 1
+                    });
+                };
+                reader.readAsDataURL(file);
+            });
+        });
+
+        // Ensure crop button assigns the cropped image data to the correct hidden input field
+        document.getElementById('cropButton').addEventListener('click', () => {
+            if (cropper) {
+                const canvas = cropper.getCroppedCanvas({
+                    width: 300, // Adjust as needed
+                    height: 300,
+                });
+
+                canvas.toBlob((blob) => {
+                    const reader = new FileReader();
+                    reader.readAsDataURL(blob);
+                    reader.onloadend = () => {
+                        currentCroppedInput.value = reader.result; // Set Base64 image string
+                        console.log(`Cropped image saved in hidden input: ${reader.result}`);
+                        document.getElementById('cropModal').style.display = 'none'; // Close crop modal
+                    };
+                });
+            }
+        });
+
+        // Ensure all cropped images are present before submitting the form
+        document.querySelector('form').addEventListener('submit', function (event) {
+            let allImagesCropped = true;
+            for (let i = 1; i <= 4; i++) {
+                const croppedImageValue = document.getElementById('croppedImage' + i).value;
+                if (!croppedImageValue) {
+                    allImagesCropped = false;
+                    console.log(`Image ${i} not cropped or missing.`);
+                }
+            }
+
+            if (!allImagesCropped) {
+                event.preventDefault();
+                alert('Please crop all images before submitting the form.');
+            }
+        });
+   
+</script>
+
+
 
 {% endblock %}
-
