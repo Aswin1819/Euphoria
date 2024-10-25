@@ -14,5 +14,8 @@ urlpatterns = [
     path('shopNow/',views.shopNow,name='shopNow'),
     path('userlogout/',views.userlogout,name = 'userlogout'),
     path('resendOtpForPass/',views.resendOtpForPass,name='resendOtpForPass'),
-    path('userProfile/',views.userProfile,name='userProfile'),
+    path('userProfileInformation/',views.userProfileInformation,name='userProfileInformation'),
+    path('userManageAddress/',views.userManageAddress,name='userManageAddress'),
+    path('edit-address/<int:address_id>/', views.editAddress, name='editAddress'),
+    path('delete-address/<int:address_id>/', views.deleteAddress, name='deleteAddress'),
 ]

@@ -2,14 +2,15 @@ from django.shortcuts import render,redirect,get_object_or_404
 from django.contrib.auth import get_user_model
 from django.contrib.auth import login,logout,authenticate
 from django.contrib.auth.hashers import make_password
-from adminapp.models import EuphoUser,OTP,Products,Variant
+from adminapp.models import EuphoUser,OTP,Products,Variant,Address
 from django.contrib import messages
 from userapp.userotp import generateAndSendOtp
 from django.conf import settings
 from .signals import userOtpVerified
-from .forms import UserLoginForm,UserSignupForm,ChangeProfileForm,ChangePasswordForm
+from .forms import UserLoginForm,UserSignupForm,ChangeProfileForm,ChangePasswordForm,AddressForm
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import update_session_auth_hash
+from django.urls import reverse
 
 # Create your views here.
 
@@ -239,7 +240,7 @@ def productView(request,id):
 #     return render(request,'userprofile.html',{'form':form})       
 
 @login_required
-def userProfile(request):
+def userProfileInformation(request):
     user = request.user
 
     # Handle profile form
@@ -255,7 +256,7 @@ def userProfile(request):
             if profile_form.is_valid():
                 profile_form.save()
                 print("profile edited successfully")
-                return redirect('userProfile')
+                return redirect('userProfileInformation')
             else:
                 print(profile_form.errors)
 
@@ -265,24 +266,67 @@ def userProfile(request):
                 password_form.save()
                 update_session_auth_hash(request, password_form.user)  # Keeps the user logged in
                 print("Password changed successfully")
-                return redirect('userProfile')
+                return redirect('userProfileInformation')
             else:
                 print(password_form.errors)
 
-    return render(request, 'userprofile.html', {
+    return render(request, 'userprofileinformation.html', {
         'profile_form': profile_form,
         'password_form': password_form,
     })
     
         
 
+def userManageAddress(request):
+    
+    user_address = Address.objects.filter(user=request.user)
+    
+    if request.method == 'POST':
+        form = AddressForm(request.POST)
+        if form.is_valid():
+            address = form.save(commit=False)
+            address.user=request.user
+            address.save()
+            return redirect(userManageAddress)
+        else:
+            print(form.errors)
+    else:
+        form = AddressForm()
+        
+    context = {
+        'form': form,
+        'addresses':user_address,
+    }
+    return render(request,'usermanageaddress.html',context)
 
 
 
+@login_required
+def editAddress(request, address_id):
+    # Get the address object for the given ID and user
+    address = get_object_or_404(Address, id=address_id, user=request.user)
+
+    if request.method == 'POST':
+        form = AddressForm(request.POST, instance=address)
+        if form.is_valid():
+            form.save()  # Update the existing address
+            return redirect(reverse('userManageAddress'))  # Redirect back to the address management page
+    else:
+        form = AddressForm(instance=address)  # Populate form with existing data
+
+    context = {
+        'form': form,
+        'address': address,
+    }
+    return render(request, 'usereditaddress.html', context)
 
 
 
-
+@login_required
+def deleteAddress(request, address_id):
+    address = get_object_or_404(Address, id=address_id, user=request.user)
+    address.delete()
+    return redirect(reverse('userManageAddress'))
 
 
 def userlogout(request):

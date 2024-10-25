@@ -1,0 +1,25 @@
+{% extends 'userprofile.html' %}
+
+{% block profile %}
+<div class="col-md-9">
+    <div class="card shadow-sm bg-light">
+        <div class="card-body">
+            <h5 class="card-title">Edit Address</h5>
+
+            <form method="POST" action="{% url 'editAddress' address.id %}">
+                {% csrf_token %}
+                {{ form.address_type }}
+                {{ form.address }}
+                {{ form.city }}
+                {{ form.place }}
+                {{ form.landmark }}
+                {{ form.pincode }}
+                {{ form.phone }}
+                <div class="d-flex justify-content-end">
+                    <button type="submit" class="btn btn-primary">Update Address</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

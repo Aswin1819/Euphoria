@@ -144,3 +144,22 @@ class Variant(models.Model):
 
     def __str__(self):
         return f"{self.product.name} - {self.weight}g"
+
+
+class Address(models.Model):
+    ADDRESS_TYPES = [
+        ('home', 'Home'),
+        ('work', 'Work'),
+    ]
+
+    user = models.ForeignKey(EuphoUser, on_delete=models.CASCADE, related_name='addresses')
+    address_type = models.CharField(max_length=10, choices=ADDRESS_TYPES, default='home')
+    address = models.TextField()
+    city = models.CharField(max_length=100)
+    place = models.CharField(max_length=100)
+    landmark = models.CharField(max_length=100, blank=True, null=True)
+    pincode = models.CharField(max_length=10)
+    phone = models.CharField(max_length=15)
+
+    def __str__(self):
+        return f'{self.user.username} - {self.address_type.capitalize()} Address'

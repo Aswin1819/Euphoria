@@ -2,6 +2,7 @@ from django import forms
 import re
 from django.contrib.auth import get_user_model
 from django.contrib.auth.forms import UserCreationForm,PasswordChangeForm
+from adminapp.models import Address
 
 # from adminapp.models import EuphoUser
 
@@ -113,9 +114,36 @@ class ChangeProfileForm(forms.ModelForm):
         model = EuphoUser
         fields = ['username','gender','email','phone','profile_image']
         
+    def clean_username(self):
+        username = self.cleaned_data.get('username')
+        if not username.isalpha():
+            raise forms.ValidationError('Username must be alphabets')
+        return username   
+    def clean_phone(self):
+        phone = self.cleaned_data.get('phone')
+        if not phone.isdigit():
+            raise forms.ValidationError('Phone number must contain only digits')
+        if len(phone) != 10:
+            raise forms.ValidationError('Phone number must be exactly 10 digits')
+        return phone            
+        
         
 class ChangePasswordForm(PasswordChangeForm):
     class Meta:
         model = EuphoUser
         fields = ['old_password','new_password1','new_password2']
         
+
+class AddressForm(forms.ModelForm):
+    class Meta:
+        model = Address
+        fields = ['address_type', 'address', 'city', 'place', 'landmark', 'pincode', 'phone']
+        widgets = {
+            'address_type': forms.Select(attrs={'class': 'form-control'}),
+            'address': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Enter your address'}),
+            'city': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'City'}),
+            'place': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Place'}),
+            'landmark': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Landmark (optional)'}),
+            'pincode': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Pincode'}),
+            'phone': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Phone number'}),
+        }
