@@ -7,7 +7,9 @@ from django.contrib import messages
 from userapp.userotp import generateAndSendOtp
 from django.conf import settings
 from .signals import userOtpVerified
-from .forms import UserLoginForm,UserSignupForm
+from .forms import UserLoginForm,UserSignupForm,ChangeProfileForm,ChangePasswordForm
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth import update_session_auth_hash
 
 # Create your views here.
 
@@ -204,14 +206,73 @@ def productView(request,id):
     return render(request,'productview.html',{'product':product,'related_products':related_products,'variants':variants,'default_variant':default_variant})
 
 
+# def userProfile(request):
+#     if request.user.is_authenticated:
+#         user = request.user
+#         if request.method=='POST': 
+#             form = ChangeProfileForm(request.POST,request.FILES,instance=user)
+#             if form.is_valid():
+#                 form.save()
+#                 return render(request,'userprofile.html',{'form':form})
+#             else:
+#                 print(form.errors)
+#         else:
+#             form = ChangeProfileForm(instance=user)
+#     return render(request,'userprofile.html',{'form':form})
+
+
+
+# @login_required
+# def changePasswordProfile(request):
+#     user=request.user
+#     if request.method == 'POST':
+#         form = ChangePasswordForm(user = request.user,data=request.POST)
+#         if form.is_valid():
+#             form.save()
+#             update_session_auth_hash(request,form.user)#updating the session
+#             print("password changed successfully")
+#             return redirect(userProfile)
+#         else:
+#             print(form.errors)
+#     else:
+#         form = ChangePasswordForm(instance=user)
+#     return render(request,'userprofile.html',{'form':form})       
+
+@login_required
 def userProfile(request):
-    if request.user.is_authenticated:
-        return render(request,'userprofile.html')
-    else:
-        return redirect(userlogin)
+    user = request.user
+
+    # Handle profile form
+    profile_form = ChangeProfileForm(instance=user)
     
-    
-        
+    # Handle password form
+    password_form = ChangePasswordForm(user=user)
+
+    if request.method == 'POST':
+        # Check which form is being submitted
+        if 'profile_submit' in request.POST:
+            profile_form = ChangeProfileForm(request.POST, request.FILES, instance=user)
+            if profile_form.is_valid():
+                profile_form.save()
+                print("profile edited successfully")
+                return redirect('userProfile')
+            else:
+                print(profile_form.errors)
+
+        elif 'password_submit' in request.POST:
+            password_form = ChangePasswordForm(user=user, data=request.POST)
+            if password_form.is_valid():
+                password_form.save()
+                update_session_auth_hash(request, password_form.user)  # Keeps the user logged in
+                print("Password changed successfully")
+                return redirect('userProfile')
+            else:
+                print(password_form.errors)
+
+    return render(request, 'userprofile.html', {
+        'profile_form': profile_form,
+        'password_form': password_form,
+    })
     
         
 

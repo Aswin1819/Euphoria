@@ -1,7 +1,9 @@
 from django import forms
 import re
 from django.contrib.auth import get_user_model
-from django.contrib.auth.forms import UserCreationForm
+from django.contrib.auth.forms import UserCreationForm,PasswordChangeForm
+
+# from adminapp.models import EuphoUser
 
 class UserLoginForm(forms.Form):
     email = forms.EmailField(widget=forms.EmailInput(attrs={
@@ -102,3 +104,18 @@ class UserSignupForm(UserCreationForm):
         if len(password1) < 6:
             raise forms.ValidationError('Password must be at least 6 characters long')
         return password1
+    
+    
+    
+
+class ChangeProfileForm(forms.ModelForm):
+    class Meta:
+        model = EuphoUser
+        fields = ['username','gender','email','phone','profile_image']
+        
+        
+class ChangePasswordForm(PasswordChangeForm):
+    class Meta:
+        model = EuphoUser
+        fields = ['old_password','new_password1','new_password2']
+        

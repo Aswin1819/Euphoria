@@ -9,7 +9,7 @@
                 <div class="card-body p-0">
                     <!-- Profile Section -->
                     <div class="text-center bg-white py-3">
-                        <img src="/media/product_Images/default.jpg" alt="Profile Picture" class="rounded-circle" style="width: 100px;">
+                        <img src="{% if user.profile_image %}{{ user.profile_image.url }}{% else %}/media/product_Images/default.jpg{% endif %}" alt="Profile Picture" class="rounded-circle" style="width: 100px;">
                         <p class="mb-1 mt-2">Hello!,<i class="profile-name"><strong>{{ user.username }}</strong></i></p>
                         
                     </div>
@@ -69,85 +69,93 @@
             </div>
         </div>
         
-        
+        {% block profile %} {% endblock %}
 
         <!-- Profile Details (right) -->
         <div class="col-md-9">
+            <!-- Profile Form -->
             <div class="card shadow-sm bg-light">
                 <div class="card-body">
                     <h5 class="card-title">Edit Profile</h5>
-                    <!-- Profile Information Form -->
-                    <form method="POST" enctype="multipart/form-data">
+                    <form method="POST" enctype="multipart/form-data" action="{% url 'userProfile' %}">
                         {% csrf_token %}
                         <div class="row mb-3">
-                            <label for="username" class="col-sm-2 col-form-label">Username</label>
-                            <div class="col-sm-4">
-                                <input type="text" class="form-control" id="username" value="Aswin">
-                            </div>
-                            <label for="gender" class="col-sm-2 col-form-label">Your Gender</label>
-                            <div class="col-sm-4">
-                                <select class="form-control" id="gender" name="gender">
-                                    <option value="male">Male</option>
-                                    <option value="female">Female</option>
-                                    <option value="others">Others</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div class="row mb-3">
-                            <label for="email" class="col-sm-2 col-form-label">Email</label>
-                            <div class="col-sm-4">
-                                <input type="email" class="form-control" id="email" value="sanjusamuelss222@gmail.com">
-                            </div>
-                            <label for="phone" class="col-sm-2 col-form-label">Mobile Number</label>
-                            <div class="col-sm-4">
-                                <input type="text" class="form-control" id="phone" value="+918606842487">
-                            </div>
-                        </div>
-                        <div class="row mb-3">
-                            <label for="profileImage" class="col-sm-2 col-form-label">Profile Image</label>
+                            <label for="id_username" class="col-sm-2 col-form-label">Username</label>
                             <div class="col-sm-10">
-                                <input type="file" class="form-control" id="profileImage" name="profile_image">
+                                {{ profile_form.username }}
                             </div>
                         </div>
+                        <div class="row mb-3">
+                            <label for="id_gender" class="col-sm-2 col-form-label">Gender</label>
+                            <div class="col-sm-10">
+                                {{ profile_form.gender }}
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <label for="id_phone" class="col-sm-2 col-form-label">Phone</label>
+                            <div class="col-sm-10">
+                                {{ profile_form.phone }}
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <label for="id_profile_image" class="col-sm-2 col-form-label">Profile Image</label>
+                            <div class="col-sm-10">
+                                {{ profile_form.profile_image }}
+                            </div>
+                        </div>
+                        <!-- Email Display -->
+                        <div class="row mb-3">
+                            <label for="id_email_display" class="col-sm-2 col-form-label">Email</label>
+                            <div class="col-sm-10">
+                                <input type="text" class="form-control" id="id_email_display" value="{{ profile_form.email.value }}" readonly>
+                            </div>
+                        </div>
+                        <!-- Hidden Email Input -->
+                        <input type="hidden" name="email" value="{{ profile_form.email.value }}">
+
                         <!-- Save Changes Button -->
                         <div class="d-flex justify-content-between">
-                            <button type="button" class="btn btn-secondary">Cancel</button>
-                            <button type="submit" class="btn btn-primary">Save Changes</button>
+                            <button type="submit" name="profile_submit" class="btn btn-primary">Save Changes</button>
                         </div>
                     </form>
                 </div>
             </div>
+
+
+            
+            <!-- Change Password Form -->
             <div class="card shadow-sm bg-light mb-3 mt-5">
                 <div class="card-body">
                     <h5 class="card-title">Change Password</h5>
-                    <form method="POST">
+                    <form method="POST" action="{% url 'userProfile' %}">
                         {% csrf_token %}
                         <div class="row mb-3">
                             <label for="currentPassword" class="col-sm-4 col-form-label">Current Password</label>
                             <div class="col-sm-8">
-                                <input type="password" class="form-control" id="currentPassword">
+                                {{ password_form.old_password }}
                             </div>
                         </div>
                         <div class="row mb-3">
-                            <label for="newPassword" class="col-sm-4 col-form-label">New Password</label>
+                            <label for="newPassword1" class="col-sm-4 col-form-label">New Password</label>
                             <div class="col-sm-8">
-                                <input type="password" class="form-control" id="newPassword">
+                                {{ password_form.new_password1 }}
                             </div>
                         </div>
                         <div class="row mb-3">
-                            <label for="confirmNewPassword" class="col-sm-4 col-form-label">Confirm New Password</label>
+                            <label for="newPassword2" class="col-sm-4 col-form-label">Confirm New Password</label>
                             <div class="col-sm-8">
-                                <input type="password" class="form-control" id="confirmNewPassword">
+                                {{ password_form.new_password2 }}
                             </div>
                         </div>
                         <!-- Save Changes Button -->
                         <div class="d-flex justify-content-between">
-                            <button type="button" class="btn btn-secondary">Cancel</button>
-                            <button type="submit" class="btn btn-primary">Save Changes</button>
+                            <button type="submit" name="password_submit" class="btn btn-primary">Save Changes</button>
                         </div>
                     </form>
                 </div>
             </div>
+
+            
         </div>
         
     </div>

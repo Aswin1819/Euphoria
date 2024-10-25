@@ -30,9 +30,18 @@ class EuphoUserManager(BaseUserManager):
         return self.create_user(email, username, phone, password, **extra_fields)
 
 class EuphoUser(AbstractBaseUser, PermissionsMixin):
+    GENDER_CHOICES = [
+        ('male', 'Male'),
+        ('female', 'Female'),
+        ('others', 'Others'),
+    ]
+    
+    
     username = models.CharField(max_length=100)
     email = models.EmailField(unique=True)
     phone = models.CharField(max_length=15)
+    gender = models.CharField(max_length=6, choices=GENDER_CHOICES, default='male')  # Default value
+    profile_image = models.ImageField(upload_to='profile_images/', blank=True, null=True)
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
     is_superuser = models.BooleanField(default=False)
