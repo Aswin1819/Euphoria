@@ -2,6 +2,7 @@ from django.db import models
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
 from django.utils import timezone
 from datetime import timedelta
+from django.conf import settings
 
 class EuphoUserManager(BaseUserManager):
     def create_user(self, email, username, phone, password=None, **extra_fields):
@@ -160,6 +161,57 @@ class Address(models.Model):
     landmark = models.CharField(max_length=100, blank=True, null=True)
     pincode = models.CharField(max_length=10)
     phone = models.CharField(max_length=15)
+    is_primary = models.BooleanField(default=False)
+    
+    def save(self, *args, **kwargs):
+        # Check if there is already a primary address for the user
+        if not Address.objects.filter(user=self.user, is_primary=True).exists():
+            self.is_primary = True  # Make this the primary address if no other exists
+        super(Address, self).save(*args, **kwargs)
 
     def __str__(self):
         return f'{self.user.username} - {self.address_type.capitalize()} Address'
+    
+    
+class Cart(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, blank=True, null=True)
+    session_id = models.CharField(max_length=255, blank=True, null=True)  # For guests
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"Cart - User: {self.user or 'Guest'}"
+    
+    def get_total_price(self):
+        return sum(item.get_total_price() for item in self.items.all())
+    
+class CartItem(models.Model):
+    cart = models.ForeignKey(Cart, on_delete=models.CASCADE, related_name="items")
+    product = models.ForeignKey(Products, on_delete=models.CASCADE)
+    quantity = models.PositiveIntegerField(default=1)
+    variant = models.ForeignKey(Variant, on_delete=models.CASCADE)
+    def __str__(self):
+        return f"{self.quantity} of {self.product.name} - {self.variant.weight}g"
+    
+    def get_total_price(self):
+        return self.variant.price * self.quantity
+    
+    
+    
+class Order(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    total_amount = models.DecimalField(max_digits=10, decimal_places=2)
+    created_at = models.DateTimeField(auto_now_add=True)
+    status = models.CharField(max_length=50, choices=[("Pending", "Pending"), ("Completed", "Completed")])
+
+    def __str__(self):
+        return f"Order {self.id} - {self.user.username}"
+
+class OrderItem(models.Model):
+    order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name="order_items")
+    product = models.ForeignKey(Products, on_delete=models.CASCADE)
+    quantity = models.PositiveIntegerField()
+    price = models.DecimalField(max_digits=10, decimal_places=2)
+
+    def get_total_price(self):
+        return self.price * self.quantity

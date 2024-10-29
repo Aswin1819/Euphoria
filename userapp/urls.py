@@ -18,4 +18,8 @@ urlpatterns = [
     path('userManageAddress/',views.userManageAddress,name='userManageAddress'),
     path('edit-address/<int:address_id>/', views.editAddress, name='editAddress'),
     path('delete-address/<int:address_id>/', views.deleteAddress, name='deleteAddress'),
+    path('cartDetails/',views.cartDetails,name='cartDetails'),
+    path('addToCart/',views.addToCart,name='addToCart'),
+    path('removeCartItems/<int:product_id>/<int:variant_id>/',views.removeCartItems,name='removeCartItems'),
+    path('setPrimaryAddress/<int:address_id>',views.setPrimaryAddress,name='setPrimaryAddress'),
 ]

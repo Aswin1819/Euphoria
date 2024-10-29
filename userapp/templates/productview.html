@@ -58,7 +58,7 @@
             <!-- Variant Weight Selection -->
             <div class="variant-selection">
                 <label for="variant-weight" class="form-label">Select Weight:</label>
-                <select id="variant-weight" class="form-control" onchange="updateVariant()">
+                <select id="variant-weight" class="form-control" onchange="updateVariant()" name="variant_id">
                     {% for variant in variants %}
                         <option value="{{ variant.id }}" data-price="{{ variant.price }}" data-stock="{{ variant.stock }}">
                             {{ variant.weight }}g
@@ -68,17 +68,32 @@
             </div>
     
             <!-- Quantity and Add to Cart -->
-            <div class="my-4">
+            <!-- <div class="my-4">
                 <label for="quantity" class="form-label">Quantity</label>
                 <div class="input-group mb-3" style="max-width: 150px;">
                     <button class="btn btn-outline-secondary" type="button">-</button>
                     <input type="text" class="form-control text-center" id="quantity" value="1">
                     <button class="btn btn-outline-secondary" type="button">+</button>
                 </div>
-                <button class="btn btn-primary btn-lg">Add to Cart</button>
+                <a id="addToCartButton" class="btn btn-primary btn-lg" data-product-id="{{ product.id }}">Add to Cart</a>
+                
+            </div> -->
+            <form action="{% url 'addToCart' %}" method="post">
+                {% csrf_token %}
+                <input type="hidden" name="product_id" value="{{ product.id }}">
+                <input type="hidden" name="variant_id" id="variant_id" value="{{ default_variant.id }}">
+                
+                <!-- Quantity Input -->
+                <div class="my-4">
+                    <label for="quantity" class="form-label">Quantity</label>
+                    <input type="number" name="quantity" id="quantity" value="1" min="1" class="form-control">
+                </div>
+                
+                <button type="submit" class="btn btn-primary btn-lg">Add to Cart</button>
                 <button class="btn btn-success btn-lg ms-3">Buy Now</button>
                 <button class="btn btn-warning btn-lg ms-3">Add to Wishlist</button>
-            </div>
+            </form>
+            
         </div>
     </div>
     
@@ -158,6 +173,7 @@ function updateVariant() {
     var selectedOption = variantSelect.options[variantSelect.selectedIndex];
     var price = selectedOption.getAttribute('data-price');
     var stock = selectedOption.getAttribute('data-stock');
+   
 
     // Update price
     document.getElementById('variant-price').innerText = `₹ ${price}`;
@@ -171,6 +187,7 @@ function updateVariant() {
     }
     document.getElementById('stock-status').innerHTML = stockMessage;
 }
+updateVariant()
 
 
 </script>

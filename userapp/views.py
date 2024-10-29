@@ -2,7 +2,7 @@ from django.shortcuts import render,redirect,get_object_or_404
 from django.contrib.auth import get_user_model
 from django.contrib.auth import login,logout,authenticate
 from django.contrib.auth.hashers import make_password
-from adminapp.models import EuphoUser,OTP,Products,Variant,Address
+from adminapp.models import EuphoUser,OTP,Products,Variant,Address,Cart,CartItem
 from django.contrib import messages
 from userapp.userotp import generateAndSendOtp
 from django.conf import settings
@@ -320,13 +320,74 @@ def editAddress(request, address_id):
     }
     return render(request, 'usereditaddress.html', context)
 
-
-
 @login_required
 def deleteAddress(request, address_id):
     address = get_object_or_404(Address, id=address_id, user=request.user)
     address.delete()
     return redirect(reverse('userManageAddress'))
+
+
+
+def addToCart(request):
+    if request.method=="POST":
+        product_id = request.POST.get('product_id')       
+        variant_id = request.POST.get('variant_id')    
+        quantity = request.POST.get('quantity')
+   
+        product = get_object_or_404(Products,id=product_id)
+        variant = get_object_or_404(Variant,id=variant_id)
+        
+        if request.user.is_authenticated:
+            cart,created = Cart.objects.get_or_create(user=request.user)
+        else:
+            cart,created = Cart.objects.get_or_create(session_id=request.session.session_key)
+        
+        cart_item,created = CartItem.objects.get_or_create(cart=cart,product=product,variant=variant,defaults={'quantity':1})
+        if not created:
+            cart_item.quantity += 1
+        cart_item.save()
+        return redirect(cartDetails)
+    return redirect(productView)
+
+
+def cartDetails(request):
+    if request.user.is_authenticated:
+        cart = Cart.objects.filter(user=request.user).first() 
+        cart_items = cart.items.select_related('product').prefetch_related('product__variants') if cart else []
+        user_addresses = request.user.addresses.all() 
+        if user_addresses and not user_addresses.filter(is_primary=True).exists():
+            first_address = user_addresses.first()
+            first_address.is_primary = True
+            first_address.save()
+            
+        return render(request,'usercart.html',{'cart':cart,'cart_items':cart_items,'user_addresses':user_addresses})
+    return render(request, 'usercart.html', {'cart': None, 'cart_items': [], 'user_addresses': []})
+
+
+def removeCartItems(request,product_id,variant_id):
+    if request.user.is_authenticated:
+        cart = Cart.objects.filter(user=request.user).first()
+    else:
+        cart = Cart.objects.filter(session_id=request.session.session_key).first()
+    
+    if cart:
+        cart_item = get_object_or_404(CartItem,cart=cart,product_id=product_id,variant_id=variant_id)
+        cart_item.delete()
+        return redirect(cartDetails)
+    
+
+def setPrimaryAddress(request,address_id):
+    if request.user.is_authenticated:
+        Address.objects.filter(user=request.user,is_primary=True).update(is_primary=False)
+        
+        selected_address = get_object_or_404(Address,id=address_id,user=request.user)
+        selected_address.is_primary=True
+        selected_address.save()
+    return redirect(cartDetails)
+
+
+
+
 
 
 def userlogout(request):
