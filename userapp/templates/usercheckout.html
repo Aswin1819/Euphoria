@@ -1,0 +1,189 @@
+{% extends 'userbase.html' %}
+
+{% block content %}
+<div class="container my-4">
+    <!-- Delivery Address Section -->
+    <div class="card p-3 mb-4">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                {% if user_addresses %}
+                    {% for address in user_addresses %}
+                        {% if address.is_primary %}
+                            <h5>Deliver to: <strong>{{ address.user.username }}, {{ address.pincode }}</strong></h5>
+                            <p class="mb-0">{{ address.address }}, {{ address.place }}, {{ address.city }}</p>
+                        {% endif %}
+                    {% endfor %}
+                {% else %}
+                    <h5>No address available</h5>
+                {% endif %}
+            </div>
+            <button class="btn btn-primary" data-bs-toggle="collapse" data-bs-target="#addressCollapse" aria-expanded="false" aria-controls="addressCollapse">Change</button>
+        </div>
+
+        <!-- Collapsible address list -->
+        <div class="collapse mt-3" id="addressCollapse">
+            <h6>Select Address</h6>
+            {% for address in user_addresses %}
+                <div class="card p-2 mb-2">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <strong>{{ address.user.username }}</strong>, {{ address.pincode }}
+                            <p>{{ address.address }}, {{ address.place }}, {{ address.city }}</p>
+                        </div>
+                        <a class="btn btn-outline-primary btn-sm" onclick="setPrimaryAddress({{ address.id }})">Deliver Here</a>
+                    </div>
+                </div>
+            {% empty %}
+                <p>No addresses available.</p>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Checkout Items Section -->
+    <div class="row">
+        <!-- Product Summary Section -->
+        <div class="col-lg-8">
+            {% for item in cart_items %}
+                <div class="card mb-3 p-3">
+                    <div class="d-flex">
+                        <img src="{{ item.product.product_images.first.images.url }}" alt="Product Image" class="img-fluid" style="width: 100px; height: 100px; object-fit: cover;">
+                        <div class="ms-3 flex-grow-1">
+                            <h6>{{ item.product.name }}</h6>
+                            <p class="text-muted mb-0">{{ item.product.description|truncatewords:10 }}</p>
+                            <p class="mb-1">Brand: {{ item.product.brand.name }}</p>
+                            <div class="d-flex align-items-center">
+                                <p class="mb-0">Quantity: {{ item.quantity }}</p>
+                            </div>
+                        </div>
+                        <div class="text-end">
+                            <p class="mb-0">₹{{ item.get_total_price }}</p>
+                            <p class="text-success">{{ item.discount_percentage }}% Off</p>
+                        </div>
+                    </div>
+                </div>
+            {% empty %}
+                <p>Your cart is empty.</p>
+            {% endfor %}
+        </div>
+
+        <!-- Order Summary and Payment Section -->
+        <div class="col-lg-4">
+            <div class="card p-3 mb-4">
+                <h5 class="card-title">PAYMENT METHOD</h5>
+                <form method="POST" action="{% url 'placeOrder' %}">
+                    {% csrf_token %}
+                    <select class="form-select mb-3" name="payment_method" aria-label="Select Payment Method" required>
+                        <option selected disabled>Choose a payment method</option>
+                        <option value="cod">Cash on Delivery</option>
+                        <option value="card">Credit/Debit Card</option>
+                        <option value="upi">UPI</option>
+                        <option value="netbanking">Net Banking</option>
+                    </select>
+        
+                    <!-- Hidden input to send the selected primary address ID -->
+                    {% for address in user_addresses %}
+                        {% if address.is_primary %}
+                            <input type="hidden" name="address_id" value="{{ address.id }}">
+                        {% endif %}
+                    {% endfor %}
+        
+                    <h5 class="card-title mt-4">PRICE DETAILS</h5>
+                    <div class="d-flex justify-content-between">
+                        <p>Price ({{ cart_items|length }} items)</p>
+                        <p>₹{{ cart.get_total_price }}</p>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <p>Discount</p>
+                        <p class="text-success">- ₹{{ total_discount }}</p>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <p>Shipping Fee</p>
+                        <p class="text-success">Free</p>
+                    </div>
+                    <hr>
+                    <div class="d-flex justify-content-between fw-bold">
+                        <p>Total Amount</p>
+                        <p>₹{{ cart.get_total_price }}</p>
+                    </div>
+                    <button id="place-order-btn" type="submit" class="btn btn-warning btn-lg w-100 mt-3">Place Order</button>
+                </form>
+            </div>
+        </div>
+        
+    </div>
+</div>
+
+<script>
+
+    document.getElementById('place-order-btn').addEventListener('click', function(event) {
+        // Gather necessary data
+        event.preventDefault();  
+        const addressId = document.querySelector('input[name="address_id"]').value;
+        const paymentMethod = document.querySelector('select[name="payment_method"]').value;
+        console.log('Address ID:', addressId); // Debugging line
+        console.log('Payment Method:', paymentMethod); // Debugging line
+
+    
+        // Make the AJAX request
+        fetch('/placeOrder/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}'  // Make sure to include CSRF token
+            },
+            body: JSON.stringify({
+                address_id: addressId,
+                payment_method: paymentMethod
+            })
+        })
+        .then(response => {
+            console.log('Response:', response);
+            if (!response.ok) {
+                return response.json().then(errorData => { throw errorData; });
+            }
+            return response.json();
+        })
+        .then(data => {
+            // Show success message with SweetAlert
+            Swal.fire({
+                icon: 'success',
+                title: 'Order Placed Successfully!',
+                text: `Your order ID is: ${data.order_id}`,
+                confirmButtonText: 'Okay'
+            }).then(() => {
+                // Optionally redirect the user to another page
+                window.location.href = '/userYourOrder/'; // Change to your order confirmation page
+            });
+        })
+        .catch(error => {
+            // Show error message with SweetAlert
+            Swal.fire({
+                icon: 'error',
+                title: 'Error!',
+                text: error.error || 'There was an issue placing your order. Please try again.',
+                confirmButtonText: 'Okay'
+            });
+        });
+    });
+
+
+
+    // Function to set primary address via AJAX
+    function setPrimaryAddress(addressId) {
+        fetch("{% url 'set_primary_address' %}", {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            body: JSON.stringify({ address_id: addressId })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            }
+        });
+    }
+</script>
+{% endblock %}

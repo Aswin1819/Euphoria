@@ -2,7 +2,7 @@ from django.shortcuts import render,redirect,get_object_or_404
 from django.contrib.auth import login,logout,authenticate
 from django.contrib import messages
 from django.contrib.auth import get_user_model
-from .models import EuphoUser,Category,Products,Images,Brand,Variant
+from .models import EuphoUser,Category,Products,Images,Brand,Variant,Order,OrderItem
 from .forms import ProductForm, VariantForm
 from django.forms import modelformset_factory
 #imagecropping modules
@@ -406,8 +406,20 @@ def brandSearch(request):
 
  
 def adminOrders(request):
-    return render(request,'adminorders.html')
+    orders = Order.objects.select_related('user').prefetch_related('order_items__product')
+    return render(request,'adminorders.html',{'orders':orders})
+
+
+def UpdateOrderStatus(request,order_id):
+    if request.method == 'POST':
+        order = get_object_or_404(Order,id=order_id)
+        new_status = request.POST.get('status')
+        order.status = new_status
+        order.save()
+        return redirect(adminOrders)
     
+
+
 def adminCoupons(request):
     return render(request,'admincoupons.html')
 

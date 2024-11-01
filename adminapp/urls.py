@@ -27,7 +27,8 @@ urlpatterns = [
     path('editBrands/<int:id>',views.editBrands,name='editBrands'),
     path('brandSearch/',views.brandSearch,name='brandSearch'),
     
-    path('adminorders/',views.adminOrders,name = 'adminOrders'),
+    path('adminOrders/',views.adminOrders,name = 'adminOrders'),
+    path('UpdateOrderStatus/<int:order_id>/',views.UpdateOrderStatus,name='UpdateOrderStatus'),
     path('admincoupons/',views.adminCoupons,name ='adminCoupons'),
     path('adminLogout',views.adminLogout,name='adminLogout'),
    

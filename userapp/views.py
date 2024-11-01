@@ -2,15 +2,23 @@ from django.shortcuts import render,redirect,get_object_or_404
 from django.contrib.auth import get_user_model
 from django.contrib.auth import login,logout,authenticate
 from django.contrib.auth.hashers import make_password
-from adminapp.models import EuphoUser,OTP,Products,Variant,Address,Cart,CartItem
+from adminapp.models import EuphoUser,OTP,Products,Variant,Address,Cart,CartItem,Order,OrderItem
+from decimal import Decimal
 from django.contrib import messages
 from userapp.userotp import generateAndSendOtp
 from django.conf import settings
 from .signals import userOtpVerified
 from .forms import UserLoginForm,UserSignupForm,ChangeProfileForm,ChangePasswordForm,AddressForm
 from django.contrib.auth.decorators import login_required
+from django.utils import timezone
+from django.db import transaction
 from django.contrib.auth import update_session_auth_hash
 from django.urls import reverse
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+import json
+from django.template.loader import render_to_string
+from django.views.decorators.http import require_POST
 
 # Create your views here.
 
@@ -190,7 +198,7 @@ def changePassword(request):
     return render(request,'change_password.html')
 
 def userhome(request):
-    products = Products.objects.filter(category__is_active=True,brand__is_active=True).prefetch_related('variants')
+    products = Products.objects.filter(category__is_active=True,brand__is_active=True).prefetch_related('variants')[15:27]
     latest_product = Products.objects.filter(category__is_active=True,brand__is_active=True).order_by('-id')[:4]
     featured = Products.objects.filter(is_featured=True,category__is_active=True,brand__is_active=True)
     return render(request,'user_home.html',{'products':products,'latest_products':latest_product,'featured_products':featured})
@@ -376,14 +384,284 @@ def removeCartItems(request,product_id,variant_id):
         return redirect(cartDetails)
     
 
-def setPrimaryAddress(request,address_id):
-    if request.user.is_authenticated:
-        Address.objects.filter(user=request.user,is_primary=True).update(is_primary=False)
+
+# @csrf_exempt
+# def update_quantity(request):
+#     if request.user.is_authenticated:
+#         data = json.loads(request.body)
+#         product_id = data.get('product_id')
+#         variant_id = data.get('variant_id')
+#         quantity = data.get('quantity')
         
-        selected_address = get_object_or_404(Address,id=address_id,user=request.user)
-        selected_address.is_primary=True
-        selected_address.save()
-    return redirect(cartDetails)
+#         cart = Cart.objects.filter(user=request.user).first()
+#         cart_item = cart.items.filter(product_id=product_id, variant_id=variant_id).first()
+#         cart_item.quantity = quantity
+#         cart_item.save()
+        
+#         total_amount = sum(item.get_total_price() for item in cart.items.all())
+#         return JsonResponse({'success': True, 'new_quantity': cart_item.quantity, 'total_amount': total_amount})
+#     return JsonResponse({'success': False})
+
+@csrf_exempt
+def update_quantity(request):
+    if request.user.is_authenticated:
+        # Extract data from the request body
+        data = json.loads(request.body)
+        product_id = data.get('product_id')
+        variant_id = data.get('variant_id')
+        quantity = data.get('quantity')
+
+        # Retrieve the user's cart
+        cart = Cart.objects.filter(user=request.user).first()
+        
+        if cart:
+            # Get the cart item
+            cart_item = cart.items.filter(product_id=product_id, variant_id=variant_id).first()
+            
+            if cart_item:
+                # Enforce the max quantity rule on the server side
+                if quantity > 4:
+                    quantity = 4  # Cap it at 4 if somehow bypassed on the client side
+
+                # Update quantity and save
+                cart_item.quantity = quantity
+                cart_item.save()
+
+                # Calculate the new total for display
+                total_amount = sum(item.get_total_price() for item in cart.items.all())
+
+                return JsonResponse({
+                    'success': True,
+                    'new_quantity': cart_item.quantity,
+                    'total_amount': total_amount
+                })
+            else:
+                return JsonResponse({'success': False, 'error': 'Cart item does not exist.'})
+        else:
+            return JsonResponse({'success': False, 'error': 'Cart not found.'})
+
+    return JsonResponse({'success': False, 'error': 'Invalid request.'})
+
+@csrf_exempt
+def set_primary_address(request):
+    if request.user.is_authenticated:
+        data = json.loads(request.body)
+        address_id = data.get('address_id')
+        
+        Address.objects.filter(user=request.user).update(is_primary=False)
+        Address.objects.filter(id=address_id, user=request.user).update(is_primary=True)
+        
+        return JsonResponse({'success': True})
+    return JsonResponse({'success': False})
+
+
+
+
+# def setPrimaryAddress(request,address_id):
+#     if request.user.is_authenticated:
+#         Address.objects.filter(user=request.user,is_primary=True).update(is_primary=False)
+        
+#         selected_address = get_object_or_404(Address,id=address_id,user=request.user)
+#         selected_address.is_primary=True
+#         selected_address.save()
+#     return redirect(cartDetails)
+
+
+def user_checkout(request):
+   
+    user_addresses = Address.objects.filter(user=request.user)
+    
+    try:
+        cart = Cart.objects.get(user=request.user)
+        cart_items = CartItem.objects.filter(cart=cart)
+    except Cart.DoesNotExist:
+        cart = None
+        cart_items = []
+
+    
+    total_price = sum(item.get_total_price() for item in cart_items)
+    # total_discount = sum(item.get_discount_amount() for item in cart_items)
+    # shipping_fee = 0  # Assuming shipping is free for this example
+    # final_total_price = total_price - total_discount + shipping_fee
+    final_total_price = total_price
+
+    # Context to pass to the template
+    context = {
+        'user_addresses': user_addresses,
+        'cart_items': cart_items,
+        'cart': cart,
+        'total_price': total_price,
+        'final_total_price': final_total_price,
+    }
+    
+    # 'total_discount': total_discount,
+    #     'shipping_fee': shipping_fee,
+
+    return render(request, 'usercheckout.html', context)
+
+
+# @login_required
+# @transaction.atomic
+# def placeOrder(request):
+#     if request.method == 'POST':
+#         user = request.user
+#         selected_address_id = request.POST.get('address_id')
+#         payment_method = request.POST.get('payment_method')
+        
+#         cart = get_object_or_404(Cart, user=user)
+#         address = get_object_or_404(Address,id=selected_address_id,user=user)
+        
+#         if not cart.items.exists():
+#             return JsonResponse({"error":"Your cart is empty"},status=400)
+        
+#         total_amount = sum(item.variant.price * item.quantity for item in cart.items.all())
+        
+#         order = Order.objects.create(
+#             user=user,
+#             total_amount=total_amount,
+#             status="Pending",
+#             created_at=timezone.now()
+#         )
+        
+#         for cart_item in cart.items.all():
+#             OrderItem.objects.create(
+#                 order=order,
+#                 product=cart_item.product,
+#                 quantity=cart_item.quantity,
+#                 price=cart_item.variant.price
+#             )
+            
+#             cart_item.variant.stock -= cart_item.quantity
+#             cart_item.save()
+            
+#         cart.items.all().delete()
+#         return JsonResponse({"order_id": order.id}, status=200)
+#     return JsonResponse({"error": "Invalid request method"}, status=405)
+
+
+@login_required
+@transaction.atomic
+def placeOrder(request):
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)  # Parse JSON data
+            user = request.user
+            selected_address_id = data.get('address_id')
+            payment_method = data.get('payment_method')
+
+            cart = get_object_or_404(Cart, user=user)
+            address = get_object_or_404(Address, id=selected_address_id, user=user)
+
+            if not cart.items.exists():
+                return JsonResponse({"error": "Your cart is empty"}, status=400)
+
+            total_amount = sum(item.variant.price * item.quantity for item in cart.items.all())
+
+            order = Order.objects.create(
+                user=user,
+                total_amount=total_amount,
+                status="Pending",
+                payment_method=payment_method,
+                created_at=timezone.now()
+            )
+
+            for cart_item in cart.items.all():
+                OrderItem.objects.create(
+                    order=order,
+                    product=cart_item.product,
+                    quantity=cart_item.quantity,
+                    price=cart_item.variant.price
+                )
+
+                cart_item.variant.stock -= cart_item.quantity
+                cart_item.variant.save()
+
+            cart.items.all().delete()
+            return JsonResponse({"order_id": order.id}, status=200)
+
+        except Exception as e:
+            return JsonResponse({"error": f"Order placement failed: {str(e)}"}, status=500)
+
+    return JsonResponse({"error": "Invalid request method"}, status=405)
+
+
+
+
+@login_required
+def userYourOrder(request):
+    user = request.user
+    status_filter = request.GET.get('status', 'all')  # Get the status filter from the URL, default to 'all'
+
+    # Retrieve orders based on the status filter
+    if status_filter == 'all':
+        orders = Order.objects.filter(user=user)
+    else:
+        orders = Order.objects.filter(user=user, status=status_filter.capitalize())
+        
+    is_ajax_request = request.headers.get('x-requested-with') == 'XMLHttpRequest'
+    print("Is AJAX request:", is_ajax_request)
+    
+    if is_ajax_request:
+        orders_html = render_to_string('partials/orders_list.html', {'orders': orders})
+        return JsonResponse({'orders_html': orders_html})
+    
+    
+    # if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+    #     orders_html = render_to_string('partials/orders_list.html', {'orders': orders})
+    #     return JsonResponse({'orders_html': orders_html})
+
+    # Render the template with orders and the current filter
+    return render(request, 'user_your_order.html', {
+        'orders': orders,
+        'status_filter': status_filter
+    })
+
+
+
+
+@require_POST
+@csrf_exempt
+def cancel_order(request, order_id):
+    try:
+        # Parse JSON request body to get the cancellation reason
+        data = json.loads(request.body)
+        reason = data.get('reason', '')
+
+        order = Order.objects.get(id=order_id, user=request.user, status='Pending')
+        order.status = 'Cancelled'
+        order.cancellation_reason = reason  # Save cancellation reason
+        order.save()
+        return JsonResponse({'success': True})
+    except Order.DoesNotExist:
+        return JsonResponse({'success': False}, status=404)
+    
+
+
+@require_POST
+@csrf_exempt
+def return_order(request, order_id):
+    try:
+        # Parse JSON request body to get the cancellation reason
+        data = json.loads(request.body)
+        reason = data.get('reason', '')
+
+        order = Order.objects.get(id=order_id, user=request.user, status='Delivered')
+        order.status = 'Returned'
+        order.return_reason = reason  # Save cancellation reason
+        order.save()
+        return JsonResponse({'success': True})
+    except Order.DoesNotExist:
+        return JsonResponse({'success': False}, status=404)
+
+
+
+
+
+
+
+
+
+
 
 
 

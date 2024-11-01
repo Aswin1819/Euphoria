@@ -1,46 +1,150 @@
 {% extends 'adminbase.html' %}
 
-
 {% block title %}Admin Orders{% endblock %}
 
 {% block content %}
-        <!-- Main Content Area -->
-        <div class="col-md-10 ">
-            <div class="d-flex justify-content-between align-items-center mt-0 mb-4 dash-head py-2 rounded text-white px-2">
-                <h3>Orders</h3>
-                <form class="d-flex" role="search">
-                    <input class="form-control me-2" type="search" placeholder="Search For User" aria-label="Search">
-                    <button class="btn btn-outline-success" type="submit">Search</button>
-                </form>
-            </div>
+    <!-- Main Content Area -->
+    <div class="col-md-10 ">
+        <div class="d-flex justify-content-between align-items-center mt-0 mb-4 dash-head py-2 rounded text-white px-2">
+            <h3>Orders</h3>
+            <form class="d-flex" role="search">
+                <input class="form-control me-2" type="search" placeholder="Search For User" aria-label="Search">
+                <button class="btn btn-outline-success" type="submit">Search</button>
+            </form>
+        </div>
 
-            <!-- Customer Table -->
+        <!-- Order List Table -->
+        <div class="table-responsive">
             <table class="table">
                 <thead id="table-head" class="custom-table-header">
                     <tr>
                         <th scope="col">ID</th>
-                        <th scope="col">Name</th>
-                        <th scope="col">Payment</th>
-                        <th scope="col">Status</th>
+                        <th scope="col">Order Name</th>
+                        <th scope="col">Customer Name</th>
+                        <th scope="col">Order Date</th>
+                        <th scope="col">Quantity</th>
                         <th scope="col">Price</th>
-                        <th scope="col">Edit</th>
+                        <th scope="col">Status</th>
+                        <th scope="col">Action</th>
                     </tr>
                 </thead>
                 <tbody>
-                    <tr>
-                        <td>1</td>
-                        <td>Manu S</td>
-                        <td>Cash on Delivery</td>
-                        <td>Processing</td>
-                        <td>$400</td>
-                        <td>
-                            <button class="btn btn-primary btn-sm btn-del">edit</button>
-                            <button class="btn btn-danger btn-sm btn-blk">Delete</button>
-                        </td>
-                    </tr>
-                    <!-- Additional rows can be added here -->
+                    {% for order in orders %}
+                        <tr>
+                            <td>{{ order.id }}</td>
+                            <td>{{ order.order_items.first.product.name }}</td> <!-- First item’s product name as "Order Name" -->
+                            <td>{{ order.user.username }}</td>
+                            <td>{{ order.created_at|date:"Y-m-d" }}</td>
+                            <td>{{ order.order_items.count }}</td> <!-- Display count of items as quantity -->
+                            <td>${{ order.total_amount }}</td>
+                            <td>
+                                <span class="badge 
+                                    {% if order.status == 'Pending' %} bg-warning 
+                                    {% elif order.status == 'Delivered' %} bg-success 
+                                    {% elif order.status == 'Cancelled' %} bg-danger
+                                    {% else %} bg-secondary {% endif %}">
+                                    {{ order.status }}
+                                </span>
+                            </td>
+                            <td>
+                                <!-- View Icon to Trigger Modal -->
+                                <a href="#" class="text-decoration-none text-primary" data-bs-toggle="modal" data-bs-target="#viewOrderModal{{ order.id }}">
+                                    <i class="fa fa-eye"></i>
+                                </a>
+                                <a href="#" class="text-decoration-none" data-bs-toggle="modal" data-bs-target="#updateStatusModal{{ order.id }}">
+                                    <i class="fa fa-pencil"></i>
+                                </a>                                
+                            </td>
+                        </tr>
+                        <!-- Update Status Modal -->
+                        <div class="modal fade" id="updateStatusModal{{ order.id }}" tabindex="-1" aria-labelledby="updateStatusModalLabel{{ order.id }}" aria-hidden="true">
+                            <div class="modal-dialog">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title" id="updateStatusModalLabel{{ order.id }}">Update Order Status</h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                    </div>
+                                    <div class="modal-body">
+                                        <form id="updateStatusForm{{ order.id }}" method="POST" action="{% url 'UpdateOrderStatus' order.id %}">
+                                            {% csrf_token %}
+                                            <div class="mb-3">
+                                                <label for="orderStatus{{ order.id }}" class="form-label">Select Status</label>
+                                                <select class="form-select" id="orderStatus{{ order.id }}" name="status" required>
+                                                    <option value="Pending">Pending</option>
+                                                    <option value="Delivered">Delivered</option>
+                                                    <option value="Cancelled">Cancelled</option>
+                                                    <option value="Returned">Returned</option>
+                                                    <option value="Refunded">Refunded</option>
+                                                    <option value="Failed">Failed</option>
+                                                </select>
+                                            </div>
+                                            <button type="submit" class="btn btn-primary">Save changes</button>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                    {% endfor %}
                 </tbody>
             </table>
         </div>
- 
+
+        <!-- Modals for Viewing Order Details (Outside the table structure) -->
+        {% for order in orders %}
+            <div class="modal fade" id="viewOrderModal{{ order.id }}" tabindex="-1" aria-labelledby="viewOrderModalLabel{{ order.id }}" aria-hidden="true">
+                <div class="modal-dialog modal-lg">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="viewOrderModalLabel{{ order.id }}">Order Details - Order #{{ order.id }}</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <p><strong>Customer Name:</strong> {{ order.user.username }}</p>
+                            <p><strong>Payment Method:</strong> {{ order.payment_method }}</p>
+                            <p><strong>Address:</strong> 
+                                {% for address in order.user.addresses.all %}
+                                    {% if address.is_primary %}
+                                    {{ address.address }}, {{ address.city }}, {{ address.place }}, {{ address.pincode }}
+                                    {% endif %}
+                                {% endfor %}
+                            </p> <!-- Adjust as per actual field -->
+                            <p><strong>Status:</strong> {{ order.status }}</p>
+                            <p><strong>Order Date:</strong> {{ order.created_at|date:"Y-m-d" }}</p>
+                            <p><strong>Total Price:</strong> ${{ order.total_amount }}</p>
+                            <hr>
+
+                            <!-- Order Items Section -->
+                            <h6>Order Items:</h6>
+                            <table class="table table-bordered">
+                                <thead>
+                                    <tr>
+                                        <th>Product Image</th>
+                                        <th>Product Name</th>
+                                        <th>Quantity</th>
+                                        <th>Price</th>
+                                        <th>Total Price</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for item in order.order_items.all %}
+                                        <tr>
+                                            <td><img src="{{ item.product.product_images.first.images.url }}" alt="{{ item.product.name }}" width="50" height="50"></td>
+                                            <td>{{ item.product.name }}</td>
+                                            <td>{{ item.quantity }}</td>
+                                            <td>${{ item.price }}</td>
+                                            <td>${{ item.get_total_price }}</td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
 {% endblock %}

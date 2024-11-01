@@ -1,0 +1,164 @@
+{% for order in orders %}
+    <div class="card mb-3 shadow-sm">
+        <div class="row g-0">
+            {% for item in order.order_items.all %}
+                <div class="col-md-3">
+                    <img src="{{ item.product.product_images.first.images.url }}" class="img-fluid rounded-start" alt="{{ item.product.name }}">
+                </div>
+                <div class="col-md-9">
+                    <div class="card-body">
+                        <h5 class="card-title">{{ item.product.name }}</h5>
+                        <p class="card-text mb-1">Quantity: {{ item.quantity }}</p>
+                        <p class="card-text mb-1">Total Amount: ₹{{ item.get_total_price }}</p>
+                        <p class="card-text mb-1">Status: {{ order.status }}</p>
+                        <p class="card-text"><small class="text-muted">Order ID: {{ order.id }}</small></p>
+                        
+                        <!-- Progress Bar for Order Status -->
+                        <div class="progress mt-3 mb-2" style="height: 10px;">
+                            <div class="progress-bar 
+                                {% if order.status == 'Pending' %}bg-warning{% elif order.status == 'Delivered' %}bg-success{% else %}bg-danger{% endif %}"
+                                role="progressbar"
+                                style="width: 
+                                    {% if order.status == 'Pending' %}25{% elif order.status == 'Delivered' %}100{% elif order.status == 'Returned' or order.status == 'Cancelled' %}100{% endif %}%;"
+                                aria-valuenow="{% if order.status == 'Pending' %}25{% elif order.status == 'Delivered' %}100{% else %}50{% endif %}"
+                                aria-valuemin="0" aria-valuemax="100">
+                            </div>
+                        </div>
+
+                        <!-- Action Button for Cancel or Return -->
+                        {% if order.status == 'Pending' %}
+                            <button class="btn btn-danger" onclick="cancelOrder('{{ order.id }}')">Cancel Order</button>
+                        {% elif order.status == 'Delivered' %}
+                            <button class="btn btn-warning" onclick="returnOrder('{{ order.id }}')">Return Order</button>
+                        {% endif %}
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+{% empty %}
+    <p>No orders found.</p>
+{% endfor %}
+
+<!-- modal for entering cancellation reason -->
+<div class="modal fade" id="cancelOrderModal" tabindex="-1" aria-labelledby="cancelOrderModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="cancelOrderModalLabel">Cancel Order</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="cancelOrderForm">
+                    <div class="mb-3">
+                        <label for="cancellationReason" class="form-label">Reason for Cancellation</label>
+                        <textarea class="form-control" id="cancellationReason" rows="3" required></textarea>
+                    </div>
+                    <input type="hidden" id="orderIdToCancel">
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-danger" onclick="submitCancelOrder()">Submit</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal for Return Reason (Place this outside the loop, near the end of the template) -->
+<div class="modal fade" id="returnOrderModal" tabindex="-1" aria-labelledby="returnOrderModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="returnOrderModalLabel">Return Order</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="returnOrderForm">
+                    <div class="mb-3">
+                        <label for="returnReason" class="form-label">Reason for Return</label>
+                        <textarea class="form-control" id="returnReason" rows="3" required></textarea>
+                    </div>
+                    <input type="hidden" id="orderIdToReturn">
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-warning" onclick="submitReturnOrder()">Submit</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+<script>
+    function filterOrders(status) {
+        // Existing filterOrders function
+    }
+
+    function cancelOrder(orderId) {
+        // Store orderId in hidden input for use in the submit function
+        document.getElementById('orderIdToCancel').value = orderId;
+        // Show the cancellation modal
+        new bootstrap.Modal(document.getElementById('cancelOrderModal')).show();
+    }
+
+    function submitCancelOrder() {
+        const orderId = document.getElementById('orderIdToCancel').value;
+        const reason = document.getElementById('cancellationReason').value;
+
+        fetch(`/cancel_order/${orderId}/`, {
+            method: 'POST',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRFToken': '{{ csrf_token }}',
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ reason: reason })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert("Order cancelled successfully!");
+                location.reload();
+            } else {
+                alert("Error cancelling order.");
+            }
+        })
+        .catch(error => console.error("Error:", error));
+    }
+
+    function returnOrder(orderId) {
+        // Store orderId in hidden input for use in the submit function
+        document.getElementById('orderIdToReturn').value = orderId;
+        // Show the return modal
+        new bootstrap.Modal(document.getElementById('returnOrderModal')).show();
+    }
+    
+    function submitReturnOrder() {
+        const orderId = document.getElementById('orderIdToReturn').value;
+        const reason = document.getElementById('returnReason').value;
+    
+        fetch(`/return_order/${orderId}/`, {
+            method: 'POST',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRFToken': '{{ csrf_token }}',
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ reason: reason })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert("Order return initiated successfully!");
+                location.reload();
+            } else {
+                alert("Error initiating return.");
+            }
+        })
+        .catch(error => console.error("Error:", error));
+    }
+</script>
+

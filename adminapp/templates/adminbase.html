@@ -41,7 +41,7 @@
                         <a class="nav-link {% if request.resolver_match.url_name == 'adminCategory'%} active {% endif %}" href="{% url 'adminCategory' %}">Category</a>
                         <a class="nav-link {% if request.resolver_match.url_name == 'adminBrands'%} active {% endif %}" href="{% url 'adminBrands' %}">Brands</a>
                         <a class="nav-link {% if request.resolver_match.url_name == 'adminCustomers' %}active{% endif %}" href="{% url 'adminCustomers' %}">Customers</a>
-                        <a class="nav-link" href="#">Orders</a>
+                        <a class="nav-link {% if request.resolver_match.url_name == 'adminOrders' %}active{% endif %}" href="{% url 'adminOrders' %}">Orders</a>
                         <a class="nav-link {% if request.resolver_match.url_name == 'adminCoupons'%} active {% endif %}" href="{% url 'adminCoupons' %}">Coupons</a>
                         <a class="nav-link" href="#">Banners</a>
                     </nav>

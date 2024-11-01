@@ -32,7 +32,7 @@
                             <strong>{{ address.user.username }}</strong>, {{ address.pincode }}
                             <p>{{ address.address }}, {{ address.place }}, {{ address.city }}</p>
                         </div>
-                        <a href="{% url 'setPrimaryAddress' address.id %}" class="btn btn-outline-primary btn-sm">Deliver Here</a>
+                        <a  class="btn btn-outline-primary btn-sm" onclick="setPrimaryAddress({{ address.id }})">Deliver Here</a>
                     </div>
                 </div>
             {% empty %}
@@ -52,23 +52,18 @@
                     <div class="ms-3 flex-grow-1">
                         <h6>{{ item.product.name }}</h6>
                         <p class="text-muted mb-0">{{ item.product.description|truncatewords:10 }}</p>
-                        {% comment %} <p class="mb-1">Seller: {{ item.seller_name }}</p>
-                        <p class="text-success">Delivery by {{ item.delivery_date }} | Free</p> {% endcomment %}
                         <p class="mb-1">Brand: {{ item.product.brand.name }}</p>
                         <p class="text-success">In Stock: {{ item.variant.stock }}</p>
                         <div class="d-flex align-items-center">
-                            <button class="btn btn-outline-secondary btn-sm">-</button>
-                            <input type="text" class="form-control text-center mx-2" value="{{ item.quantity }}" style="width: 50px;">
-                            <button class="btn btn-outline-secondary btn-sm">+</button>
-                        </div>
+                            <button class="btn btn-outline-secondary btn-sm btn-decrement" data-product-id="{{ item.product.id }}" data-variant-id="{{ item.variant.id }}">-</button>
+                            <input type="text" class="form-control text-center mx-2 quantity-input" value="{{ item.quantity }}" style="width: 50px;" readonly>
+                            <button class="btn btn-outline-secondary btn-sm btn-increment" data-product-id="{{ item.product.id }}" data-variant-id="{{ item.variant.id }}">+</button>
+                        </div>                        
                     </div>
                     <div class="text-end">
                         <p class="mb-0">₹{{ item.get_total_price }}</p>
-                        {% comment %} <h5>₹{{ item.product.variants.first.price }}</h5> {% endcomment %}
                         <p class="text-success">{{ item.discount_percentage }}% Off</p>
-                        <p class="text-success">1 coupon & 1 offer applied</p>
                         <div>
-                            <!-- <button class="btn btn-dark p-0">Save for later</button> | -->
                             <a href="{% url 'removeCartItems' item.product.id item.variant.id %}" class="btn btn-link btn-lg p-0">Remove</a>
                         </div>
                     </div>
@@ -85,7 +80,7 @@
                 <h5 class="card-title">PRICE DETAILS</h5>
                 <div class="d-flex justify-content-between">
                     <p>Price ({{ cart_items|length }} items)</p>
-                    <p>₹{{ cart.get_total_price }}</p>
+                    <p id="overall-amount">₹{{ cart.get_total_price }}</p>
                 </div>
                 <div class="d-flex justify-content-between">
                     <p>Discount</p>
@@ -106,12 +101,104 @@
                 <hr>
                 <div class="d-flex justify-content-between fw-bold">
                     <p>Total Amount</p>
-                    <p>₹{{ cart.get_total_price }}</p>
+                    <p id="total-amount">₹{{ cart.get_total_price }}</p>
                 </div>
                 <p class="text-success mt-2">You will save ₹{{ total_savings }} on this order</p>
-                <button class="btn btn-warning btn-lg w-100">Place Order</button>
+                <a href="{% url 'user_checkout' %}" class="btn btn-warning btn-lg w-100">Checkout <i class="fa-solid fa-arrow-right"></i></a>
             </div>
         </div>
     </div>
 </div>
+
+<script>
+    // JavaScript to handle AJAX-based quantity update
+    function updateQuantity(productId, variantId, quantity) {
+        fetch("{% url 'update_quantity' %}", {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            body: JSON.stringify({ product_id: productId, variant_id: variantId, quantity: quantity })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                document.querySelector(`[data-product-id="${productId}"][data-variant-id="${variantId}"]`).nextElementSibling.value = data.new_quantity; 
+                document.getElementById("total-amount").innerText = `₹${data.total_amount}`;
+                document.getElementById("overall-amount").innerText = `₹${data.total_amount}`;
+            } else {
+                console.error(data.error);
+            }
+        });
+    }
+    
+    // Handle increment and decrement buttons
+    document.querySelectorAll('.btn-increment').forEach(button => {
+        button.addEventListener('click', function () {
+            const productId = this.dataset.productId; // Use itemId here
+            const variantId = this.dataset.variantId;
+            const quantity = parseInt(this.previousElementSibling.value) + 1;
+    
+            // Check if quantityInput is found
+            if (!quantity) {
+                console.error(`Quantity input for item ID not found.`);
+                return;
+            }
+    
+            
+            const newQuantity = quantity;
+    
+            if (newQuantity > 4) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Quantity Limit Exceeded',
+                    text: 'You can only purchase a maximum of 4 units of this product.',
+                    confirmButtonText: 'Okay'
+                });
+            } else {
+                updateQuantity(productId, variantId, newQuantity);
+            }
+        });
+    });
+    
+    document.querySelectorAll('.btn-decrement').forEach(button => {
+        button.addEventListener('click', function () {
+            const productId = this.dataset.productId; // Use itemId here
+            const variantId = this.dataset.variantId;
+            let quantity = parseInt(this.nextElementSibling.value) - 1;
+    
+            // Check if quantityInput is found
+            if (!quantity) {
+                console.error(`Quantity input for item ID not found.`);
+                return;
+            }
+    
+            let newQuantity = quantity;
+    
+            if (newQuantity > 0) {
+                updateQuantity(productId, variantId, newQuantity);
+            }
+        });
+    });
+
+    // Function to set primary address via AJAX
+    function setPrimaryAddress(addressId) {
+        fetch("{% url 'set_primary_address' %}", {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            body: JSON.stringify({ address_id: addressId })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            }
+        });
+    }
+</script>
+
 {% endblock %}
