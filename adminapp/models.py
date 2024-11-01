@@ -121,13 +121,12 @@ class Images(models.Model):
 class Products(models.Model):
     name = models.CharField( max_length=255)
     description = models.TextField()
-    # price = models.DecimalField(max_digits=10, decimal_places=2)
-    # stock = models.PositiveIntegerField()
     brand = models.ForeignKey(Brand, on_delete=models.CASCADE)
-    # weight = models.IntegerField(null=True)
     category = models.ForeignKey(Category, on_delete=models.CASCADE)
     is_active = models.BooleanField(default=True)
     is_featured = models.BooleanField(default=False)
+    popularity = models.PositiveIntegerField(default=0)
+    created_at = models.DateTimeField(default=timezone.now)
     
     
     def __str__(self):

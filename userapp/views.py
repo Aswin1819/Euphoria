@@ -19,6 +19,7 @@ from django.views.decorators.csrf import csrf_exempt
 import json
 from django.template.loader import render_to_string
 from django.views.decorators.http import require_POST
+from django.core.paginator import Paginator
 
 # Create your views here.
 
@@ -198,17 +199,57 @@ def changePassword(request):
     return render(request,'change_password.html')
 
 def userhome(request):
-    products = Products.objects.filter(category__is_active=True,brand__is_active=True).prefetch_related('variants')[15:27]
+    products = Products.objects.filter(category__is_active=True,brand__is_active=True).prefetch_related('variants').order_by('-popularity')
     latest_product = Products.objects.filter(category__is_active=True,brand__is_active=True).order_by('-id')[:4]
     featured = Products.objects.filter(is_featured=True,category__is_active=True,brand__is_active=True)
     return render(request,'user_home.html',{'products':products,'latest_products':latest_product,'featured_products':featured})
 
+@login_required(login_url='userlogin')
 def shopNow(request):
-    products = Products.objects.filter(category__is_active=True,brand__is_active=True).prefetch_related('variants')
-    return render(request,'shopnow.html',{'products':products})
+    sort_option = request.GET.get('sort', 'popularity')
+    products = Products.objects.filter(category__is_active=True, brand__is_active=True).prefetch_related('variants')
+    
+    # Sort options
+    if sort_option == 'price_low_to_high':
+        products = products.order_by('variants__price')
+    elif sort_option == 'price_high_to_low':
+        products = products.order_by('-variants__price')
+    elif sort_option == 'average_rating':
+        products = products.order_by('-average_rating')
+    elif sort_option == 'featured':
+        products = products.filter(is_featured=True)
+    elif sort_option == 'new_arrivals':
+        products = products.order_by('-created_at')
+    elif sort_option == 'a_to_z':
+        products = products.order_by('name')
+    elif sort_option == 'z_to_a':
+        products = products.order_by('-name')
+    else:
+        products = products.order_by('-popularity')
+
+    # Pagination
+    paginator = Paginator(products, 20)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
+
+    is_ajax_request = request.headers.get('x-requested-with') == 'XMLHttpRequest'
+    print("Is AJAX request:", is_ajax_request)
+    
+    if is_ajax_request:
+        html = render_to_string('partials/product_list.html', {'page_obj': page_obj})
+        return JsonResponse({'html': html})
+
+
+    return render(request, 'shopnow.html', {
+        'page_obj': page_obj,
+        'sort_option': sort_option,
+    })
 
 def productView(request,id):
     product = get_object_or_404(Products, id=id)
+    product.popularity+=1
+    product.save()
     variants = Variant.objects.filter(product=product)
     default_variant = variants.first() if variants else None
     related_products = Products.objects.filter(brand=product.brand,category__is_active=True,brand__is_active=True).exclude(id=product.id)
@@ -247,7 +288,7 @@ def productView(request,id):
 #         form = ChangePasswordForm(instance=user)
 #     return render(request,'userprofile.html',{'form':form})       
 
-@login_required
+@login_required(login_url='userlogin')
 def userProfileInformation(request):
     user = request.user
 
@@ -284,7 +325,7 @@ def userProfileInformation(request):
     })
     
         
-
+@login_required(login_url='userlogin')
 def userManageAddress(request):
     
     user_address = Address.objects.filter(user=request.user)
@@ -309,7 +350,7 @@ def userManageAddress(request):
 
 
 
-@login_required
+@login_required(login_url='userlogin')
 def editAddress(request, address_id):
     # Get the address object for the given ID and user
     address = get_object_or_404(Address, id=address_id, user=request.user)
@@ -328,14 +369,14 @@ def editAddress(request, address_id):
     }
     return render(request, 'usereditaddress.html', context)
 
-@login_required
+@login_required(login_url='userlogin')
 def deleteAddress(request, address_id):
     address = get_object_or_404(Address, id=address_id, user=request.user)
     address.delete()
     return redirect(reverse('userManageAddress'))
 
 
-
+@login_required(login_url='userlogin')
 def addToCart(request):
     if request.method=="POST":
         product_id = request.POST.get('product_id')       
@@ -343,6 +384,8 @@ def addToCart(request):
         quantity = request.POST.get('quantity')
    
         product = get_object_or_404(Products,id=product_id)
+        product.popularity+=1
+        product.save()
         variant = get_object_or_404(Variant,id=variant_id)
         
         if request.user.is_authenticated:
@@ -357,7 +400,7 @@ def addToCart(request):
         return redirect(cartDetails)
     return redirect(productView)
 
-
+@login_required(login_url='userlogin')
 def cartDetails(request):
     if request.user.is_authenticated:
         cart = Cart.objects.filter(user=request.user).first() 
@@ -371,7 +414,7 @@ def cartDetails(request):
         return render(request,'usercart.html',{'cart':cart,'cart_items':cart_items,'user_addresses':user_addresses})
     return render(request, 'usercart.html', {'cart': None, 'cart_items': [], 'user_addresses': []})
 
-
+@login_required(login_url='userlogin')
 def removeCartItems(request,product_id,variant_id):
     if request.user.is_authenticated:
         cart = Cart.objects.filter(user=request.user).first()
@@ -402,6 +445,7 @@ def removeCartItems(request,product_id,variant_id):
 #         return JsonResponse({'success': True, 'new_quantity': cart_item.quantity, 'total_amount': total_amount})
 #     return JsonResponse({'success': False})
 
+@login_required(login_url='userlogin')
 @csrf_exempt
 def update_quantity(request):
     if request.user.is_authenticated:
@@ -442,6 +486,7 @@ def update_quantity(request):
 
     return JsonResponse({'success': False, 'error': 'Invalid request.'})
 
+@login_required(login_url='userlogin')
 @csrf_exempt
 def set_primary_address(request):
     if request.user.is_authenticated:
@@ -466,7 +511,7 @@ def set_primary_address(request):
 #         selected_address.save()
 #     return redirect(cartDetails)
 
-
+@login_required(login_url='userlogin')
 def user_checkout(request):
    
     user_addresses = Address.objects.filter(user=request.user)
@@ -539,7 +584,7 @@ def user_checkout(request):
 #     return JsonResponse({"error": "Invalid request method"}, status=405)
 
 
-@login_required
+@login_required(login_url='userlogin')
 @transaction.atomic
 def placeOrder(request):
     if request.method == 'POST':
@@ -587,7 +632,7 @@ def placeOrder(request):
 
 
 
-@login_required
+@login_required(login_url='userlogin')
 def userYourOrder(request):
     user = request.user
     status_filter = request.GET.get('status', 'all')  # Get the status filter from the URL, default to 'all'
@@ -618,7 +663,7 @@ def userYourOrder(request):
 
 
 
-
+@login_required(login_url='userlogin')
 @require_POST
 @csrf_exempt
 def cancel_order(request, order_id):
@@ -636,7 +681,7 @@ def cancel_order(request, order_id):
         return JsonResponse({'success': False}, status=404)
     
 
-
+@login_required(login_url='userlogin')
 @require_POST
 @csrf_exempt
 def return_order(request, order_id):
@@ -667,7 +712,7 @@ def return_order(request, order_id):
 
 
 
-
+@login_required(login_url='userlogin')
 def userlogout(request):
     logout(request)
     print("logout succeessfully")

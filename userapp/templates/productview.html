@@ -56,7 +56,7 @@
             <p class="product-description">{{ product.description }}</p>
     
             <!-- Variant Weight Selection -->
-            <div class="variant-selection">
+            <div class="variant-selection my-4">
                 <label for="variant-weight" class="form-label">Select Weight:</label>
                 <select id="variant-weight" class="form-control" onchange="updateVariant()" name="variant_id">
                     {% for variant in variants %}
@@ -84,12 +84,16 @@
                 <input type="hidden" name="variant_id" id="variant_id" value="{{ default_variant.id }}">
                 
                 <!-- Quantity Input -->
-                <div class="my-4">
+                <!-- <div class="my-4">
                     <label for="quantity" class="form-label">Quantity</label>
                     <input type="number" name="quantity" id="quantity" value="1" min="1" class="form-control">
-                </div>
-                
+                </div> -->
+                {% if default_variant.stock == 0 %}
+                    <button type="submit" class="btn btn-primary btn-lg cursor-none" disabled>Add to Cart</button>
+                {% else %}
                 <button type="submit" class="btn btn-primary btn-lg">Add to Cart</button>
+                {% endif %}
+
                 <button class="btn btn-success btn-lg ms-3">Buy Now</button>
                 <button class="btn btn-warning btn-lg ms-3">Add to Wishlist</button>
             </form>

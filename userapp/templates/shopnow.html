@@ -1,5 +1,4 @@
 {% extends 'userbase.html' %}
-
 {% load custom_filters %}
 
 {% block content %}
@@ -9,33 +8,61 @@
         <img src="/media/product_Images/banner2.jpg" alt="Banner" class="img-fluid banner-img">
     </div>
 
-    <!-- Best Sellers Section -->
-    <div class="text-center">
-        <h1 class="my-5">Shop Now</h1>
+    <!-- Filter Section -->
+    <div class="d-flex justify-content-between align-items-center mt-4">
+        <div class="form-inline">
+            <label for="sortSelect" class="me-2">Sort by:</label>
+            <select id="sortSelect" class="form-select" onchange="filterProducts()">
+                <option value="popularity">Popularity</option>
+                <option value="price_low_to_high">Price: Low to High</option>
+                <option value="price_high_to_low">Price: High to Low</option>
+                <option value="average_rating">Average Ratings</option>
+                <option value="featured">Featured</option>
+                <option value="new_arrivals">New Arrivals</option>
+                <option value="a_to_z">A - Z</option>
+                <option value="z_to_a">Z - A</option>
+            </select>
+        </div>
     </div>
 
-    <!-- Products Section without Carousel -->
-    <div class="row">
-        {% for product in products %}
-        {% if product.is_active %}
-        <div class="col-sm-6 col-md-4 col-lg-3 mb-4">
-            <a href="{% url 'productView' product.id %}" class="productatag">
-                <div class="card h-100 product-card" style="width: 100%; max-width: 300px;">
-                    {% if product.product_images.all %}
-                        <img src="{{ product.product_images.first.images.url }}" class="card-img-top img-fluid" alt="{{ product.product_images.first.alt_text }}" style="height: 200px; object-fit: cover;">
-                    {% else %}
-                        <img src="/media/product_Images/default.jpg" class="card-img-top img-fluid" alt="Default Image" style="height: 200px; object-fit: cover;">
-                    {% endif %}
-                    <div class="card-body d-flex flex-column justify-content-between">
-                        <h5 class="card-title text-muted">{{ product.brand }}</h5>
-                        <h6 class="card-title">{{ product.name }}</h6>
-                        <p class="card-text">Price: <strong>&#8377; {{ product.variants.first.price }}</strong></p>
-                    </div>
-                </div>
-            </a>
-        </div>
-        {% endif %}
-        {% endfor %}
+    <!-- Product List -->
+    <div id="product-list">
+        {% include 'partials/product_list.html' %}
     </div>
+
+    {% include 'partials/pagination.html' %}
 </div>
+
+<script>
+    function filterProducts() {
+        const sortOption = document.getElementById('sortSelect').value;
+        loadPage(1, sortOption);
+    }
+
+    function loadPage(pageNumber, sortOption = null) {
+        const sort = sortOption || document.getElementById('sortSelect').value;
+        const url = new URL(window.location.href);
+        url.searchParams.set('page', pageNumber);
+        url.searchParams.set('sort', sort);
+
+        fetch(url, {
+            headers: {
+                "X-Requested-With": "XMLHttpRequest"
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById('product-list').innerHTML = data.html;
+        })
+        .catch(error => console.error('Error:', error));
+    }
+
+    // On page load, set the selected option
+    document.addEventListener("DOMContentLoaded", function() {
+        const sortOption = "{{ sort_option }}";
+        document.getElementById('sortSelect').value = sortOption;
+    });
+</script>
+
+
 {% endblock %}

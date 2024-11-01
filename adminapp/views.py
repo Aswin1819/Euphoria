@@ -8,6 +8,7 @@ from django.forms import modelformset_factory
 #imagecropping modules
 from django.core.files.base import ContentFile
 import base64
+import re
 # Create your views here.
 
                                 #########           #########
@@ -110,6 +111,16 @@ def addCategory(request):
     if request.user.is_superuser:
         if request.method == "POST":
             category = request.POST.get('category')
+            if Category.objects.filter(name__iexact=category).exists():
+                messages.warning(request,"Category name already exists")
+                return redirect(adminCategory)
+            if not category:
+                messages.warning(request,"name cant be empty")
+                return redirect(adminCategory)
+            if not re.match("^[A-Za-z ]*$", category) or not category.strip():
+                messages.warning(request, "Name must contain only letters and cannot be empty.")
+                return redirect(adminCategory)
+            
             new_category = Category.objects.create(name=category)
             new_category.save()
             print("category added successfully")
@@ -130,6 +141,15 @@ def editCategory(request,id):
     if request.user.is_superuser:
         if request.method=='POST':
             new_name = request.POST.get('category')
+            if Category.objects.filter(name__iexact=new_name).exclude(id=id).exists():
+                messages.warning(request,"Category name already exists")
+                return redirect(adminCategory)
+            if not new_name:
+                messages.warning(request,"name cant be empty")
+                return redirect(adminCategory)
+            if not re.match("^[A-Za-z ]*$", new_name) or not new_name.strip():
+                messages.warning(request, "Name must contain only letters and cannot be empty.")
+                return redirect(adminCategory)
             
             item = Category.objects.get(id=id)
             item.name = new_name
@@ -360,6 +380,16 @@ def addBrands(request):
     if request.user.is_superuser:
         if request.method=='POST':
             brand = request.POST.get('brand')
+            if not brand:
+                messages.warning(request,"Name cant be empty")
+                return redirect(adminBrands)
+            if Brand.objects.filter(name__iexact=brand).exists():
+                messages.warning(request,"Brand name already exists")
+                return redirect(adminBrands)
+            if not re.match("^[A-Za-z ]*$", brand) or not brand.strip():
+                messages.warning(request, "Name must contain only letters and cannot be empty.")
+                return redirect(adminCategory)
+            
             new_brand=Brand.objects.create(name=brand)
             new_brand.save()
             return redirect(adminBrands)
@@ -379,6 +409,16 @@ def editBrands(request,id):
     if request.user.is_superuser:
         if request.method=='POST':
             new_name = request.POST.get('brand')
+            if not new_name:
+                messages.warning(request,"Name cant be empty")
+                return redirect(adminBrands)
+            if Brand.objects.filter(name__iexact=new_name).exclude(id=id).exists():
+                messages.warning(request,"Brand name already exists")
+                return redirect(adminBrands)
+            if not re.match("^[A-Za-z ]*$", new_name) or not new_name.strip():
+                messages.warning(request, "Name must contain only letters and cannot be empty.")
+                return redirect(adminCategory)
+            
             brand = Brand.objects.get(id=id)
             brand.name=new_name
             brand.save()
@@ -417,7 +457,7 @@ def UpdateOrderStatus(request,order_id):
         order.status = new_status
         order.save()
         return redirect(adminOrders)
-    
+
 
 
 def adminCoupons(request):

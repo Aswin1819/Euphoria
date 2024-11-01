@@ -128,3 +128,6 @@
 
 /* profile name */
 
+.stock-out{
+    cursor: not-allowed;
+}
