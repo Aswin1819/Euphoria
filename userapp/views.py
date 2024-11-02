@@ -2,7 +2,7 @@ from django.shortcuts import render,redirect,get_object_or_404
 from django.contrib.auth import get_user_model
 from django.contrib.auth import login,logout,authenticate
 from django.contrib.auth.hashers import make_password
-from adminapp.models import EuphoUser,OTP,Products,Variant,Address,Cart,CartItem,Order,OrderItem
+from adminapp.models import EuphoUser,OTP,Products,Variant,Address,Cart,CartItem,Order,OrderItem,Category
 from decimal import Decimal
 from django.contrib import messages
 from userapp.userotp import generateAndSendOtp
@@ -199,10 +199,14 @@ def changePassword(request):
     return render(request,'change_password.html')
 
 def userhome(request):
+    # categories = Category.objects.filter(is_active=True)
     products = Products.objects.filter(category__is_active=True,brand__is_active=True).prefetch_related('variants').order_by('-popularity')
     latest_product = Products.objects.filter(category__is_active=True,brand__is_active=True).order_by('-id')[:4]
     featured = Products.objects.filter(is_featured=True,category__is_active=True,brand__is_active=True)
-    return render(request,'user_home.html',{'products':products,'latest_products':latest_product,'featured_products':featured})
+    return render(request,'user_home.html',{
+        'products':products,
+        'latest_products':latest_product,
+        'featured_products':featured})
 
 @login_required(login_url='userlogin')
 def shopNow(request):
@@ -245,6 +249,19 @@ def shopNow(request):
         'page_obj': page_obj,
         'sort_option': sort_option,
     })
+
+
+def categoryProducts(request,category_id):
+    category = get_object_or_404(Category,id=category_id)
+    products = Products.objects.filter(category=category,is_active=True)
+    return render(request,'categoryproductsview.html',{
+        'category':category,
+        'products':products})
+
+
+
+
+
 
 def productView(request,id):
     product = get_object_or_404(Products, id=id)
@@ -698,6 +715,13 @@ def return_order(request, order_id):
     except Order.DoesNotExist:
         return JsonResponse({'success': False}, status=404)
 
+
+@login_required(login_url='userlogin')
+def search_products(request):
+    query = request.GET.get('q', '')
+    results = Products.objects.filter(name__icontains=query) | Products.objects.filter(brand__name__icontains=query)
+    html = render_to_string('partials/search_results.html', {'results': results})
+    return JsonResponse({'html': html})
 
 
 

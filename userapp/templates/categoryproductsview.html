@@ -1,0 +1,35 @@
+{% extends 'userbase.html' %}
+
+{% block content %}
+
+<div class="container-fluid">
+    <div class="banner-container mb-4">
+        <img src="/media/product_Images/banner2.jpg" alt="Banner" class="img-fluid banner-img">
+    </div>
+    <div class="text-center display-5 mb-5">{{ category.name }}</div>
+    <div class="row">
+        {% for product in products %}
+            <div class="col-sm-6 col-md-4 col-lg-3 mb-4">
+                <a href="{% url 'productView' product.id %}" class="productatag">
+                    <div class="card h-100 product-card" style="width: 100%; max-width: 300px;">
+                        {% if product.product_images.all %}
+                            <img src="{{ product.product_images.first.images.url }}" class="card-img-top img-fluid" alt="{{ product.product_images.first.alt_text }}" style="height: 200px; object-fit: cover;">
+                        {% else %}
+                            <img src="/media/product_Images/default.jpg" class="card-img-top img-fluid" alt="Default Image" style="height: 200px; object-fit: cover;">
+                        {% endif %}
+                        <div class="card-body d-flex flex-column justify-content-between">
+                            <h5 class="card-title text-muted">{{ product.brand }}</h5>
+                            <h6 class="card-title">{{ product.name }}</h6>
+                            <p class="card-text">Price: <strong>&#8377; {{ product.variants.first.price }}</strong></p>
+                        </div>
+                    </div>
+                </a>
+            </div>
+        {% empty %}
+            <p class="text-center">No products found in this category.</p>
+        {% endfor %}
+    </div>
+</div>
+
+
+{% endblock %}

@@ -5,10 +5,12 @@ from django.contrib.auth import get_user_model
 from .models import EuphoUser,Category,Products,Images,Brand,Variant,Order,OrderItem
 from .forms import ProductForm, VariantForm
 from django.forms import modelformset_factory
+from django.db.models import Q
 #imagecropping modules
 from django.core.files.base import ContentFile
 import base64
 import re
+
 # Create your views here.
 
                                 #########           #########
@@ -458,6 +460,22 @@ def UpdateOrderStatus(request,order_id):
         order.save()
         return redirect(adminOrders)
 
+
+def orderSearch(request):
+    if request.user.is_superuser:
+        if request.method == 'POST':
+            search = request.POST.get('search')
+            if search:
+                
+                result = Order.objects.filter(
+                    Q(order_items__product__name__icontains=search) | 
+                    Q(user__username__icontains=search)
+                ).distinct()  
+
+                return render(request, 'adminorders.html', {'orders': result, 'search_query': search})
+    return render(request, 'adminorders.html', {'orders': []})
+            
+                
 
 
 def adminCoupons(request):
