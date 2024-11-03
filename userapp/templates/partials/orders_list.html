@@ -1,44 +1,44 @@
-{% for order in orders %}
+{% for item in orders %}
     <div class="card mb-3 shadow-sm">
         <div class="row g-0">
-            {% for item in order.order_items.all %}
-                <div class="col-md-3">
-                    <img src="{{ item.product.product_images.first.images.url }}" class="img-fluid rounded-start" alt="{{ item.product.name }}">
-                </div>
-                <div class="col-md-9">
-                    <div class="card-body">
-                        <h5 class="card-title">{{ item.product.name }}</h5>
-                        <p class="card-text mb-1">Quantity: {{ item.quantity }}</p>
-                        <p class="card-text mb-1">Total Amount: ₹{{ item.get_total_price }}</p>
-                        <p class="card-text mb-1">Status: {{ order.status }}</p>
-                        <p class="card-text"><small class="text-muted">Order ID: {{ order.id }}</small></p>
-                        
-                        <!-- Progress Bar for Order Status -->
-                        <div class="progress mt-3 mb-2" style="height: 10px;">
-                            <div class="progress-bar 
-                                {% if order.status == 'Pending' %}bg-warning{% elif order.status == 'Delivered' %}bg-success{% else %}bg-danger{% endif %}"
-                                role="progressbar"
-                                style="width: 
-                                    {% if order.status == 'Pending' %}25{% elif order.status == 'Delivered' %}100{% elif order.status == 'Returned' or order.status == 'Cancelled' %}100{% endif %}%;"
-                                aria-valuenow="{% if order.status == 'Pending' %}25{% elif order.status == 'Delivered' %}100{% else %}50{% endif %}"
-                                aria-valuemin="0" aria-valuemax="100">
-                            </div>
-                        </div>
+            <div class="col-md-3">
+                <img src="{{ item.product.product_images.first.images.url }}" class="img-fluid rounded-start" alt="{{ item.product.name }}">
+            </div>
+            <div class="col-md-9">
+                <div class="card-body">
+                    <h5 class="card-title">{{ item.product.name }}</h5>
+                    <p class="card-text mb-1">Quantity: {{ item.quantity }}</p>
+                    <p class="card-text mb-1">Total Amount: ₹{{ item.get_total_price }}</p>
+                    <p class="card-text mb-1">Status: {{ item.status }}</p>  <!-- Changed to item.status -->
+                    <p class="card-text"><small class="text-muted">Order ID: {{ item.order.id }}</small></p>
 
-                        <!-- Action Button for Cancel or Return -->
-                        {% if order.status == 'Pending' %}
-                            <button class="btn btn-danger" onclick="cancelOrder('{{ order.id }}')">Cancel Order</button>
-                        {% elif order.status == 'Delivered' %}
-                            <button class="btn btn-warning" onclick="returnOrder('{{ order.id }}')">Return Order</button>
-                        {% endif %}
+                    <!-- Progress Bar for Order Item Status -->
+                    <div class="progress mt-3 mb-2" style="height: 10px;">
+                        <div class="progress-bar 
+                            {% if item.status == 'Pending' %}bg-warning{% elif item.status == 'Delivered' %}bg-success{% else %}bg-danger{% endif %}"
+                            role="progressbar"
+                            style="width: 
+                                {% if item.status == 'Pending' %}25{% elif item.status == 'Delivered' %}100{% elif item.status == 'Returned' or item.status == 'Cancelled' %}100{% endif %}%;"
+                            aria-valuenow="{% if item.status == 'Pending' %}25{% elif item.status == 'Delivered' %}100{% else %}50{% endif %}"
+                            aria-valuemin="0" aria-valuemax="100">
+                        </div>
                     </div>
+
+                    <!-- Action Button for Cancel or Return based on OrderItem status -->
+                    {% if item.status == 'Pending' %}
+                        <button class="btn btn-danger" onclick="cancelOrder('{{ item.id }}')">Cancel Order</button>
+                    {% elif item.status == 'Delivered' %}
+                        <button class="btn btn-warning" onclick="returnOrder('{{ item.id }}')">Return Order</button>
+                    {% endif %}
                 </div>
-            {% endfor %}
+            </div>
         </div>
     </div>
 {% empty %}
     <p>No orders found.</p>
 {% endfor %}
+
+
 
 <!-- modal for entering cancellation reason -->
 <div class="modal fade" id="cancelOrderModal" tabindex="-1" aria-labelledby="cancelOrderModalLabel" aria-hidden="true">
@@ -93,22 +93,20 @@
 
 
 <script>
-    function filterOrders(status) {
-        // Existing filterOrders function
-    }
+    
 
-    function cancelOrder(orderId) {
-        // Store orderId in hidden input for use in the submit function
-        document.getElementById('orderIdToCancel').value = orderId;
+    function cancelOrder(orderItemId) {
+        // Store orderItemId in hidden input for use in the submit function
+        document.getElementById('orderIdToCancel').value = orderItemId;
         // Show the cancellation modal
         new bootstrap.Modal(document.getElementById('cancelOrderModal')).show();
     }
-
+    
     function submitCancelOrder() {
-        const orderId = document.getElementById('orderIdToCancel').value;
+        const orderItemId = document.getElementById('orderIdToCancel').value;
         const reason = document.getElementById('cancellationReason').value;
-
-        fetch(`/cancel_order/${orderId}/`, {
+    
+        fetch(`/cancel_order_item/${orderItemId}/`, {  // Changed to order item endpoint
             method: 'POST',
             headers: {
                 'X-Requested-With': 'XMLHttpRequest',
@@ -120,27 +118,27 @@
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                alert("Order cancelled successfully!");
+                alert("Order item cancelled successfully!");
                 location.reload();
             } else {
-                alert("Error cancelling order.");
+                alert("Error cancelling order item.");
             }
         })
         .catch(error => console.error("Error:", error));
     }
-
-    function returnOrder(orderId) {
-        // Store orderId in hidden input for use in the submit function
-        document.getElementById('orderIdToReturn').value = orderId;
+    
+    function returnOrder(orderItemId) {
+        // Store orderItemId in hidden input for use in the submit function
+        document.getElementById('orderIdToReturn').value = orderItemId;
         // Show the return modal
         new bootstrap.Modal(document.getElementById('returnOrderModal')).show();
     }
     
     function submitReturnOrder() {
-        const orderId = document.getElementById('orderIdToReturn').value;
+        const orderItemId = document.getElementById('orderIdToReturn').value;
         const reason = document.getElementById('returnReason').value;
     
-        fetch(`/return_order/${orderId}/`, {
+        fetch(`/return_order_item/${orderItemId}/`, {  // Changed to order item endpoint
             method: 'POST',
             headers: {
                 'X-Requested-With': 'XMLHttpRequest',
@@ -152,7 +150,7 @@
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                alert("Order return initiated successfully!");
+                alert("Order item return initiated successfully!");
                 location.reload();
             } else {
                 alert("Error initiating return.");
@@ -160,5 +158,6 @@
         })
         .catch(error => console.error("Error:", error));
     }
+    
 </script>
 

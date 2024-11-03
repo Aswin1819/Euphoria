@@ -1,6 +1,16 @@
 {% extends 'userbase.html' %}
 
 {% block content %}
+{% if messages %}
+    <div class="alert-container" style="position: fixed; top: 0; left: 0; right: 0; z-index: 9999;">
+        {% for message in messages %}
+            <div class="alert alert-warning alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {% endfor %}
+    </div>
+{% endif %}
 <div class="container my-4">
     <!-- Delivery Address Section -->
     <div class="card p-3 mb-4">
@@ -73,7 +83,7 @@
                 <form method="POST" action="{% url 'placeOrder' %}">
                     {% csrf_token %}
                     <select class="form-select mb-3" name="payment_method" aria-label="Select Payment Method" required>
-                        <option selected disabled>Choose a payment method</option>
+                        {% comment %} <option selected disabled>Choose a payment method</option> {% endcomment %}
                         <option value="cod">Cash on Delivery</option>
                         <option value="card">Credit/Debit Card</option>
                         <option value="upi">UPI</option>

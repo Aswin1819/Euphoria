@@ -24,10 +24,13 @@ urlpatterns = [
     path('update-quantity/', views.update_quantity, name='update_quantity'),
     path('set-primary-address/', views.set_primary_address, name='set_primary_address'),
     path('user_checkout/',views.user_checkout,name='user_checkout'),
+    
     path('placeOrder/',views.placeOrder,name='placeOrder'),
     path('userYourOrder/',views.userYourOrder,name='userYourOrder'),
-    path('cancel_order/<int:order_id>/', views.cancel_order, name='cancel_order'),
-    path('return_order/<int:order_id>/', views.return_order, name='return_order'),
+    path('cancel_order_item/<int:item_id>/', views.cancel_order_item, name='cancel_order_item'),
+    path('return_order_item/<int:item_id>/', views.return_order_item, name='return_order_item'),
+
+    
     path('search_products/',views.search_products,name='search_products'),
     path('categoryProducts/<int:category_id>/',views.categoryProducts,name='categoryProducts'),
 ]

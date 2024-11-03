@@ -448,16 +448,16 @@ def brandSearch(request):
 
  
 def adminOrders(request):
-    orders = Order.objects.select_related('user').prefetch_related('order_items__product')
-    return render(request,'adminorders.html',{'orders':orders})
+    orders = OrderItem.objects.select_related('order', 'product').prefetch_related('order__user')
+    return render(request, 'adminorders.html', {'orders': orders})
 
 
-def UpdateOrderStatus(request,order_id):
+def UpdateOrderStatus(request, order_item_id):
     if request.method == 'POST':
-        order = get_object_or_404(Order,id=order_id)
+        order_item = get_object_or_404(OrderItem, id=order_item_id)
         new_status = request.POST.get('status')
-        order.status = new_status
-        order.save()
+        order_item.status = new_status
+        order_item.save()
         return redirect(adminOrders)
 
 
@@ -466,10 +466,9 @@ def orderSearch(request):
         if request.method == 'POST':
             search = request.POST.get('search')
             if search:
-                
-                result = Order.objects.filter(
-                    Q(order_items__product__name__icontains=search) | 
-                    Q(user__username__icontains=search)
+                result = OrderItem.objects.filter(
+                    Q(product__name__icontains=search) | 
+                    Q(order__user__username__icontains=search)
                 ).distinct()  
 
                 return render(request, 'adminorders.html', {'orders': result, 'search_query': search})

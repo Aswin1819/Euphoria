@@ -131,6 +131,12 @@ class Products(models.Model):
     
     def __str__(self):
         return self.name
+    
+    def average_rating(self):
+        reviews = self.reviews.all()
+        if reviews:
+            return sum(review.rating for review in reviews) / reviews.count()
+        return 0
         
         
 class Variant(models.Model):
@@ -144,6 +150,20 @@ class Variant(models.Model):
 
     def __str__(self):
         return f"{self.product.name} - {self.weight}g"
+
+
+class Review(models.Model):
+    product = models.ForeignKey(Products, on_delete=models.CASCADE, related_name='reviews')
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    rating = models.PositiveSmallIntegerField()
+    review_text = models.TextField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('product', 'user')
+
+
+
 
 
 class Address(models.Model):
@@ -201,17 +221,8 @@ class Order(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     total_amount = models.DecimalField(max_digits=10, decimal_places=2)
     created_at = models.DateTimeField(auto_now_add=True)
-    status = models.CharField(max_length=50, choices=[
-        ("Pending", "Pending"), 
-        ("delivered", "delivered"),
-        ("Cancelled","Cancelled"),
-        ("Returned","Returned"),
-        ("Refunded","Refunded"),
-        ("Failed","Failed")])
-
     payment_method = models.CharField(max_length=50,default="Cash on Delivery")
-    cancellation_reason = models.TextField(null=True,blank=True)
-    return_reason = models.TextField(null=True,blank=True)
+    
     
     def __str__(self):
         return f"Order {self.id} - {self.user.username}"
@@ -221,6 +232,17 @@ class OrderItem(models.Model):
     product = models.ForeignKey(Products, on_delete=models.CASCADE)
     quantity = models.PositiveIntegerField()
     price = models.DecimalField(max_digits=10, decimal_places=2)
-
+    status = models.CharField(max_length=50, choices=[
+        ("Pending", "Pending"), 
+        ("Delivered", "Delivered"),
+        ("Cancelled", "Cancelled"),
+        ("Returned", "Returned"),
+        ("Refunded", "Refunded"),
+        ("Failed", "Failed")
+    ], default="Pending")
+    cancellation_reason = models.TextField(null=True,blank=True)
+    return_reason = models.TextField(null=True,blank=True)
+    last_updated = models.DateTimeField(auto_now=True)
+    
     def get_total_price(self):
         return self.price * self.quantity

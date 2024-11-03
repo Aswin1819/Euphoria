@@ -101,6 +101,33 @@
         </div>
     </div>
     
+    <!--Rating and Reviewss-->
+    <div class="my-5">
+        <h3>Reviews</h3>
+        {% for review in reviews %}
+            <div>
+                <p><strong>{{ review.user.username }}</strong> rated: {{ review.rating }}/5</p>
+                <p>{{ review.review_text }}</p>
+                <p><small>{{ review.created_at }}</small></p>
+            </div>
+        {% empty %}
+            <p>No reviews yet. Be the first to review this product!</p>
+        {% endfor %}
+    </div>
+    
+    {% if user.is_authenticated and has_purchased and not has_reviewed %}
+        <h4>Leave a Review</h4>
+        <form method="post">
+            {% csrf_token %}
+            {{ form.as_p }}
+            <button type="submit" class="btn btn-primary">Submit Review</button>
+        </form>
+    {% elif not has_purchased %}
+        <p class="text-muted">Only users who have purchased and received this product can leave a review.</p>
+    {% elif has_reviewed %}
+        <p class="text-muted">You have already reviewed this product.</p>
+    {% endif %}
+    
 
     <!-- Related Products Section -->
 

@@ -8,7 +8,7 @@ from django.contrib import messages
 from userapp.userotp import generateAndSendOtp
 from django.conf import settings
 from .signals import userOtpVerified
-from .forms import UserLoginForm,UserSignupForm,ChangeProfileForm,ChangePasswordForm,AddressForm
+from .forms import UserLoginForm,UserSignupForm,ChangeProfileForm,ChangePasswordForm,AddressForm,ReviewForm
 from django.contrib.auth.decorators import login_required
 from django.utils import timezone
 from django.db import transaction
@@ -260,17 +260,63 @@ def categoryProducts(request,category_id):
 
 
 
-
-
-
-def productView(request,id):
+def productView(request, id):
     product = get_object_or_404(Products, id=id)
-    product.popularity+=1
+    product.popularity += 1
     product.save()
+
     variants = Variant.objects.filter(product=product)
     default_variant = variants.first() if variants else None
-    related_products = Products.objects.filter(brand=product.brand,category__is_active=True,brand__is_active=True).exclude(id=product.id)
-    return render(request,'productview.html',{'product':product,'related_products':related_products,'variants':variants,'default_variant':default_variant})
+
+    related_products = Products.objects.filter(
+        brand=product.brand,
+        category__is_active=True,
+        brand__is_active=True
+    ).exclude(id=product.id)
+
+    # Check if the user has a "Delivered" order item for this product
+    has_purchased = OrderItem.objects.filter(
+        order__user=request.user, product=product, status='Delivered'
+    ).exists()
+
+    
+    has_reviewed = product.reviews.filter(user=request.user).exists()
+    # Handle review form submission if eligible
+    form=None
+    if request.method == 'POST' and has_purchased and not has_reviewed:
+        form = ReviewForm(request.POST)
+        if form.is_valid():
+            review = form.save(commit=False)
+            review.product = product
+            review.user = request.user
+            review.save()
+            return redirect('productView', id=id)  # Reload page to see the new review
+    elif has_purchased and not has_reviewed:
+        form = ReviewForm()
+
+    # Retrieve existing reviews for the product
+    reviews = product.reviews.all()
+
+    return render(request, 'productview.html', {
+        'product': product,
+        'related_products': related_products,
+        'variants': variants,
+        'default_variant': default_variant,
+        'reviews': reviews,
+        'form': form,
+        'has_purchased': has_purchased,
+        'has_reviewed': has_reviewed
+    })
+
+
+# def productView(request,id):
+#     product = get_object_or_404(Products, id=id)
+#     product.popularity+=1
+#     product.save()
+#     variants = Variant.objects.filter(product=product)
+#     default_variant = variants.first() if variants else None
+#     related_products = Products.objects.filter(brand=product.brand,category__is_active=True,brand__is_active=True).exclude(id=product.id)
+#     return render(request,'productview.html',{'product':product,'related_products':related_products,'variants':variants,'default_variant':default_variant})
 
 
 # def userProfile(request):
@@ -610,7 +656,8 @@ def placeOrder(request):
             user = request.user
             selected_address_id = data.get('address_id')
             payment_method = data.get('payment_method')
-
+            print(selected_address_id)
+            print(payment_method)
             cart = get_object_or_404(Cart, user=user)
             address = get_object_or_404(Address, id=selected_address_id, user=user)
 
@@ -622,7 +669,6 @@ def placeOrder(request):
             order = Order.objects.create(
                 user=user,
                 total_amount=total_amount,
-                status="Pending",
                 payment_method=payment_method,
                 created_at=timezone.now()
             )
@@ -632,6 +678,7 @@ def placeOrder(request):
                     order=order,
                     product=cart_item.product,
                     quantity=cart_item.quantity,
+                    status="Pending",
                     price=cart_item.variant.price
                 )
 
@@ -656,9 +703,9 @@ def userYourOrder(request):
 
     # Retrieve orders based on the status filter
     if status_filter == 'all':
-        orders = Order.objects.filter(user=user)
+        orders = OrderItem.objects.filter(order__user=user).prefetch_related('product')  
     else:
-        orders = Order.objects.filter(user=user, status=status_filter.capitalize())
+        orders = OrderItem.objects.filter(order__user=user, status=status_filter.capitalize()).prefetch_related('product')
         
     is_ajax_request = request.headers.get('x-requested-with') == 'XMLHttpRequest'
     print("Is AJAX request:", is_ajax_request)
@@ -667,12 +714,6 @@ def userYourOrder(request):
         orders_html = render_to_string('partials/orders_list.html', {'orders': orders})
         return JsonResponse({'orders_html': orders_html})
     
-    
-    # if request.headers.get('x-requested-with') == 'XMLHttpRequest':
-    #     orders_html = render_to_string('partials/orders_list.html', {'orders': orders})
-    #     return JsonResponse({'orders_html': orders_html})
-
-    # Render the template with orders and the current filter
     return render(request, 'user_your_order.html', {
         'orders': orders,
         'status_filter': status_filter
@@ -683,36 +724,44 @@ def userYourOrder(request):
 @login_required(login_url='userlogin')
 @require_POST
 @csrf_exempt
-def cancel_order(request, order_id):
+def cancel_order_item(request, item_id):
     try:
         # Parse JSON request body to get the cancellation reason
         data = json.loads(request.body)
         reason = data.get('reason', '')
 
-        order = Order.objects.get(id=order_id, user=request.user, status='Pending')
-        order.status = 'Cancelled'
-        order.cancellation_reason = reason  # Save cancellation reason
-        order.save()
+        # Get the specific OrderItem with 'Pending' status
+        order_item = OrderItem.objects.get(id=item_id, order__user=request.user, status='Pending')
+        
+        # Update OrderItem status and cancellation reason
+        order_item.status = 'Cancelled'
+        order_item.cancellation_reason = reason
+        order_item.save()
+
         return JsonResponse({'success': True})
-    except Order.DoesNotExist:
+    except OrderItem.DoesNotExist:
         return JsonResponse({'success': False}, status=404)
     
 
 @login_required(login_url='userlogin')
 @require_POST
 @csrf_exempt
-def return_order(request, order_id):
+def return_order_item(request, item_id):
     try:
-        # Parse JSON request body to get the cancellation reason
+        # Parse JSON request body to get the return reason
         data = json.loads(request.body)
         reason = data.get('reason', '')
 
-        order = Order.objects.get(id=order_id, user=request.user, status='Delivered')
-        order.status = 'Returned'
-        order.return_reason = reason  # Save cancellation reason
-        order.save()
+        # Get the specific OrderItem with 'Delivered' status
+        order_item = OrderItem.objects.get(id=item_id, order__user=request.user, status='Delivered')
+
+        # Update OrderItem status and return reason
+        order_item.status = 'Returned'
+        order_item.return_reason = reason
+        order_item.save()
+
         return JsonResponse({'success': True})
-    except Order.DoesNotExist:
+    except OrderItem.DoesNotExist:
         return JsonResponse({'success': False}, status=404)
 
 

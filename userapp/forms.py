@@ -2,7 +2,7 @@ from django import forms
 import re
 from django.contrib.auth import get_user_model
 from django.contrib.auth.forms import UserCreationForm,PasswordChangeForm
-from adminapp.models import Address
+from adminapp.models import Address,Review
 
 # from adminapp.models import EuphoUser
 
@@ -147,3 +147,10 @@ class AddressForm(forms.ModelForm):
             'pincode': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Pincode'}),
             'phone': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Phone number'}),
         }
+
+
+
+class ReviewForm(forms.ModelForm):
+    class Meta:
+        model = Review
+        fields = ['rating', 'review_text']
