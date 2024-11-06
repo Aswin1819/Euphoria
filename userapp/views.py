@@ -20,6 +20,7 @@ import json
 from django.template.loader import render_to_string
 from django.views.decorators.http import require_POST
 from django.core.paginator import Paginator
+from django.db.models import Q
 
 # Create your views here.
 
@@ -208,10 +209,16 @@ def userhome(request):
         'latest_products':latest_product,
         'featured_products':featured})
 
-@login_required(login_url='userlogin')
+
 def shopNow(request):
     sort_option = request.GET.get('sort', 'popularity')
+    search_query = request.GET.get('query','').strip()
     products = Products.objects.filter(category__is_active=True, brand__is_active=True).prefetch_related('variants')
+    
+    if search_query:
+        products = products.filter(
+            Q(name__icontains=search_query)|Q(brand__name__icontains=search_query)
+        )
     
     # Sort options
     if sort_option == 'price_low_to_high':
@@ -248,6 +255,7 @@ def shopNow(request):
     return render(request, 'shopnow.html', {
         'page_obj': page_obj,
         'sort_option': sort_option,
+        'search_query':search_query,
     })
 
 
@@ -309,47 +317,7 @@ def productView(request, id):
     })
 
 
-# def productView(request,id):
-#     product = get_object_or_404(Products, id=id)
-#     product.popularity+=1
-#     product.save()
-#     variants = Variant.objects.filter(product=product)
-#     default_variant = variants.first() if variants else None
-#     related_products = Products.objects.filter(brand=product.brand,category__is_active=True,brand__is_active=True).exclude(id=product.id)
-#     return render(request,'productview.html',{'product':product,'related_products':related_products,'variants':variants,'default_variant':default_variant})
-
-
-# def userProfile(request):
-#     if request.user.is_authenticated:
-#         user = request.user
-#         if request.method=='POST': 
-#             form = ChangeProfileForm(request.POST,request.FILES,instance=user)
-#             if form.is_valid():
-#                 form.save()
-#                 return render(request,'userprofile.html',{'form':form})
-#             else:
-#                 print(form.errors)
-#         else:
-#             form = ChangeProfileForm(instance=user)
-#     return render(request,'userprofile.html',{'form':form})
-
-
-
-# @login_required
-# def changePasswordProfile(request):
-#     user=request.user
-#     if request.method == 'POST':
-#         form = ChangePasswordForm(user = request.user,data=request.POST)
-#         if form.is_valid():
-#             form.save()
-#             update_session_auth_hash(request,form.user)#updating the session
-#             print("password changed successfully")
-#             return redirect(userProfile)
-#         else:
-#             print(form.errors)
-#     else:
-#         form = ChangePasswordForm(instance=user)
-#     return render(request,'userprofile.html',{'form':form})       
+       
 
 @login_required(login_url='userlogin')
 def userProfileInformation(request):
@@ -399,8 +367,10 @@ def userManageAddress(request):
             address = form.save(commit=False)
             address.user=request.user
             address.save()
+            messages.success(request,"Address added successfully")
             return redirect(userManageAddress)
         else:
+            messages.warning(request,'ERROR!!. Kindly please check the add address form')
             print(form.errors)
     else:
         form = AddressForm()
@@ -421,11 +391,14 @@ def editAddress(request, address_id):
     if request.method == 'POST':
         form = AddressForm(request.POST, instance=address)
         if form.is_valid():
-            form.save()  # Update the existing address
-            return redirect(reverse('userManageAddress'))  # Redirect back to the address management page
+            form.save()  
+            messages.success(request,"Address edited successfully")
+            return redirect(reverse('userManageAddress'))  
+        else:
+            messages.warning(request,"Error in edititng the address")
+            print(form.errors)
     else:
-        form = AddressForm(instance=address)  # Populate form with existing data
-
+        form = AddressForm(instance=address) 
     context = {
         'form': form,
         'address': address,
@@ -490,24 +463,6 @@ def removeCartItems(request,product_id,variant_id):
         return redirect(cartDetails)
     
 
-
-# @csrf_exempt
-# def update_quantity(request):
-#     if request.user.is_authenticated:
-#         data = json.loads(request.body)
-#         product_id = data.get('product_id')
-#         variant_id = data.get('variant_id')
-#         quantity = data.get('quantity')
-        
-#         cart = Cart.objects.filter(user=request.user).first()
-#         cart_item = cart.items.filter(product_id=product_id, variant_id=variant_id).first()
-#         cart_item.quantity = quantity
-#         cart_item.save()
-        
-#         total_amount = sum(item.get_total_price() for item in cart.items.all())
-#         return JsonResponse({'success': True, 'new_quantity': cart_item.quantity, 'total_amount': total_amount})
-#     return JsonResponse({'success': False})
-
 @login_required(login_url='userlogin')
 @csrf_exempt
 def update_quantity(request):
@@ -563,17 +518,6 @@ def set_primary_address(request):
     return JsonResponse({'success': False})
 
 
-
-
-# def setPrimaryAddress(request,address_id):
-#     if request.user.is_authenticated:
-#         Address.objects.filter(user=request.user,is_primary=True).update(is_primary=False)
-        
-#         selected_address = get_object_or_404(Address,id=address_id,user=request.user)
-#         selected_address.is_primary=True
-#         selected_address.save()
-#     return redirect(cartDetails)
-
 @login_required(login_url='userlogin')
 def user_checkout(request):
    
@@ -607,44 +551,6 @@ def user_checkout(request):
 
     return render(request, 'usercheckout.html', context)
 
-
-# @login_required
-# @transaction.atomic
-# def placeOrder(request):
-#     if request.method == 'POST':
-#         user = request.user
-#         selected_address_id = request.POST.get('address_id')
-#         payment_method = request.POST.get('payment_method')
-        
-#         cart = get_object_or_404(Cart, user=user)
-#         address = get_object_or_404(Address,id=selected_address_id,user=user)
-        
-#         if not cart.items.exists():
-#             return JsonResponse({"error":"Your cart is empty"},status=400)
-        
-#         total_amount = sum(item.variant.price * item.quantity for item in cart.items.all())
-        
-#         order = Order.objects.create(
-#             user=user,
-#             total_amount=total_amount,
-#             status="Pending",
-#             created_at=timezone.now()
-#         )
-        
-#         for cart_item in cart.items.all():
-#             OrderItem.objects.create(
-#                 order=order,
-#                 product=cart_item.product,
-#                 quantity=cart_item.quantity,
-#                 price=cart_item.variant.price
-#             )
-            
-#             cart_item.variant.stock -= cart_item.quantity
-#             cart_item.save()
-            
-#         cart.items.all().delete()
-#         return JsonResponse({"order_id": order.id}, status=200)
-#     return JsonResponse({"error": "Invalid request method"}, status=405)
 
 
 @login_required(login_url='userlogin')
@@ -703,9 +609,9 @@ def userYourOrder(request):
 
     # Retrieve orders based on the status filter
     if status_filter == 'all':
-        orders = OrderItem.objects.filter(order__user=user).prefetch_related('product')  
+        orders = OrderItem.objects.filter(order__user=user).prefetch_related('product').order_by('-last_updated')
     else:
-        orders = OrderItem.objects.filter(order__user=user, status=status_filter.capitalize()).prefetch_related('product')
+        orders = OrderItem.objects.filter(order__user=user, status=status_filter.capitalize()).prefetch_related('product').order_by('-last_updated')
         
     is_ajax_request = request.headers.get('x-requested-with') == 'XMLHttpRequest'
     print("Is AJAX request:", is_ajax_request)
@@ -737,6 +643,13 @@ def cancel_order_item(request, item_id):
         order_item.status = 'Cancelled'
         order_item.cancellation_reason = reason
         order_item.save()
+        
+        variant = Variant.objects.filter(product=order_item.product).first()
+        if variant:                    
+            variant.stock += order_item.quantity          
+            variant.save()
+        else:
+            pritn('variant not found')
 
         return JsonResponse({'success': True})
     except OrderItem.DoesNotExist:
@@ -759,18 +672,18 @@ def return_order_item(request, item_id):
         order_item.status = 'Returned'
         order_item.return_reason = reason
         order_item.save()
+        
+        variant = Variant.objects.filter(product=order_item.product).first()
+        if variant:
+            variant.stock += order_item.quantity
+            variant.save()
+        else:
+            print("variant not found")
 
         return JsonResponse({'success': True})
     except OrderItem.DoesNotExist:
         return JsonResponse({'success': False}, status=404)
 
-
-@login_required(login_url='userlogin')
-def search_products(request):
-    query = request.GET.get('q', '')
-    results = Products.objects.filter(name__icontains=query) | Products.objects.filter(brand__name__icontains=query)
-    html = render_to_string('partials/search_results.html', {'results': results})
-    return JsonResponse({'html': html})
 
 
 

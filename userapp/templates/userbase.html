@@ -53,10 +53,10 @@
                     <!-- Right-aligned Icons (responsive) -->
                     <ul class="navbar-nav ms-auto">
                         <li class="nav-item px-2">
-                            <!-- Button to trigger search modal -->
-                            <a class="nav-link" href="#" data-bs-toggle="modal" data-bs-target="#searchModal">
-                                <i class="fas fa-search"></i>
-                            </a>
+                            <form action="{% url 'shopNow' %}" method="get" class="d-flex">
+                                <input class="form-control me-2" type="search" name="query" placeholder="Search products" aria-label="Search" value="{{ request.GET.query }}">
+                                <button class="btn btn-outline-dark" type="submit">Search</button>
+                            </form>                            
                         </li>                        
                         <li class="nav-item px-2">
                             <a class="nav-link" href="{% url 'userProfileInformation'%}">
@@ -77,27 +77,6 @@
                 </div>
             </div>
         </nav>
-        <div class="modal fade" id="searchModal" tabindex="-1" aria-labelledby="searchModalLabel" aria-hidden="true">
-            <div class="modal-dialog modal-dialog-centered">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title" id="searchModalLabel">Search Products</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                    </div>
-                    <div class="modal-body">
-                        <!-- Search Form -->
-                        <form id="searchForm">
-                            <div class="input-group mb-3">
-                                <input type="text" class="form-control" placeholder="Search by product or brand name" id="searchQuery">
-                                <button class="btn btn-primary" type="button" onclick="performSearch()">Search</button>
-                            </div>
-                        </form>
-                        <!-- Search Results -->
-                        <div id="searchResults" class="mt-3"></div>
-                    </div>
-                </div>
-            </div>
-        </div>
     </header>
     
     
@@ -162,24 +141,7 @@
     <!-- sweet alert script  -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     {% comment %} <script src="{% static 'js/signup_validation.js' %}"></script> {% endcomment %}
-    <script>
-        function performSearch() {
-            const query = document.getElementById('searchQuery').value;
-            if (query.trim() === '') return; // Don't proceed if the query is empty
-        
-            fetch(`/search_products/?q=${encodeURIComponent(query)}`, {
-                headers: {
-                    "X-Requested-With": "XMLHttpRequest"
-                }
-            })
-            .then(response => response.json())
-            .then(data => {
-                document.getElementById('searchResults').innerHTML = data.html;
-            })
-            .catch(error => console.error('Search error:', error));
-        }
-        
-    </script>
+    
 </body>
 </html>
 

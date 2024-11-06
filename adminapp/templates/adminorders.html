@@ -35,7 +35,7 @@
                             <td>{{ item.order.user.username }}</td>  <!-- Customer Name -->
                             <td>{{ item.order.created_at|date:"Y-m-d" }}</td>  <!-- Order Date -->
                             <td>{{ item.quantity }}</td>  <!-- Quantity -->
-                            <td>${{ item.get_total_price }}</td>  <!-- Total Price -->
+                            <td>&#8377;{{ item.get_total_price }}</td>  <!-- Total Price -->
                             <td>
                                 <span class="badge 
                                     {% if item.status == 'Pending' %} bg-warning 
@@ -108,7 +108,7 @@
                             </p>
                             <p><strong>Status:</strong> {{ item.status }}</p>
                             <p><strong>Order Date:</strong> {{ item.order.created_at|date:"Y-m-d" }}</p>
-                            <p><strong>Total Price:</strong> ${{ item.get_total_price }}</p>
+                            <p><strong>Total Price:</strong> &#8377;{{ item.get_total_price }}</p>
                             <hr>
 
                             <!-- Order Items Section -->
@@ -128,8 +128,8 @@
                                         <td><img src="{{ item.product.product_images.first.images.url }}" alt="{{ item.product.name }}" width="50" height="50"></td>
                                         <td>{{ item.product.name }}</td>
                                         <td>{{ item.quantity }}</td>
-                                        <td>${{ item.price }}</td>
-                                        <td>${{ item.get_total_price }}</td>
+                                        <td>&#8377;{{ item.price }}</td>
+                                        <td>&#8377;{{ item.get_total_price }}</td>
                                     </tr>
                                 </tbody>
                             </table>

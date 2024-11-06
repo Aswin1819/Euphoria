@@ -15,9 +15,11 @@ urlpatterns = [
     path('userlogout/',views.userlogout,name = 'userlogout'),
     path('resendOtpForPass/',views.resendOtpForPass,name='resendOtpForPass'),
     path('userProfileInformation/',views.userProfileInformation,name='userProfileInformation'),
+    
     path('userManageAddress/',views.userManageAddress,name='userManageAddress'),
     path('edit-address/<int:address_id>/', views.editAddress, name='editAddress'),
     path('delete-address/<int:address_id>/', views.deleteAddress, name='deleteAddress'),
+    
     path('cartDetails/',views.cartDetails,name='cartDetails'),
     path('addToCart/',views.addToCart,name='addToCart'),
     path('removeCartItems/<int:product_id>/<int:variant_id>/',views.removeCartItems,name='removeCartItems'),
@@ -30,7 +32,5 @@ urlpatterns = [
     path('cancel_order_item/<int:item_id>/', views.cancel_order_item, name='cancel_order_item'),
     path('return_order_item/<int:item_id>/', views.return_order_item, name='return_order_item'),
 
-    
-    path('search_products/',views.search_products,name='search_products'),
     path('categoryProducts/<int:category_id>/',views.categoryProducts,name='categoryProducts'),
 ]

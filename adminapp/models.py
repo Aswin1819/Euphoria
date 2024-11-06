@@ -47,6 +47,7 @@ class EuphoUser(AbstractBaseUser, PermissionsMixin):
     is_staff = models.BooleanField(default=False)
     is_superuser = models.BooleanField(default=False)
     date_joined = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(auto_now=True)
 
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['username', 'phone']
@@ -55,6 +56,9 @@ class EuphoUser(AbstractBaseUser, PermissionsMixin):
 
     def __str__(self):
         return self.email
+    
+    def get_primary_address(self):
+        return self.addresses.filter(is_primary=True).first()
 
 class OTP(models.Model):
     email = models.EmailField()
@@ -127,6 +131,7 @@ class Products(models.Model):
     is_featured = models.BooleanField(default=False)
     popularity = models.PositiveIntegerField(default=0)
     created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(auto_now=True)
     
     
     def __str__(self):
@@ -189,7 +194,7 @@ class Address(models.Model):
         super(Address, self).save(*args, **kwargs)
 
     def __str__(self):
-        return f'{self.user.username} - {self.address_type.capitalize()} Address'
+        return f'{self.address}'
     
     
 class Cart(models.Model):

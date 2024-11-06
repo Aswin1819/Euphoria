@@ -142,33 +142,8 @@
 
 /* Modal Body */
 .modal-body {
-    background-color: #e2c39a; /* Light background for body */
+    background-color: #e4e1dc; /* Light background for body */
     color: #333; /* Text color */
     padding: 20px; /* Padding for readability */
 }
 
-/* Modal Footer */
-.modal-footer {
-    background-color: #343a40;
-    border-top: 1px solid #444;
-}
-
-/* Button Styles */
-.modal-footer .btn-close {
-    color: #fff;
-    background-color: #343a40;
-    border: none;
-}
-.modal-footer .btn-close:hover {
-    color: #343a40;
-    background-color: #f8f9fa;
-    border: 1px solid #343a40;
-}
-
-.modal-footer .btn-primary {
-    background-color: #0056b3; /* Matching primary button color */
-    border: none;
-}
-.modal-footer .btn-primary:hover {
-    background-color:#e4d2b9;
-}

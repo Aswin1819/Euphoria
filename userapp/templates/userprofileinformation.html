@@ -41,6 +41,11 @@
                     <div class="col-sm-10">
                         {{ profile_form.profile_image }}
                     </div>
+                    <div id="profile_image-error">
+                        {% for error in profile_form.profile_image.errors %}
+                            <p class="text-danger">{{ error }}</p>
+                        {% endfor %}
+                    </div>
                 </div>
                 <!-- Email Display -->
                 <div class="row mb-3">
@@ -73,17 +78,32 @@
                     <div class="col-sm-8">
                         {{ password_form.old_password }}
                     </div>
+                    <div id="old_password-error">
+                        {% for error in password_form.old_password.errors %}
+                            <p class="text-danger">{{ error }}</p>
+                        {% endfor %}
+                    </div>
                 </div>
                 <div class="row mb-3">
                     <label for="newPassword1" class="col-sm-4 col-form-label">New Password</label>
                     <div class="col-sm-8">
                         {{ password_form.new_password1 }}
                     </div>
+                    <div id="new_password1-error">
+                        {% for error in password_form.new_password1.errors %}
+                            <p class="text-danger">{{ error }}</p>
+                        {% endfor %}
+                    </div>
                 </div>
                 <div class="row mb-3">
                     <label for="newPassword2" class="col-sm-4 col-form-label">Confirm New Password</label>
                     <div class="col-sm-8">
                         {{ password_form.new_password2 }}
+                    </div>
+                    <div id="new_password2-error">
+                        {% for error in password_form.new_password2.errors %}
+                            <p class="text-danger">{{ error }}</p>
+                        {% endfor %}
                     </div>
                 </div>
                 <!-- Save Changes Button -->

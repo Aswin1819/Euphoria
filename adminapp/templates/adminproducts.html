@@ -64,7 +64,7 @@
                             </td>
                             <td>{{ product.category }}</td>
                             <td>
-                                <form method="POST" action="{% url 'removeProducts' product.id %}">
+                                <form method="POST" action="{% url 'removeProducts' product.id %}" style="display: flex; gap: 5px;">
                                     {% csrf_token %}
                                     <a href="{% url 'editProducts' product.id %}" class="btn btn-sm btn-primary">Edit</a>
                                     {% if product.is_active %}
@@ -72,14 +72,53 @@
                                     {% else %}
                                         <button type="submit" class="btn btn-sm btn-success">Active</button>
                                     {% endif %}
+                                    <a href="#" class="btn btn-sm btn-warning" data-bs-toggle="modal" data-bs-target="#addVariantModal{{ product.id }}">
+                                        Variant+
+                                    </a>                                    
                                 </form>
                             </td>
                         </tr>
+                        <!--add variant modal -->
+                        <div class="modal fade" id="addVariantModal{{ product.id }}" tabindex="-1" aria-labelledby="addVariantModalLabel{{ product.id }}" aria-hidden="true">
+                            <div class="modal-dialog">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title" id="addVariantModalLabel{{ product.id }}">Add Variant for {{ product.name }}</h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                    </div>
+                                    <div class="modal-body">
+                                        <form method="POST" action="{% url 'addVariant' %}">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="product_id" value="{{ product.id }}">
+                                            <div class="mb-3">
+                                                <label for="weight" class="form-label">Weight (in grams)</label>
+                                                <input type="number" class="form-control" id="weight" name="weight" placeholder="Weight (in grams)" required>
+                                                {{form.weight.errors}}
+                                            </div>
+                                            <div class="mb-3">
+                                                <label for="price" class="form-label">Price</label>
+                                                <input type="number" class="form-control" id="price" name="price" placeholder="Price" required>
+                                                {{form.price.errors}}
+                                            </div>
+                                            <div class="mb-3">
+                                                <label for="stock" class="form-label">Stock</label>
+                                                <input type="number" class="form-control" id="stock" name="stock" placeholder="Stock" required>
+                                                {{form.stock.errors}}
+                                            </div>
+                                            <button type="submit" class="btn btn-primary">Save Variant</button>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
                         
                         {% endfor %}
                     </tbody>
                 </table>
             </div>
         </div>
+
+        
     
 {% endblock %}

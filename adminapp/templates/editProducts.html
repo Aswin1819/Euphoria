@@ -22,19 +22,16 @@
     <div class="card p-4" style="background-color: #633B00;">
         <form method="POST" action="{% url 'editProducts' product_form.instance.id %}" enctype="multipart/form-data">
             {% csrf_token %}
-            {{ product_form.management_form }}  <!-- Ensure management form is included for file uploads -->
+            {{ product_form.management_form }}
 
-            <!-- Product Form Fields -->
             <div class="row mb-4">
                 <div class="col-md-6">
                     <label class="form-label text-white">Product Name*</label>
-                    {{ product_form.name }}
-                    {{ product_form.name.errors }}
+                    {{ product_form.name }}{{product_form.name.errors}}
                 </div>
                 <div class="col-md-6">
                     <label class="form-label text-white">Description*</label>
-                    {{ product_form.description }}
-                    {{ product_form.description.errors }}
+                    {{ product_form.description }}{{product_form.description.errors}}
                 </div>
             </div>
 
@@ -42,41 +39,29 @@
                 <div class="col-md-6">
                     <label class="form-label text-white">Category Name*</label>
                     {{ product_form.category }}
-                    {{ product_form.category.errors }}
                 </div>
                 <div class="col-md-6">
                     <label class="form-label text-white">Brand Name*</label>
                     {{ product_form.brand }}
-                    {{ product_form.brand.errors }}
                 </div>
             </div>
 
-            {% comment %} <div class="row mb-4">
-                <div class="col-md-12">
-                    <label class="form-label text-white">Product Images (max 4)*</label>
-                    <div class="row">
-                        <div class="col-md-3">
-                            <input type="file" class="form-control" name="image1" accept="image/*">
-                            {% if images|length > 0 %}<img src="{{ images.0.images.url }}" style="width: 100%; height: auto;" alt="Image 1">{% endif %}
-                        </div>
-                        <div class="col-md-3">
-                            <input type="file" class="form-control" name="image2" accept="image/*">
-                            {% if images|length > 1 %}<img src="{{ images.1.images.url }}" style="width: 100%; height: auto;" alt="Image 2">{% endif %}
-                        </div>
-                        <div class="col-md-3">
-                            <input type="file" class="form-control" name="image3" accept="image/*">
-                            {% if images|length > 2 %}<img src="{{ images.2.images.url }}" style="width: 100%; height: auto;" alt="Image 3">{% endif %}
-                        </div>
-                        <div class="col-md-3">
-                            <input type="file" class="form-control" name="image4" accept="image/*">
-                            {% if images|length > 3 %}<img src="{{ images.3.images.url }}" style="width: 100%; height: auto;" alt="Image 4">{% endif %}
-                        </div>
-                    </div>
-                </div>
-            </div> {% endcomment %}
             <div class="row mb-4">
                 <div class="col-md-12">
-                    <label class="form-label text-white">Product Images (max 4)*</label>
+                    <label class="form-label text-white">Current Product Images</label>
+                    <div class="row">
+                        {% for image in product.product_images.all %}
+                        <div class="col-md-3">
+                            <img src="{{ image.images.url }}" style="width: 100%; height: auto;" alt="Image {{ forloop.counter }}">
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <div class="row mb-4">
+                <div class="col-md-12">
+                    <label class="form-label text-white">Upload New Images (max 4)*</label>
                     <div class="row">
                         {% for i in "1234" %}
                         <div class="col-md-3">
@@ -88,38 +73,37 @@
                 </div>
             </div>
 
-            <!-- Dynamic Variant Formset -->
-            <div class="row mb-4">
+            <div class="row mb-4" id="variants-container">
                 <h4 class="text-white">Product Variants</h4>
-                
-                <!-- Loop through each form in the formset -->
+                {{ variant_formset.management_form }}
                 {% for form in variant_formset %}
-                <div class="variant-row">
+              
+                <div class="variant-row text-white">
                     <div class="row mb-3">
+                        {{ form.id }}
+
                         <div class="col-md-4">
-                            {{ form.weight.label_tag }} {{ form.weight }}
-                            {{ form.weight.errors }}
+                            {{ form.weight.label_tag }} {{ form.weight }} {{form.weight.errors}}
                         </div>
                         <div class="col-md-4">
-                            {{ form.price.label_tag }} {{ form.price }}
-                            {{ form.price.errors }}
+                            {{ form.price.label_tag }} {{ form.price }} {{form.price.errors}}
                         </div>
                         <div class="col-md-4">
-                            {{ form.stock.label_tag }} {{ form.stock }}
-                            {{ form.stock.errors }}
+                            {{ form.stock.label_tag }} {{ form.stock }} {{form.stock.errors}}                         
+                            {% if variant_formset.total_form_count > 1 %}
+                                {% if variant_formset.can_delete %}
+                                    <label for="{{ form.DELETE.id_for_label }}">Delete</label>
+                                    {{ form.DELETE }}
+                                {% endif %}
+                            {% else %}
+                                <label class="text-white">Default variant cannot be deleted</label>
+                            {% endif %}
                         </div>
                     </div>
-                    {{ form.id }}
                 </div>
                 {% endfor %}
-                
-                <!-- Display any formset errors -->
-                {% comment %} {% if variant_formset.non_form_errors %}
-                <div class="alert alert-danger">
-                    {{ variant_formset.non_form_errors }}
-                </div>
-                {% endif %} {% endcomment %}
             </div>
+            
 
             <div class="d-flex justify-content-center mb-2">
                 <button type="submit" class="btn btn-danger w-25">Update Product</button>
@@ -132,6 +116,7 @@
     <img id="imagePreview" style="max-width: 100%;">
     <button id="cropButton">Crop</button>
 </div>
+
 
 <script>
 
@@ -166,8 +151,8 @@
         document.getElementById('cropButton').addEventListener('click', () => {
             if (cropper) {
                 const canvas = cropper.getCroppedCanvas({
-                    width: 300, // Adjust as needed
-                    height: 300,
+                    width: 200, // Adjust as needed
+                    height: 200,
                 });
 
                 canvas.toBlob((blob) => {
@@ -182,22 +167,7 @@
             }
         });
 
-        // Ensure all cropped images are present before submitting the form
-        document.querySelector('form').addEventListener('submit', function (event) {
-            let allImagesCropped = true;
-            for (let i = 1; i <= 4; i++) {
-                const croppedImageValue = document.getElementById('croppedImage' + i).value;
-                if (!croppedImageValue) {
-                    allImagesCropped = false;
-                    console.log(`Image ${i} not cropped or missing.`);
-                }
-            }
-
-            if (!allImagesCropped) {
-                event.preventDefault();
-                alert('Please crop all images before submitting the form.');
-            }
-        });
+        
    
 </script>
 

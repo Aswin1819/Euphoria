@@ -1,5 +1,15 @@
 {% extends 'userprofile.html' %}
 {% block profile %}
+{% if messages %}
+    <div class="alert-container" style="position: fixed; top: 0; left: 0; right: 0; z-index: 9999;">
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {% endfor %}
+    </div>
+{% endif %}
 <!-- Profile Details (right) -->
 <div class="col-md-9">
     <div class="card shadow-sm bg-light">
@@ -18,11 +28,17 @@
                         {% csrf_token %}
                         {{ form.address_type }}
                         {{ form.address }}
+                        {{form.address.errors}}
                         {{ form.city }}
+                        {{form.city.errors}}
                         {{ form.place }}
+                        {{form.place.errors}}
                         {{ form.landmark }}
+                        {{form.landmark.errors}}
                         {{ form.pincode }}
+                        {{form.pincode.errors}}
                         {{ form.phone }}
+                        {{form.phone.errors}}
                         <div class="d-flex justify-content-end">
                             <button type="submit" class="btn btn-dark">Save Address</button>
                         </div>

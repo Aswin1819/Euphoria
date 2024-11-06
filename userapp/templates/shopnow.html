@@ -8,6 +8,10 @@
         <img src="/media/product_Images/banner2.jpg" alt="Banner" class="img-fluid banner-img">
     </div>
 
+    {% if search_query %}
+        <h4 class="mb-3 text-center mt-3">Search result for "{{ search_query }}" </h4>
+    {% endif %}
+
     <!-- Filter Section -->
     <div class="d-flex justify-content-between align-items-center mt-4">
         <div class="form-inline">

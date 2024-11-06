@@ -6,10 +6,36 @@
             </div>
             <div class="col-md-9">
                 <div class="card-body">
-                    <h5 class="card-title">{{ item.product.name }}</h5>
+                    {% comment %} <h5 class="card-title">{{ item.product.name }}</h5>
                     <p class="card-text mb-1">Quantity: {{ item.quantity }}</p>
                     <p class="card-text mb-1">Total Amount: ₹{{ item.get_total_price }}</p>
-                    <p class="card-text mb-1">Status: {{ item.status }}</p>  <!-- Changed to item.status -->
+                    <p class="card-text mb-1">Status: {{ item.status }}</p>
+                    <p class="card-text mb-1">Address: {{ item.order.user.get_primary_address }}</p>
+                    <p class="card-text mb-1">Ordered: {{ item.order.created_at|date:"d-m-y" }}</p> {% endcomment %}
+                    <h5 class="card-title">{{ item.product.name }}</h5>
+
+                    <div class="d-flex justify-content-between">
+                        <p class="card-text mb-1">Quantity: {{ item.quantity }}</p>
+                        <p class="card-text mb-1">Address: {{ item.order.user.get_primary_address }}</p>
+                    </div>
+                
+                    <div class="d-flex justify-content-between">
+                        <p class="card-text mb-1">Total Amount: ₹{{ item.get_total_price }}</p>
+                        <p class="card-text mb-1">Ordered: {{ item.order.created_at|date:"d-m-y" }}</p>
+                    </div>
+                
+                    <div class="d-flex justify-content-between">
+                        <p class="card-text mb-1">Status: {{ item.status }}</p>
+                        <p class="card-text mb-1">
+                            {% if item.status == 'Delivered' %}
+                                Delivered on: {{ item.last_updated|date:"d-m-y" }}
+                            {% elif item.status == 'Cancelled' %}
+                                Cancelled on: {{ item.last_updated|date:"d-m-y" }}
+                            {% elif item.status == 'Returned' %}
+                                Returned on: {{ item.last_updated|date:"d-m-y" }}
+                            {% endif %}
+                        </p>
+                    </div>
                     <p class="card-text"><small class="text-muted">Order ID: {{ item.order.id }}</small></p>
 
                     <!-- Progress Bar for Order Item Status -->
@@ -106,7 +132,7 @@
         const orderItemId = document.getElementById('orderIdToCancel').value;
         const reason = document.getElementById('cancellationReason').value;
     
-        fetch(`/cancel_order_item/${orderItemId}/`, {  // Changed to order item endpoint
+        fetch(`/cancel_order_item/${orderItemId}/`, {  
             method: 'POST',
             headers: {
                 'X-Requested-With': 'XMLHttpRequest',

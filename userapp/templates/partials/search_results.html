@@ -1,9 +1,0 @@
-<div class="list-group">
-    {% for product in results %}
-        <a href="{% url 'productView' product.id %}" class="list-group-item list-group-item-action">
-            <strong>{{ product.name }}</strong> - {{ product.brand }}
-        </a>
-    {% empty %}
-        <p class="text-center">No products found.</p>
-    {% endfor %}
-</div>
