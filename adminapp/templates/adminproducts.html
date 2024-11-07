@@ -16,17 +16,20 @@
 {% endif %}
         <!-- Main Content Area -->
         <div class="col-md-10 ">
-            <div class="d-flex justify-content-between align-items-center mt-0 mb-4 dash-head py-2 rounded text-white px-2" style="background-color: #8b5e34;">
-                <h3>Products</h3>
-                <div class="d-flex align-items-center">
-                    <a href="{% url 'addProducts' %}" class="btn btn-rounded btn-light me-3">Add Product +</a>
+            <div class="d-flex flex-column flex-md-row justify-content-between align-items-center mt-0 mb-2 dash-head py-2 rounded text-white px-2">
+                <h3 class="mb-3 mb-md-0">Products</h3>
+                
+                <div class="d-flex flex-column flex-md-row align-items-center">
+                    <a href="{% url 'addProducts' %}" class="btn btn-rounded btn-light mb-2 mb-md-0 me-md-3">Add Product +</a>
+                    
                     <form class="d-flex" role="search" method="POST" action="{% url 'productSearch' %}">
                         {% csrf_token %}
-                        <input class="form-control me-2" name="search" type="search" placeholder="Search" aria-label="Search" style="border-radius: 20px;">
+                        <input class="form-control me-2 mb-2 mb-md-0" name="search" type="search" placeholder="Search" aria-label="Search" style="border-radius: 20px;">
                         <button class="btn btn-light" type="submit" style="border-radius: 20px;">Search</button>
                     </form>
                 </div>
             </div>
+            
 
 
             <!-- Customer Table -->

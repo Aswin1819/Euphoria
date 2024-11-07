@@ -194,7 +194,7 @@ class Address(models.Model):
         super(Address, self).save(*args, **kwargs)
 
     def __str__(self):
-        return f'{self.address}'
+        return f'{self.address},{self.city}'
     
     
 class Cart(models.Model):
@@ -220,13 +220,21 @@ class CartItem(models.Model):
     def get_total_price(self):
         return self.variant.price * self.quantity
     
+
+class PaymentMethod(models.Model):
+    name = models.CharField(max_length=50)
     
+    def __str__(self):
+        return self.name
     
+
+
+
 class Order(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     total_amount = models.DecimalField(max_digits=10, decimal_places=2)
     created_at = models.DateTimeField(auto_now_add=True)
-    payment_method = models.CharField(max_length=50,default="Cash on Delivery")
+    paymentmethod = models.ForeignKey(PaymentMethod,on_delete=models.SET_NULL,null=True,default=1)
     
     
     def __str__(self):

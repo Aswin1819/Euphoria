@@ -1,6 +1,16 @@
 {% extends 'userbase.html' %}
 
 {% block content %}
+{% if messages %}
+    <div class="alert-container" style="position: fixed; top: 0; left: 0; right: 0; z-index: 9999;">
+        {% for message in messages %}
+            <div class="alert alert-warning alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {% endfor %}
+    </div>
+{% endif %}
 <div class="container my-4">
     <!-- Delivery Address Section -->
     <div class="card p-3 mb-4">
@@ -18,8 +28,13 @@
                     <h5>No address available</h5>
                 {% endif %}
             </div>
-            <!-- Change button triggers collapse -->
-            <button class="btn btn-primary" data-bs-toggle="collapse" data-bs-target="#addressCollapse" aria-expanded="false" aria-controls="addressCollapse">Change</button>
+            <div>
+                <a href="{% url 'userManageAddress' %}" class="btn btn-outline-dark " type="button">
+                    + Add
+                </a>
+                <!-- Change button triggers collapse -->
+                <button class="btn btn-primary" data-bs-toggle="collapse" data-bs-target="#addressCollapse" aria-expanded="false" aria-controls="addressCollapse">Change</button>
+            </div>
         </div>
 
         <!-- Collapsible address list -->
@@ -53,7 +68,11 @@
                         <h6>{{ item.product.name }}</h6>
                         <p class="text-muted mb-0">{{ item.product.description|truncatewords:10 }}</p>
                         <p class="mb-1">Brand: {{ item.product.brand.name }}</p>
-                        <p class="text-success">In Stock: {{ item.variant.stock }}</p>
+                        {% if item.variant.stock > 0 %}
+                            <p class="text-success">In Stock: {{ item.variant.stock }}</p>
+                        {% else %}
+                            <p class="text-danger">Out of Stock</p>
+                        {% endif %}
                         <div class="d-flex align-items-center">
                             <button class="btn btn-outline-secondary btn-sm btn-decrement" data-product-id="{{ item.product.id }}" data-variant-id="{{ item.variant.id }}">-</button>
                             <input type="text" class="form-control text-center mx-2 quantity-input" value="{{ item.quantity }}" style="width: 50px;" readonly>
@@ -103,8 +122,15 @@
                     <p>Total Amount</p>
                     <p id="total-amount">₹{{ cart.get_total_price }}</p>
                 </div>
-                <p class="text-success mt-2">You will save ₹{{ total_savings }} on this order</p>
-                <a href="{% url 'user_checkout' %}" class="btn btn-warning btn-lg w-100">Checkout <i class="fa-solid fa-arrow-right"></i></a>
+                {% comment %} <p class="text-success mt-2">You will save ₹{{ total_savings }} on this order</p> {% endcomment %}
+                {% if out_of_stock_items %}
+                    <div class="alert alert-danger mt-2">
+                        Some items in your cart are out of stock. Please remove them to proceed.
+                    </div>
+                    <button class="btn btn-warning btn-lg w-100" disabled>Checkout <i class="fa-solid fa-arrow-right"></i></button>
+                {% else %}
+                    <a href="{% url 'user_checkout' %}" class="btn btn-warning btn-lg w-100">Checkout <i class="fa-solid fa-arrow-right"></i></a>
+                {% endif %}
             </div>
         </div>
     </div>
@@ -127,8 +153,13 @@
                 document.querySelector(`[data-product-id="${productId}"][data-variant-id="${variantId}"]`).nextElementSibling.value = data.new_quantity; 
                 document.getElementById("total-amount").innerText = `₹${data.total_amount}`;
                 document.getElementById("overall-amount").innerText = `₹${data.total_amount}`;
-            } else {
-                console.error(data.error);
+            } else if(data.error) {
+                Swal.fire({
+                    icon : 'warning',
+                    title : 'Quantity Limit Exceeded',
+                    text : data.error,
+                    confirmButtonText : 'Okay',
+                });
             }
         });
     }

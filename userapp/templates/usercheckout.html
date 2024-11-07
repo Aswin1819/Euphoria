@@ -27,7 +27,13 @@
                     <h5>No address available</h5>
                 {% endif %}
             </div>
-            <button class="btn btn-primary" data-bs-toggle="collapse" data-bs-target="#addressCollapse" aria-expanded="false" aria-controls="addressCollapse">Change</button>
+            <div>
+                <a href="{% url 'userManageAddress' %}" class="btn btn-outline-dark " type="button">
+                    + Add
+                </a>
+                <button class="btn btn-primary" data-bs-toggle="collapse" data-bs-target="#addressCollapse" aria-expanded="false" aria-controls="addressCollapse">Change</button>
+
+            </div>
         </div>
 
         <!-- Collapsible address list -->
@@ -82,12 +88,10 @@
                 <h5 class="card-title">PAYMENT METHOD</h5>
                 <form method="POST" action="{% url 'placeOrder' %}">
                     {% csrf_token %}
-                    <select class="form-select mb-3" name="payment_method" aria-label="Select Payment Method" required>
-                        {% comment %} <option selected disabled>Choose a payment method</option> {% endcomment %}
-                        <option value="cod">Cash on Delivery</option>
-                        <option value="card">Credit/Debit Card</option>
-                        <option value="upi">UPI</option>
-                        <option value="netbanking">Net Banking</option>
+                    <select class="form-select mb-3" name="payment_method_id" aria-label="Select Payment Method" required>
+                        {% for method in payment_methods %}
+                            <option value="{{ method.id }}">{{ method.name }}</option>
+                        {% endfor %}
                     </select>
         
                     <!-- Hidden input to send the selected primary address ID -->
@@ -128,10 +132,22 @@
     document.getElementById('place-order-btn').addEventListener('click', function(event) {
         // Gather necessary data
         event.preventDefault();  
-        const addressId = document.querySelector('input[name="address_id"]').value;
-        const paymentMethod = document.querySelector('select[name="payment_method"]').value;
-        console.log('Address ID:', addressId); // Debugging line
-        console.log('Payment Method:', paymentMethod); // Debugging line
+        const addressInput = document.querySelector('input[name="address_id"]');
+        const addressId = addressInput ? addressInput.value : null;
+        const paymentMethod = document.querySelector('select[name="payment_method_id"]').value;
+
+        if (!addressId) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Address Required',
+                text: 'Please select a valid address before placing the order.',
+                confirmButtonText: 'Okay'
+            });
+            return; 
+        }
+
+        console.log('Address ID:', addressId); 
+        console.log('Payment Method:', paymentMethod);
 
     
         // Make the AJAX request
@@ -139,11 +155,11 @@
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'X-CSRFToken': '{{ csrf_token }}'  // Make sure to include CSRF token
+                'X-CSRFToken': '{{ csrf_token }}'  
             },
             body: JSON.stringify({
                 address_id: addressId,
-                payment_method: paymentMethod
+                payment_method_id: paymentMethod
             })
         })
         .then(response => {
@@ -154,19 +170,19 @@
             return response.json();
         })
         .then(data => {
-            // Show success message with SweetAlert
+            
             Swal.fire({
                 icon: 'success',
                 title: 'Order Placed Successfully!',
                 text: `Your order ID is: ${data.order_id}`,
                 confirmButtonText: 'Okay'
             }).then(() => {
-                // Optionally redirect the user to another page
-                window.location.href = '/userYourOrder/'; // Change to your order confirmation page
+                
+                window.location.href = '/userYourOrder/'; 
             });
         })
         .catch(error => {
-            // Show error message with SweetAlert
+           
             Swal.fire({
                 icon: 'error',
                 title: 'Error!',
@@ -178,7 +194,7 @@
 
 
 
-    // Function to set primary address via AJAX
+   
     function setPrimaryAddress(addressId) {
         fetch("{% url 'set_primary_address' %}", {
             method: 'POST',

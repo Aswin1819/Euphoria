@@ -1,15 +1,20 @@
 {% extends "userbase.html" %}
 
 {% block content %}
-<div class="container mt-5">
-    <div class="row justify-content-center">
-        <div class="col-md-6">
+    {% if messages %}
+        <div class="alert-container" style="position: fixed; top: 0; left: 0; right: 0; z-index: 9999;">
             {% for message in messages %}
-                <div class="alert alert-{{ message.tags }} alert-dismissible fade show mx-auto text-center" role="alert" id="alertBox">
-                    <strong>{{ message }}</strong>
+                <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                    {{ message }}
                     <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                 </div>
             {% endfor %}
+        </div>
+    {% endif %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            
             <div class="card p-5 shadow login-card">
                 <div class="card-body">
                     <h3 class="text-center display-4">Enter the OTP</h3>
@@ -26,12 +31,13 @@
                         <button type="submit" class="btn btn-login w-100">Validate</button>
                     </form>
                     <p class="text-center mt-3">Time remaining: <span id="time">01:00</span></p>
-                    <p class="text-center">Didn't get the code? 
-                        <form method="POST" action="{% url 'resendotp' %}" style="display: inline;">
-                            {% csrf_token %}
-                            <input type="hidden" name="email" value="{{ email }}">
-                            <button id="resend" class="decoration-none" style="color: gray; cursor: not-allowed;" disabled>Resend</button>
-                        </form>
+                    
+                    <p class="text-center d-flex justify-content-between">Didn't get the code? 
+                    <form method="POST" action="{% url 'resendotp' %}" style="display: inline;">
+                        {% csrf_token %}
+                        <input type="hidden" name="email" value="{{ email }}">
+                        <button id="resend" class="decoration-none" style="color: gray; cursor: not-allowed;" disabled>Resend</button>
+                    </form>
                     </p>
                     
                     
@@ -43,6 +49,39 @@
 
 <!-- Optional: Script to handle countdown timer -->
 <script>
+    var timeLeft = localStorage.getItem('otp_timer') ? parseInt(localStorage.getItem('otp_timer')) : 60;
+    var timerDisplay = document.getElementById('time');
+    var resendButton = document.getElementById('resend');
+
+    function updateTimerDisplay() {
+        var minutes = Math.floor(timeLeft / 60);
+        var seconds = timeLeft % 60;
+        if (seconds < 10) seconds = '0' + seconds;
+        timerDisplay.textContent = minutes + ':' + seconds;
+    }
+
+    var timer = setInterval(function() {
+        if (timeLeft <= 0) {
+            clearInterval(timer);
+            resendButton.style.color = 'blue';
+            resendButton.style.cursor = 'pointer';
+            resendButton.removeAttribute('disabled');
+            localStorage.removeItem('otp_timer');
+        } else {
+            resendButton.style.color = 'gray';
+            resendButton.style.cursor = 'not-allowed';
+            resendButton.setAttribute('disabled', true);
+            timeLeft--;
+            localStorage.setItem('otp_timer', timeLeft);
+            updateTimerDisplay();
+        }
+    }, 1000);
+
+    // Initial display
+    updateTimerDisplay();
+</script>
+
+{% comment %} <script>
     var timeLeft = 60; // Time in seconds
     var timer = setInterval(function() {
         var minutes = Math.floor(timeLeft / 60);
@@ -65,7 +104,7 @@
 
         timeLeft--;
     }, 1000);
-</script>
+</script> {% endcomment %}
 
 
 {% endblock %}

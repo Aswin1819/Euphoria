@@ -2,7 +2,7 @@ from django.shortcuts import render,redirect,get_object_or_404
 from django.contrib.auth import get_user_model
 from django.contrib.auth import login,logout,authenticate
 from django.contrib.auth.hashers import make_password
-from adminapp.models import EuphoUser,OTP,Products,Variant,Address,Cart,CartItem,Order,OrderItem,Category
+from adminapp.models import EuphoUser,OTP,Products,Variant,Address,Cart,CartItem,Order,OrderItem,Category,PaymentMethod
 from decimal import Decimal
 from django.contrib import messages
 from userapp.userotp import generateAndSendOtp
@@ -21,11 +21,12 @@ from django.template.loader import render_to_string
 from django.views.decorators.http import require_POST
 from django.core.paginator import Paginator
 from django.db.models import Q
+from django.views.decorators.cache import never_cache
 
 # Create your views here.
 
 
-
+@never_cache
 def userlogin(request):
     if request.user.is_authenticated:
         return redirect('userhome')
@@ -49,6 +50,7 @@ def userlogin(request):
 
     return render(request, 'userlogin.html', {'form': form})
 
+@never_cache
 def usersignup(request):
     if request.user.is_authenticated:
         return redirect('userhome')
@@ -74,7 +76,7 @@ def usersignup(request):
 
 
 
-
+@never_cache
 def otpValidation(request):
     if request.method == 'POST':
         email = request.POST.get('email')
@@ -102,6 +104,7 @@ def otpValidation(request):
         return render(request,'otp_validation.html',{'email':email})
 
 
+@never_cache
 def resendotp(request):
     if request.method =='POST':
         email = request.POST.get('email')
@@ -113,6 +116,7 @@ def resendotp(request):
         return render(request,'otp_validation.html',{'email':email})
     return render(request,'otp_validation.html')
 
+@never_cache
 def resendOtpForPass(request):
     if request.method == 'POST':
         email = request.POST.get('email')
@@ -125,7 +129,7 @@ def resendOtpForPass(request):
     return render(request,'forg_pass_otp.html')
 
 
-
+@never_cache
 def forgPassEmailVerification(request):
     if request.method == 'POST':
         email = request.POST.get('email')
@@ -144,6 +148,7 @@ def forgPassEmailVerification(request):
     return render(request,'forg_pass_email.html')
 
 
+@never_cache
 def otpValidationForPass(request):
     if request.method == 'POST':
         email = request.POST.get('email')
@@ -177,7 +182,7 @@ def otpValidationForPass(request):
     return render(request, 'forg_pass_otp.html')
 
 
-
+@never_cache
 def changePassword(request):
     if request.method == 'POST':
         email = request.POST.get('email')
@@ -198,6 +203,7 @@ def changePassword(request):
             return render(request,'change_password.html',{'email':email})
     
     return render(request,'change_password.html')
+
 
 def userhome(request):
     # categories = Category.objects.filter(is_active=True)
@@ -319,6 +325,7 @@ def productView(request, id):
 
        
 
+@never_cache
 @login_required(login_url='userlogin')
 def userProfileInformation(request):
     user = request.user
@@ -336,6 +343,7 @@ def userProfileInformation(request):
             if profile_form.is_valid():
                 profile_form.save()
                 print("profile edited successfully")
+                messages.success(request,'profile edited successfully')
                 return redirect('userProfileInformation')
             else:
                 print(profile_form.errors)
@@ -346,6 +354,7 @@ def userProfileInformation(request):
                 password_form.save()
                 update_session_auth_hash(request, password_form.user)  # Keeps the user logged in
                 print("Password changed successfully")
+                messages.success(request,'Password changed successfully')
                 return redirect('userProfileInformation')
             else:
                 print(password_form.errors)
@@ -356,6 +365,7 @@ def userProfileInformation(request):
     })
     
         
+@never_cache
 @login_required(login_url='userlogin')
 def userManageAddress(request):
     
@@ -384,6 +394,7 @@ def userManageAddress(request):
 
 
 @login_required(login_url='userlogin')
+@never_cache
 def editAddress(request, address_id):
     # Get the address object for the given ID and user
     address = get_object_or_404(Address, id=address_id, user=request.user)
@@ -405,7 +416,9 @@ def editAddress(request, address_id):
     }
     return render(request, 'usereditaddress.html', context)
 
+
 @login_required(login_url='userlogin')
+@never_cache
 def deleteAddress(request, address_id):
     address = get_object_or_404(Address, id=address_id, user=request.user)
     address.delete()
@@ -442,12 +455,29 @@ def cartDetails(request):
         cart = Cart.objects.filter(user=request.user).first() 
         cart_items = cart.items.select_related('product').prefetch_related('product__variants') if cart else []
         user_addresses = request.user.addresses.all() 
+    
+            
         if user_addresses and not user_addresses.filter(is_primary=True).exists():
             first_address = user_addresses.first()
             first_address.is_primary = True
             first_address.save()
+        
+        for item in cart_items:
+            if item.quantity > item.variant.stock:  
+                messages.warning(request, f"The quantity of {item.product.name} exceeds available stock.")
+                item.quantity = item.variant.stock
+                item.save()
+        
+        
+        out_of_stock_items = []
+        for item in cart_items:
+            if item.variant.stock <= 0:
+                out_of_stock_items.append(item)
             
-        return render(request,'usercart.html',{'cart':cart,'cart_items':cart_items,'user_addresses':user_addresses})
+        if out_of_stock_items:
+            messages.warning(request, "Some items in your cart are out of stock. Please remove them to proceed.")    
+        
+        return render(request,'usercart.html',{'cart':cart,'cart_items':cart_items,'user_addresses':user_addresses,'out_of_stock_items': out_of_stock_items})
     return render(request, 'usercart.html', {'cart': None, 'cart_items': [], 'user_addresses': []})
 
 @login_required(login_url='userlogin')
@@ -477,11 +507,20 @@ def update_quantity(request):
         cart = Cart.objects.filter(user=request.user).first()
         
         if cart:
-            # Get the cart item
+           
             cart_item = cart.items.filter(product_id=product_id, variant_id=variant_id).first()
+            variant = Variant.objects.filter(id=variant_id,product_id=product_id).first()
             
-            if cart_item:
-                # Enforce the max quantity rule on the server side
+            if cart_item and variant:
+                
+                max_quantity = min(variant.stock,4)
+                
+                if quantity > max_quantity:
+                    return JsonResponse({
+                        'Success':False,
+                        'error':f"Only {variant.stock} units of products are avaliable."
+                    })
+                
                 if quantity > 4:
                     quantity = 4  # Cap it at 4 if somehow bypassed on the client side
 
@@ -504,6 +543,7 @@ def update_quantity(request):
 
     return JsonResponse({'success': False, 'error': 'Invalid request.'})
 
+
 @login_required(login_url='userlogin')
 @csrf_exempt
 def set_primary_address(request):
@@ -519,9 +559,11 @@ def set_primary_address(request):
 
 
 @login_required(login_url='userlogin')
+@never_cache
 def user_checkout(request):
    
     user_addresses = Address.objects.filter(user=request.user)
+    payment_method = PaymentMethod.objects.all()
     
     try:
         cart = Cart.objects.get(user=request.user)
@@ -544,6 +586,7 @@ def user_checkout(request):
         'cart': cart,
         'total_price': total_price,
         'final_total_price': final_total_price,
+        'payment_methods':payment_method,
     }
     
     # 'total_discount': total_discount,
@@ -555,15 +598,16 @@ def user_checkout(request):
 
 @login_required(login_url='userlogin')
 @transaction.atomic
+@never_cache
 def placeOrder(request):
     if request.method == 'POST':
         try:
             data = json.loads(request.body)  # Parse JSON data
             user = request.user
             selected_address_id = data.get('address_id')
-            payment_method = data.get('payment_method')
+            payment_method_id = data.get('payment_method_id')
             print(selected_address_id)
-            print(payment_method)
+            print(payment_method_id)
             cart = get_object_or_404(Cart, user=user)
             address = get_object_or_404(Address, id=selected_address_id, user=user)
 
@@ -571,11 +615,13 @@ def placeOrder(request):
                 return JsonResponse({"error": "Your cart is empty"}, status=400)
 
             total_amount = sum(item.variant.price * item.quantity for item in cart.items.all())
+            
+            payment_method = get_object_or_404(PaymentMethod,id=payment_method_id)
 
             order = Order.objects.create(
                 user=user,
                 total_amount=total_amount,
-                payment_method=payment_method,
+                paymentmethod=payment_method,
                 created_at=timezone.now()
             )
 
@@ -630,6 +676,7 @@ def userYourOrder(request):
 @login_required(login_url='userlogin')
 @require_POST
 @csrf_exempt
+@never_cache
 def cancel_order_item(request, item_id):
     try:
         # Parse JSON request body to get the cancellation reason
@@ -659,6 +706,7 @@ def cancel_order_item(request, item_id):
 @login_required(login_url='userlogin')
 @require_POST
 @csrf_exempt
+@never_cache
 def return_order_item(request, item_id):
     try:
         # Parse JSON request body to get the return reason
@@ -696,8 +744,7 @@ def return_order_item(request, item_id):
 
 
 
-
-
+@never_cache
 @login_required(login_url='userlogin')
 def userlogout(request):
     logout(request)

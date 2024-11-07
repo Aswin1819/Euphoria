@@ -6,12 +6,14 @@
 {% block content %}
         <!-- Main Content Area -->
         <div class="col-md-10 ">
-            <div class="d-flex justify-content-between align-items-center mt-0 mb-4 dash-head py-2 rounded text-white px-2">
-                <h3>Coupon</h3>
-                <div class="d-flex align-items-center">
-                    <button class="btn btn-light me-2 rounded" type="button">Add Coupons</button>
-                    <form class="d-flex" role="search">
-                        <input class="form-control me-2" type="search" placeholder="Search For User" aria-label="Search">
+            <div class="d-flex flex-column flex-md-row justify-content-between align-items-center mt-0 mb-4 dash-head py-2 rounded text-white px-2" style="background-color: #8b5e34;">
+                <h3 class="mb-3 mb-md-0">Coupon</h3>
+            
+                <div class="d-flex flex-column flex-md-row align-items-center">
+                    <button class="btn btn-light mb-2 mb-md-0 me-md-2 rounded" type="button">Add Coupons</button>
+            
+                    <form class="d-flex flex-column flex-md-row align-items-center" role="search">
+                        <input class="form-control me-0 me-md-2 mb-2 mb-md-0" type="search" placeholder="Search For User" aria-label="Search">
                         <button class="btn btn-outline-success" type="submit">Search</button>
                     </form>
                 </div>

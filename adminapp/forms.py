@@ -26,7 +26,7 @@ class ProductForm(forms.ModelForm):
     
     def clean_description(self):
         description = self.cleaned_data.get('description')
-        if not description or not re.match(r'^[\w\s]+$', description):
+        if not description and not re.match(r'^[\w\s]+$', description):
             raise forms.ValidationError('Enter a proper description')
         return description
     

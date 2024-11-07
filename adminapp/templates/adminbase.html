@@ -26,7 +26,68 @@
     </nav>
 
     <!-- Main Content -->
-    <div class="container mt-4 flex-grow-1">
+    <div class="container-fluid mt-4 flex-grow-1">
+        <div class="container-fluid">
+            <div class="row">
+                <!-- Sidebar -->
+                {% if not request.resolver_match.url_name == 'adminLogin'%}
+                {% if not request.resolver_match.url_name == 'checkAdmin' %}
+                {% if not request.resolver_match.url_name == 'editProducts' %}
+                {% if not request.resolver_match.url_name == 'addProducts' %}
+                
+                <!-- Button to toggle sidebar on mobile -->
+                <button class="btn btn-primary d-md-none mb-3" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasSidebar" aria-controls="offcanvasSidebar">
+                    Menu
+                </button>
+    
+                <!-- Sidebar (off-canvas for mobile, inline for desktop) -->
+                <div class="col-md-2 d-none d-md-block sidebar d-flex flex-column rounded-top-3">
+                    <nav class="nav flex-column flex-grow-1 justify-content-around">
+                        <a class="nav-link" href="#">Dashboard</a>
+                        <a class="nav-link {% if request.resolver_match.url_name == 'adminProducts' %}active{% endif %}" href="{% url 'adminProducts' %}">Products</a>
+                        <a class="nav-link {% if request.resolver_match.url_name == 'adminCategory'%} active {% endif %}" href="{% url 'adminCategory' %}">Category</a>
+                        <a class="nav-link {% if request.resolver_match.url_name == 'adminBrands'%} active {% endif %}" href="{% url 'adminBrands' %}">Brands</a>
+                        <a class="nav-link {% if request.resolver_match.url_name == 'adminCustomers' %}active{% endif %}" href="{% url 'adminCustomers' %}">Customers</a>
+                        <a class="nav-link {% if request.resolver_match.url_name == 'adminOrders' %}active{% endif %}" href="{% url 'adminOrders' %}">Orders</a>
+                        <a class="nav-link {% if request.resolver_match.url_name == 'adminCoupons'%} active {% endif %}" href="{% url 'adminCoupons' %}">Coupons</a>
+                        <a class="nav-link" href="#">Banners</a>
+                    </nav>
+                </div>
+    
+                <!-- Off-canvas sidebar for mobile -->
+                <div class="offcanvas offcanvas-start d-md-none" tabindex="-1" id="offcanvasSidebar" aria-labelledby="offcanvasSidebarLabel">
+                    <div class="offcanvas-header">
+                        <h5 class="offcanvas-title" id="offcanvasSidebarLabel">Menu</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+                    </div>
+                    <div class="offcanvas-body">
+                        <nav class="nav flex-column">
+                            <a class="nav-link" href="#">Dashboard</a>
+                            <a class="nav-link {% if request.resolver_match.url_name == 'adminProducts' %}active{% endif %}" href="{% url 'adminProducts' %}">Products</a>
+                            <a class="nav-link {% if request.resolver_match.url_name == 'adminCategory'%} active {% endif %}" href="{% url 'adminCategory' %}">Category</a>
+                            <a class="nav-link {% if request.resolver_match.url_name == 'adminBrands'%} active {% endif %}" href="{% url 'adminBrands' %}">Brands</a>
+                            <a class="nav-link {% if request.resolver_match.url_name == 'adminCustomers' %}active{% endif %}" href="{% url 'adminCustomers' %}">Customers</a>
+                            <a class="nav-link {% if request.resolver_match.url_name == 'adminOrders' %}active{% endif %}" href="{% url 'adminOrders' %}">Orders</a>
+                            <a class="nav-link {% if request.resolver_match.url_name == 'adminCoupons'%} active {% endif %}" href="{% url 'adminCoupons' %}">Coupons</a>
+                            <a class="nav-link" href="#">Banners</a>
+                        </nav>
+                    </div>
+                </div>
+    
+                {% endif %}
+                {% endif %}
+                {% endif %}
+                {% endif %}
+    
+                <!-- Main Content -->
+                
+                    {% block content %}{% endblock %}
+                
+            </div>
+        </div>
+    </div>
+    
+    {% comment %} <div class="container mt-4 flex-grow-1">
         <div class="container-fluid">
             <div class="row">
                 <!-- Sidebar -->
@@ -53,7 +114,7 @@
                 {% block content %}{% endblock %}
             </div>
         </div>
-    </div>
+    </div> {% endcomment %}
 
     <!-- Footer -->
     <footer class="footer mt-auto py-3">

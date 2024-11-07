@@ -134,7 +134,7 @@ class ChangeProfileForm(forms.ModelForm):
             valid_extensions = ['jpg','jpeg','png']
             file_extension = profile_image.name.split('.')[-1].lower()
             if file_extension not in valid_extensions:
-                raise ValidationError('Unsupported file format. Only JPG, JPEG, and PNG files are allowed.')
+                raise forms.ValidationError('Unsupported file format. Only JPG, JPEG, and PNG files are allowed.')
         return profile_image        
         
         

@@ -17,19 +17,22 @@
 
         <!-- Main Content Area -->
         <div class="col-md-10 ">
-            <div class="d-flex justify-content-between align-items-center mt-0 mb-4 dash-head py-2 rounded text-white px-2">
-                <h3>Brands</h3>
-                <div class="d-flex align-items-center">
-                    <button type="button" class="btn btn-light me-2 rounded" data-mdb-toggle="modal" data-mdb-target="#staticBackdrop1">
+            <div class="d-flex flex-column flex-md-row justify-content-between align-items-center mt-0 mb-2 dash-head py-2 rounded text-white px-2" style="background-color: #8b5e34;">
+                <h3 class="mb-3 mb-md-0">Brands</h3>
+                
+                <div class="d-flex flex-column flex-md-row align-items-center">
+                    <button type="button" class="btn btn-light mb-2 mb-md-0 me-md-2 rounded" data-mdb-toggle="modal" data-mdb-target="#staticBackdrop1">
                         Add Brands
                     </button>
-                    <form class="d-flex" role="search" method="POST" action="{% url 'brandSearch' %}">
-                        {%csrf_token%}
-                        <input class="form-control me-2" type="search" placeholder="Search For Brand" aria-label="Search" name="search">
+                    
+                    <form class="d-flex flex-column flex-md-row align-items-center" role="search" method="POST" action="{% url 'brandSearch' %}">
+                        {% csrf_token %}
+                        <input class="form-control me-0 me-md-2 mb-2 mb-md-0" type="search" placeholder="Search For Brand" aria-label="Search" name="search">
                         <button class="btn btn-outline-success" type="submit">Search</button>
                     </form>
                 </div>
             </div>
+            
 
             <!-- Customer Table -->
             <div class="table-responsive">

@@ -36,7 +36,11 @@
                             {% endif %}
                         </p>
                     </div>
-                    <p class="card-text"><small class="text-muted">Order ID: {{ item.order.id }}</small></p>
+                    <div class="d-flex justify-content-between">
+                        <p class="card-text"><small class="text-muted">Order ID: {{ item.order.id }}</small></p>
+                        <p class="card-text mb-1">Payment: {{ item.order.paymentmethod }}</p>
+                    </div>
+                    
 
                     <!-- Progress Bar for Order Item Status -->
                     <div class="progress mt-3 mb-2" style="height: 10px;">
