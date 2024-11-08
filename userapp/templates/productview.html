@@ -47,12 +47,13 @@
             <!-- Display default variant price -->
             <p id="variant-price" class="display-4 mt-5">&#8377; {{ default_variant.price }}</p>
     
-            {% if default_variant.stock == 0 %}
+            {% comment %} {% if default_variant.stock == 0 %}
                 <p class="text-danger">Stock Out</p>
             {% elif default_variant.stock < 10 %}
                 <p class="text-warning">Limited Stock</p>
-            {% endif %}
-    
+            {% endif %} {% endcomment %}
+            
+            <div id="stock-status"></div>
             <p class="product-description">{{ product.description }}</p>
     
             <!-- Variant Weight Selection -->
@@ -61,41 +62,26 @@
                 <select id="variant-weight" class="form-control" onchange="updateVariant()" name="variant_id">
                     {% for variant in variants %}
                         <option value="{{ variant.id }}" data-price="{{ variant.price }}" data-stock="{{ variant.stock }}">
+                            {% if variant.id == default_variant.id %}selected{% endif %}
                             {{ variant.weight }}g
                         </option>
                     {% endfor %}
                 </select>
             </div>
     
-            <!-- Quantity and Add to Cart -->
-            <!-- <div class="my-4">
-                <label for="quantity" class="form-label">Quantity</label>
-                <div class="input-group mb-3" style="max-width: 150px;">
-                    <button class="btn btn-outline-secondary" type="button">-</button>
-                    <input type="text" class="form-control text-center" id="quantity" value="1">
-                    <button class="btn btn-outline-secondary" type="button">+</button>
-                </div>
-                <a id="addToCartButton" class="btn btn-primary btn-lg" data-product-id="{{ product.id }}">Add to Cart</a>
-                
-            </div> -->
-            <form action="{% url 'addToCart' %}" method="post">
+           
+            <form action="{% url 'addToCart' %}" method="POST">
                 {% csrf_token %}
                 <input type="hidden" name="product_id" value="{{ product.id }}">
                 <input type="hidden" name="variant_id" id="variant_id" value="{{ default_variant.id }}">
                 
-                <!-- Quantity Input -->
-                <!-- <div class="my-4">
-                    <label for="quantity" class="form-label">Quantity</label>
-                    <input type="number" name="quantity" id="quantity" value="1" min="1" class="form-control">
-                </div> -->
-                {% if default_variant.stock == 0 %}
-                    <button type="submit" class="btn btn-primary btn-lg cursor-none" disabled>Add to Cart</button>
-                {% else %}
-                <button type="submit" class="btn btn-primary btn-lg">Add to Cart</button>
-                {% endif %}
+            
+                <button id="add-to-cart-btn" type="submit" class="btn btn-primary btn-lg">Add to Cart</button>
+              
+                
 
-                <button class="btn btn-success btn-lg ms-3">Buy Now</button>
-                <button class="btn btn-warning btn-lg ms-3">Add to Wishlist</button>
+                {% comment %} <button class="btn btn-success btn-lg ms-3">Buy Now</button>
+                <button class="btn btn-warning btn-lg ms-3">Add to Wishlist</button> {% endcomment %}
             </form>
             
         </div>
@@ -204,8 +190,9 @@ function updateVariant() {
     var selectedOption = variantSelect.options[variantSelect.selectedIndex];
     var price = selectedOption.getAttribute('data-price');
     var stock = selectedOption.getAttribute('data-stock');
+    var variantId = selectedOption.value;
    
-
+    console.log(variantId);
     // Update price
     document.getElementById('variant-price').innerText = `₹ ${price}`;
 
@@ -213,10 +200,17 @@ function updateVariant() {
     var stockMessage = '';
     if (stock == 0) {
         stockMessage = '<p class="text-danger">Stock Out</p>';
+        document.getElementById('add-to-cart-btn').disabled = true;
     } else if (stock < 10) {
         stockMessage = '<p class="text-warning">Limited Stock</p>';
+        document.getElementById('add-to-cart-btn').disabled = false;
+    } else {
+        stockMessage = '<p class="text-success">In Stock</p>';
+        document.getElementById('add-to-cart-btn').disabled = false;
     }
     document.getElementById('stock-status').innerHTML = stockMessage;
+
+    document.getElementById('variant_id').value = variantId;
 }
 updateVariant()
 

@@ -189,7 +189,9 @@ def changePassword(request):
         password = request.POST.get('password')
         confirmPassword = request.POST.get('confirm_password')
         
-        if password and confirmPassword and password==confirmPassword:
+       
+        
+        if password and confirmPassword and password==confirmPassword and len(password)>6:
             try:
                 user = EuphoUser.objects.get(email=email)
                 user.set_password(password)
@@ -199,7 +201,7 @@ def changePassword(request):
             except EuphoUser.DoesNotExist:
                 messages.warning(request,"User does not exist")
         else:
-            messages.warning(request,"Password not match or are empty")
+            messages.warning(request,"Password not match or are empty or must be atleast 6 characters")
             return render(request,'change_password.html',{'email':email})
     
     return render(request,'change_password.html')
@@ -208,7 +210,7 @@ def changePassword(request):
 def userhome(request):
     # categories = Category.objects.filter(is_active=True)
     products = Products.objects.filter(category__is_active=True,brand__is_active=True).prefetch_related('variants').order_by('-popularity')
-    latest_product = Products.objects.filter(category__is_active=True,brand__is_active=True).order_by('-id')[:4]
+    latest_product = Products.objects.filter(category__is_active=True,brand__is_active=True).order_by('-created_at')[:4]
     featured = Products.objects.filter(is_featured=True,category__is_active=True,brand__is_active=True)
     return render(request,'user_home.html',{
         'products':products,
@@ -288,14 +290,15 @@ def productView(request, id):
         brand__is_active=True
     ).exclude(id=product.id)
 
-    # Check if the user has a "Delivered" order item for this product
-    has_purchased = OrderItem.objects.filter(
-        order__user=request.user, product=product, status='Delivered'
-    ).exists()
-
-    
-    has_reviewed = product.reviews.filter(user=request.user).exists()
-    # Handle review form submission if eligible
+    if request.user.is_authenticated:
+        has_purchased = OrderItem.objects.filter(
+            order__user=request.user, product=product, status='Delivered'
+        ).exists()
+        has_reviewed = product.reviews.filter(user=request.user).exists()
+    else:
+        has_purchased = False
+        has_reviewed = False
+        
     form=None
     if request.method == 'POST' and has_purchased and not has_reviewed:
         form = ReviewForm(request.POST)
@@ -369,7 +372,7 @@ def userProfileInformation(request):
 @login_required(login_url='userlogin')
 def userManageAddress(request):
     
-    user_address = Address.objects.filter(user=request.user)
+    user_address = Address.objects.filter(user=request.user,is_deleted=False)
     
     if request.method == 'POST':
         form = AddressForm(request.POST)
@@ -397,7 +400,7 @@ def userManageAddress(request):
 @never_cache
 def editAddress(request, address_id):
     # Get the address object for the given ID and user
-    address = get_object_or_404(Address, id=address_id, user=request.user)
+    address = get_object_or_404(Address, id=address_id, user=request.user , is_deleted=False)
 
     if request.method == 'POST':
         form = AddressForm(request.POST, instance=address)
@@ -421,7 +424,9 @@ def editAddress(request, address_id):
 @never_cache
 def deleteAddress(request, address_id):
     address = get_object_or_404(Address, id=address_id, user=request.user)
-    address.delete()
+    address.is_deleted=True
+    address.save()
+    messages.success(request,'Address deleted Successfully')
     return redirect(reverse('userManageAddress'))
 
 
@@ -429,7 +434,8 @@ def deleteAddress(request, address_id):
 def addToCart(request):
     if request.method=="POST":
         product_id = request.POST.get('product_id')       
-        variant_id = request.POST.get('variant_id')    
+        variant_id = request.POST.get('variant_id')  
+        print(variant_id)  
         quantity = request.POST.get('quantity')
    
         product = get_object_or_404(Products,id=product_id)
@@ -439,8 +445,7 @@ def addToCart(request):
         
         if request.user.is_authenticated:
             cart,created = Cart.objects.get_or_create(user=request.user)
-        else:
-            cart,created = Cart.objects.get_or_create(session_id=request.session.session_key)
+        
         
         cart_item,created = CartItem.objects.get_or_create(cart=cart,product=product,variant=variant,defaults={'quantity':1})
         if not created:
@@ -454,7 +459,7 @@ def cartDetails(request):
     if request.user.is_authenticated:
         cart = Cart.objects.filter(user=request.user).first() 
         cart_items = cart.items.select_related('product').prefetch_related('product__variants') if cart else []
-        user_addresses = request.user.addresses.all() 
+        user_addresses = request.user.addresses.filter(is_deleted=False)
     
             
         if user_addresses and not user_addresses.filter(is_primary=True).exists():
@@ -562,7 +567,7 @@ def set_primary_address(request):
 @never_cache
 def user_checkout(request):
    
-    user_addresses = Address.objects.filter(user=request.user)
+    user_addresses = Address.objects.filter(user=request.user,is_deleted=False)
     payment_method = PaymentMethod.objects.all()
     
     try:
@@ -622,7 +627,8 @@ def placeOrder(request):
                 user=user,
                 total_amount=total_amount,
                 paymentmethod=payment_method,
-                created_at=timezone.now()
+                created_at=timezone.now(),
+                address=address,
             )
 
             for cart_item in cart.items.all():

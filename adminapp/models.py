@@ -186,6 +186,7 @@ class Address(models.Model):
     pincode = models.CharField(max_length=10)
     phone = models.CharField(max_length=15)
     is_primary = models.BooleanField(default=False)
+    is_deleted = models.BooleanField(default=False)
     
     def save(self, *args, **kwargs):
         # Check if there is already a primary address for the user
@@ -235,6 +236,7 @@ class Order(models.Model):
     total_amount = models.DecimalField(max_digits=10, decimal_places=2)
     created_at = models.DateTimeField(auto_now_add=True)
     paymentmethod = models.ForeignKey(PaymentMethod,on_delete=models.SET_NULL,null=True,default=1)
+    address = models.ForeignKey(Address,on_delete=models.PROTECT,null=True,blank=True)
     
     
     def __str__(self):

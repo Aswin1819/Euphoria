@@ -87,6 +87,32 @@
                 </tbody>
             </table>
         </div>
+        <!--pagination controls for order table-->
+        <div class="pagination justify-content-center mt-4">
+            <nav aria-label="Page navigation">
+                <ul class="pagination">
+                    {% if orders.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ orders.previous_page_number }}">Previous</a>
+                        </li>
+                    {% endif %}
+                    
+                    <!-- Display page numbers -->
+                    {% for num in orders.paginator.page_range %}
+                        <li class="page-item {% if orders.number == num %}active{% endif %}">
+                            <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+                        </li>
+                    {% endfor %}
+                    
+                    {% if orders.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ orders.next_page_number }}">Next</a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </nav>
+        </div>
+    </div>
         {% for item in orders %}
             <!-- View Order Details Modal -->
             <div class="modal fade" id="viewOrderModal{{ item.id }}" tabindex="-1" aria-labelledby="viewOrderModalLabel{{ item.id }}" aria-hidden="true">
@@ -98,13 +124,10 @@
                         </div>
                         <div class="modal-body">
                             <p><strong>Customer Name:</strong> {{ item.order.user.username }}</p>
-                            <p><strong>Payment Method:</strong> {{ item.order.payment_method }}</p>
+                            <p><strong>Payment Method:</strong> {{ item.order.paymentmethod }}</p>
                             <p><strong>Address:</strong> 
-                                {% for address in item.order.user.addresses.all %}
-                                    {% if address.is_primary %}
-                                    {{ address.address }}, {{ address.city }}, {{ address.place }}, {{ address.pincode }}
-                                    {% endif %}
-                                {% endfor %}
+                            {{item.order.address.address }}, {{ item.order.address.city }}, {{ item.order.address.place }}, {{ item.order.address.pincode }}                                
+                  
                             </p>
                             <p><strong>Status:</strong> {{ item.status }}</p>
                             <p><strong>Order Date:</strong> {{ item.order.created_at|date:"Y-m-d" }}</p>
@@ -141,5 +164,8 @@
                 </div>
             </div>
         {% endfor %}
+
+        <!--pagination controls for customers -->
+
     </div>
 {% endblock %}

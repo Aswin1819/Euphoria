@@ -68,6 +68,7 @@
                         <h6>{{ item.product.name }}</h6>
                         <p class="text-muted mb-0">{{ item.product.description|truncatewords:10 }}</p>
                         <p class="mb-1">Brand: {{ item.product.brand.name }}</p>
+                        <p class="mb-1">weight: {{ item.variant.weight }}g</p>
                         {% if item.variant.stock > 0 %}
                             <p class="text-success">In Stock: {{ item.variant.stock }}</p>
                         {% else %}
@@ -81,7 +82,7 @@
                     </div>
                     <div class="text-end">
                         <p class="mb-0">₹{{ item.get_total_price }}</p>
-                        <p class="text-success">{{ item.discount_percentage }}% Off</p>
+                        {% comment %} <p class="text-success">{{ item.discount_percentage }}% Off</p> {% endcomment %}
                         <div>
                             <a href="{% url 'removeCartItems' item.product.id item.variant.id %}" class="btn btn-link btn-lg p-0">Remove</a>
                         </div>
@@ -103,15 +104,15 @@
                 </div>
                 <div class="d-flex justify-content-between">
                     <p>Discount</p>
-                    <p class="text-success">- ₹{{ total_discount }}</p>
+                    <p class="text-success">- ₹Nil{{ total_discount }}</p>
                 </div>
                 <div class="d-flex justify-content-between">
                     <p>Coupons for you</p>
-                    <p class="text-success">- ₹{{ coupon_discount }}</p>
+                    <p class="text-success">- ₹Nil{{ coupon_discount }}</p>
                 </div>
                 <div class="d-flex justify-content-between">
                     <p>Platform Fee</p>
-                    <p>₹{{ platform_fee }}</p>
+                    <p>₹Nil{{ platform_fee }}</p>
                 </div>
                 <div class="d-flex justify-content-between">
                     <p>Delivery Charges</p>

@@ -7,6 +7,7 @@ from .forms import ProductForm, VariantForm
 from django.forms import modelformset_factory
 from django.db.models import Q
 from django.contrib.auth.decorators import login_required
+from django.core.paginator import Paginator
 #imagecropping modules
 from django.core.files.base import ContentFile
 import base64
@@ -70,7 +71,12 @@ def adminLogout(request):
 @login_required(login_url='adminLogin')
 def adminCustomers(request):
     if request.user.is_superuser:
-        user = EuphoUser.objects.all().order_by('-updated_at')
+        user_list = EuphoUser.objects.all().order_by('-updated_at')
+        
+        paginator = Paginator(user_list,5)
+        page_number = request.GET.get('page')
+        user = paginator.get_page(page_number)
+        
         return render(request,'admincustomers.html',{'users':user})
     return redirect(adminLogin)
 
@@ -106,7 +112,12 @@ def customerSearch(request):
 @login_required(login_url='adminLogin')
 def adminCategory(request):
     if request.user.is_superuser:
-        category = Category.objects.all().order_by('-updated_date')
+        category_list = Category.objects.all().order_by('-updated_date')
+        
+        paginator = Paginator(category_list,5)
+        page_number = request.GET.get('page')
+        category = paginator.get_page(page_number)
+        
         return render(request,'admincategory.html',{'items':category})
     return redirect(adminLogin)
 
@@ -183,39 +194,41 @@ def categorySearch(request):
 @login_required(login_url='userlogin')
 def adminProducts(request):
     if request.user.is_superuser:
-        product = Products.objects.all().prefetch_related('variants').order_by('-updated_at')
+        product_list = Products.objects.all().prefetch_related('variants').order_by('-updated_at')
         category = Category.objects.all()
+        
+        paginator = Paginator(product_list,5)
+        page_number = request.GET.get('page')
+        product = paginator.get_page(page_number)
+        
         return render(request,'adminProducts.html',{'products':product,'categories':category})
     return redirect(adminLogin)
 
 
 def addProducts(request):
     if request.user.is_superuser:
-        VariantFormSet = modelformset_factory(Variant,form=VariantForm,extra=2)
+        VariantFormSet = modelformset_factory(Variant,form=VariantForm,extra=1)
+        
         if request.method == 'POST':
-            product_form = ProductForm(request.POST, request.FILES) 
+            product_form = ProductForm(request.POST) #request.FILES changed
             variant_formset = VariantFormSet(request.POST)
+            
             image_files = [
                     request.POST.get('image1'),
                     request.POST.get('image2'),
                     request.POST.get('image3'),
                     request.POST.get('image4'),
                  ]
-            # print(image_files[0])
             
             if product_form.is_valid() and variant_formset.is_valid():
                 print("form and variants are valid ")
                 product = product_form.save()
                 
-                # for image_file in image_files:
-                #      if image_file:
-                #         Images.objects.create(images=image_file, product=product)
-                
                 for image_data in image_files:
-                    if image_data:  # Ensure that there is base64 data
+                    if image_data:  
                         try:
                             format, imgstr = image_data.split(';base64,')
-                            ext = format.split('/')[-1]  # Extract file extension
+                            ext = format.split('/')[-1]  
                             image_file = ContentFile(base64.b64decode(imgstr), name=f'product_image.{ext}')
                             Images.objects.create(images=image_file, product=product)
                         except Exception as e:
@@ -223,8 +236,6 @@ def addProducts(request):
                     else:
                         print("No image provided or invalid image.")
 
-                
-                #saving each variant in formset
                 
                 variants = variant_formset.save(commit=False)
                 for variant in variants:
@@ -239,94 +250,18 @@ def addProducts(request):
                 messages.warning(request, "Please correct the errors below.")
         else:
             product_form = ProductForm()
-            # variant1_form = VariantForm()
             variant_formset = VariantFormSet(queryset=Variant.objects.none())
 
-    categories = Category.objects.all()
-    brands = Brand.objects.all()
-    return render(request, 'addproducts.html', {
-        'product_form': product_form,
-        'variant_formset': variant_formset,
-        'categories': categories,
-        'brands': brands,
-    })
+        categories = Category.objects.all()
+        brands = Brand.objects.all()
+        return render(request, 'addproducts.html', {
+            'product_form': product_form,
+            'variant_formset': variant_formset,
+            'categories': categories,
+            'brands': brands,
+        })
+    return redirect(adminLogin)
 
-
-
-
-# def editProducts(request,id):
-#     if request.user.is_superuser:
-#         # Retrieve the product to be edited
-#         product = Products.objects.get(id=id)
-#         VariantFormSet = modelformset_factory(Variant, form=VariantForm, extra=0)  # No extra forms unless necessary
-        
-#         if request.method == 'POST':
-#             product_form = ProductForm(request.POST,instance=product)
-#             variant_formset = VariantFormSet(request.POST, queryset=Variant.objects.filter(product=product))
-#             image_files = [
-#                 request.POST.get('image1'),
-#                 request.POST.get('image2'),
-#                 request.POST.get('image3'),
-#                 request.POST.get('image4'),
-#             ]
-          
-                           
-#             if product_form.is_valid():
-#                 updated_product = product_form.save()
-#                 print('product and variant forms are valid')
-#                 # Update or replace images if new ones are uploaded
-#                 for index, image_data in enumerate(image_files):
-#                     if image_data:
-#                         try:
-#                             print('inside image try block')
-#                             format, imgstr = image_data.split(';base64,')
-#                             ext = format.split('/')[-1]
-#                             image_file = ContentFile(base64.b64decode(imgstr), name=f'product_image_{index+1}.{ext}')
-                            
-#                             # Update existing image or create new if no image exists at that index
-#                             if index < updated_product.product_images.count():
-#                                 existing_image = updated_product.product_images.all()[index]
-#                                 existing_image.images = image_file
-#                                 existing_image.save()
-#                             else:
-#                                 Images.objects.create(images=image_file, product=updated_product)
-#                         except Exception as e:
-#                             print(f"Error processing image: {e}")
-#                     else:
-#                         print(f"No image provided for image{index+1}")
-                
-#                 # Update the variants
-#                 variants = variant_formset.save(commit=False)
-#                 for variant in variants:
-#                     variant.product = updated_product
-#                     variant.save()
-
-#                 # Delete removed variants if necessary
-#                 for variant in variant_formset.deleted_objects:
-#                     variant.delete()
-
-#                 messages.success(request, "Product and variants updated successfully")
-#                 return redirect('adminProducts')
-#             else:
-#                 print(product_form.errors)
-#                 print('inside the else of validation')
-#                 messages.warning(request, "Please correct the errors below.")
-#         else:
-#             product_form = ProductForm(instance=product)
-#             variant_formset = VariantFormSet(queryset=Variant.objects.filter(product=product))
-
-#         categories = Category.objects.all()
-#         brands = Brand.objects.all()
-
-#         return render(request, 'editproducts.html', {
-#             'product_form': product_form,
-#             'variant_formset': variant_formset,
-#             'categories': categories,
-#             'brands': brands,
-#             'product': product,  # Pass the product to prepopulate the form
-#         })
-
-#     return redirect(adminLogin)
 
 def editProducts(request, id):
     if request.user.is_superuser:
@@ -348,46 +283,42 @@ def editProducts(request, id):
                 updated_product = product_form.save()
                 
                 # Handle images
+                existing_images = updated_product.product_images.all()
                 for index, image_data in enumerate(image_files):
                     if image_data:
                         try:
                             format, imgstr = image_data.split(';base64,')
                             ext = format.split('/')[-1]
                             image_file = ContentFile(base64.b64decode(imgstr), name=f'product_image_{index+1}.{ext}')
-                            
-                            if index < updated_product.product_images.count():
-                                # Update existing image
-                                existing_image = updated_product.product_images.all()[index]
+                            if index < len(existing_images):
+                                existing_image = existing_images[index]
                                 existing_image.images = image_file
                                 existing_image.save()
                             else:
-                                # Add new image if less than 4 exist
                                 Images.objects.create(images=image_file, product=updated_product)
                         except Exception as e:
                             print(f"Error processing image: {e}")
-                    else:
-                        print("There is no vlaid image")
                             
 
                 # Handle variants
-                # variants = variant_formset.save(commit=False)
                 for form in variant_formset:
-                    if form.cleaned_data and not form.cleaned_data.get('DELETE', False):
-                        form.save()
-                    elif form.cleaned_data.get('DELETE', False) and form.instance.pk:
-                        form.instance.delete()
+                    if form.cleaned_data:
+                        if form.cleaned_data.get('DELETE', False):
+                            if form.instance.pk:
+                                form.instance.delete()
+                        else:
+                            form.save()
 
                 messages.success(request, "Product and variants updated successfully.")
                 return redirect('adminProducts')
             else:
-                # Log form and formset errors
                 print("Product Form Errors:", product_form.errors)
                 print("Variant Formset Errors:", variant_formset.errors)
                 messages.warning(request, "Please correct the errors below.")
         
         else:
             product_form = ProductForm(instance=product)
-            variant_formset = VariantFormSet(queryset=Variant.objects.filter(product=product))
+            variant_formset = VariantFormSet(queryset=product.variants.all())
 
         return render(request, 'editproducts.html', {
             'product_form': product_form,
@@ -434,6 +365,7 @@ def productSearch(request):
                 product = Products.objects.filter(name__icontains=search).order_by('name')
             else:
                 product = Products.objects.all()
+                
             return render(request,'adminproducts.html',{'products':product})
             
 def removeProducts(request,id):
@@ -459,7 +391,12 @@ def removeProducts(request,id):
 
 def adminBrands(request):
     if request.user.is_superuser:
-        brand = Brand.objects.all().order_by('-updated_date')
+        brand_list = Brand.objects.all().order_by('-updated_date')
+        
+        paginator = Paginator(brand_list,5)
+        page_number = request.GET.get('page')
+        brand = paginator.get_page(page_number)
+        
         return render(request,'adminbrands.html',{'items':brand})
     return redirect(adminLogin)
 
@@ -535,7 +472,12 @@ def brandSearch(request):
 @login_required(login_url='adminLogin')
 def adminOrders(request):
     if request.user.is_superuser:     
-        orders = OrderItem.objects.select_related('order', 'product').prefetch_related('order__user').order_by('-last_updated')
+        orders_list = OrderItem.objects.select_related('order', 'product').prefetch_related('order__user').order_by('-last_updated')
+        
+        paginator = Paginator(orders_list,5)
+        page_number = request.GET.get('page')
+        orders = paginator.get_page(page_number)
+        
         return render(request, 'adminorders.html', {'orders': orders})
     else:
         return redirect(adminLogin)

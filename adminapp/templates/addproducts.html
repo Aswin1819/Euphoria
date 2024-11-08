@@ -117,7 +117,7 @@
         var formIdx = {{ variant_formset.total_form_count }};
         var variantsContainer = document.getElementById('variants-container');
         var addVariantButton = document.getElementById('add-variant');
-
+    
         // Add new variant form
         addVariantButton.addEventListener('click', function () {
             var newForm = `
@@ -139,12 +139,12 @@
                 </div>
             </div>`;
             variantsContainer.insertAdjacentHTML('beforeend', newForm);
-
+    
             formIdx++;
-
+    
             attachRemoveVariantEvent();
         });
-
+    
         // Attach remove event to the dynamically added forms
         function attachRemoveVariantEvent() {
             var removeButtons = document.querySelectorAll('.remove-variant');
@@ -154,27 +154,41 @@
                 });
             });
         }
-
+    
         // Initial attachment of the remove event for the initial variants
         attachRemoveVariantEvent();
-
+    
         // Image cropping logic
         var cropper;
         var currentImageInput, currentCroppedInput;
-
+    
         document.querySelectorAll('.image-input').forEach((input, index) => {
             input.addEventListener('change', function (event) {
                 const file = event.target.files[0];
                 if (!file) return;
-
+    
+                // Get the file format (MIME type)
+                const fileType = file.type;
+    
+                // Allowed image formats
+                const allowedFormats = ['image/jpeg', 'image/png'];
+    
+                // Check if the selected file format is allowed
+                if (!allowedFormats.includes(fileType)) {
+                    alert('Invalid image format. Please upload a JPG or PNG or image.');
+                    event.target.value = '';  // Clear the input field
+                    return;  // Stop further processing
+                }
+    
+                // Proceed with image preview and cropping if format is valid
                 const reader = new FileReader();
                 reader.onload = (e) => {
                     document.getElementById('imagePreview').src = e.target.result;
                     document.getElementById('cropModal').style.display = 'block';
-
+    
                     currentImageInput = input;
                     currentCroppedInput = document.getElementById('croppedImage' + (index + 1));
-
+    
                     if (cropper) cropper.destroy(); // Destroy previous instance if exists
                     cropper = new Cropper(document.getElementById('imagePreview'), {
                         aspectRatio: 1, // Adjust as needed
@@ -184,7 +198,7 @@
                 reader.readAsDataURL(file);
             });
         });
-
+    
         // Ensure crop button assigns the cropped image data to the correct hidden input field
         document.getElementById('cropButton').addEventListener('click', () => {
             if (cropper) {
@@ -192,7 +206,7 @@
                     width: 300, // Adjust as needed
                     height: 300,
                 });
-
+    
                 canvas.toBlob((blob) => {
                     const reader = new FileReader();
                     reader.readAsDataURL(blob);
@@ -204,7 +218,7 @@
                 });
             }
         });
-
+    
         // Ensure all cropped images are present before submitting the form
         document.querySelector('form').addEventListener('submit', function (event) {
             let allImagesCropped = true;
@@ -215,13 +229,14 @@
                     console.log(`Image ${i} not cropped or missing.`);
                 }
             }
-
+    
             if (!allImagesCropped) {
                 event.preventDefault();
                 alert('Please crop all images before submitting the form.');
             }
         });
     });
+    
 </script>
 
 

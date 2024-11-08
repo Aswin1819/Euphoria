@@ -16,7 +16,7 @@
 
                     <div class="d-flex justify-content-between">
                         <p class="card-text mb-1">Quantity: {{ item.quantity }}</p>
-                        <p class="card-text mb-1">Address: {{ item.order.user.get_primary_address }}</p>
+                        <p class="card-text mb-1">Address: {{ item.order.address.address }} ,{{ item.order.address.pincode}}</p>
                     </div>
                 
                     <div class="d-flex justify-content-between">
