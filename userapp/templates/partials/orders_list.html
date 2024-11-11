@@ -45,17 +45,17 @@
                     <!-- Progress Bar for Order Item Status -->
                     <div class="progress mt-3 mb-2" style="height: 10px;">
                         <div class="progress-bar 
-                            {% if item.status == 'Pending' %}bg-warning{% elif item.status == 'Delivered' %}bg-success{% else %}bg-danger{% endif %}"
+                            {% if item.status == 'Shipped' %}bg-warning{% elif item.status == 'Out of Delivery' %}bg-primary{% elif item.status == 'Delivered' %}bg-success{% else %}bg-danger{% endif %}"
                             role="progressbar"
                             style="width: 
-                                {% if item.status == 'Pending' %}25{% elif item.status == 'Delivered' %}100{% elif item.status == 'Returned' or item.status == 'Cancelled' %}100{% endif %}%;"
-                            aria-valuenow="{% if item.status == 'Pending' %}25{% elif item.status == 'Delivered' %}100{% else %}50{% endif %}"
+                                {% if item.status == 'Shipped' %}25{% elif item.status == 'Out of Delivery' %}75{% elif item.status == 'Delivered' %}100{% elif item.status == 'Returned' or item.status == 'Cancelled' %}100{% endif %}%;"
+                            aria-valuenow="{% if item.status == 'Shipped' %}25{% elif item.status == 'Out of Delivery' %}75{% elif item.status == 'Delivered' %}100{% else %}50{% endif %}"
                             aria-valuemin="0" aria-valuemax="100">
                         </div>
                     </div>
 
                     <!-- Action Button for Cancel or Return based on OrderItem status -->
-                    {% if item.status == 'Pending' %}
+                    {% if item.status in  'Pending , Shipped' %}
                         <button class="btn btn-danger" onclick="cancelOrder('{{ item.id }}')">Cancel Order</button>
                     {% elif item.status == 'Delivered' %}
                         <button class="btn btn-warning" onclick="returnOrder('{{ item.id }}')">Return Order</button>
@@ -126,9 +126,8 @@
     
 
     function cancelOrder(orderItemId) {
-        // Store orderItemId in hidden input for use in the submit function
+        
         document.getElementById('orderIdToCancel').value = orderItemId;
-        // Show the cancellation modal
         new bootstrap.Modal(document.getElementById('cancelOrderModal')).show();
     }
     
@@ -158,9 +157,8 @@
     }
     
     function returnOrder(orderItemId) {
-        // Store orderItemId in hidden input for use in the submit function
+        
         document.getElementById('orderIdToReturn').value = orderItemId;
-        // Show the return modal
         new bootstrap.Modal(document.getElementById('returnOrderModal')).show();
     }
     
@@ -168,7 +166,7 @@
         const orderItemId = document.getElementById('orderIdToReturn').value;
         const reason = document.getElementById('returnReason').value;
     
-        fetch(`/return_order_item/${orderItemId}/`, {  // Changed to order item endpoint
+        fetch(`/return_order_item/${orderItemId}/`, {  
             method: 'POST',
             headers: {
                 'X-Requested-With': 'XMLHttpRequest',

@@ -8,6 +8,7 @@ from django.forms import modelformset_factory
 from django.db.models import Q
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
+from django.views.decorators.cache import never_cache
 #imagecropping modules
 from django.core.files.base import ContentFile
 import base64
@@ -18,13 +19,14 @@ import re
                                 #########           #########
                                 #########ADMIN LOGIN#########
                                 #########           #########
-
+@never_cache
 def adminLogin(request):
     if request.user.is_authenticated:
         if request.user.is_superuser:
             return redirect(adminCustomers)
         return render(request,'adminlogin.html')    
     return render(request,'adminlogin.html')
+
 
 def checkAdmin(request):
         if request.method == 'POST':
@@ -53,7 +55,7 @@ def checkAdmin(request):
             return render(request,'adminlogin.html')
     
         
-    
+@never_cache
 def adminLogout(request):
     if request.user.is_authenticated:
         if request.user.is_superuser:
@@ -82,6 +84,7 @@ def adminCustomers(request):
 
 
 User = get_user_model()
+@never_cache
 def blockUser(request,id):
     if request.user.is_authenticated:
         if request.user.is_superuser:
@@ -92,7 +95,8 @@ def blockUser(request,id):
         return render(request,'adminlogin.html')
     return render(request,'adminlogin.html')
             
-    
+
+@never_cache
 @login_required(login_url='adminLogin')
 def customerSearch(request):
     if request.method=='POST':
@@ -121,6 +125,8 @@ def adminCategory(request):
         return render(request,'admincategory.html',{'items':category})
     return redirect(adminLogin)
 
+
+@never_cache
 def addCategory(request):
     if request.user.is_superuser:
         if request.method == "POST":
@@ -141,6 +147,7 @@ def addCategory(request):
             return redirect(adminCategory)
     return redirect(adminLogin)
 
+@never_cache
 def removeCategory(request,id):
     if request.user.is_superuser:
         if request.user.is_authenticated:            
@@ -151,6 +158,8 @@ def removeCategory(request,id):
         
     return redirect(adminLogin)
 
+
+@never_cache
 def editCategory(request,id):
     if request.user.is_superuser:
         if request.method=='POST':
@@ -172,6 +181,8 @@ def editCategory(request,id):
             return redirect(adminCategory)
     return redirect(adminLogin)
 
+
+@never_cache
 def categorySearch(request):
     if request.user.is_superuser:
         if request.method=='POST':
@@ -190,7 +201,7 @@ def categorySearch(request):
 
 
 
-
+@never_cache
 @login_required(login_url='userlogin')
 def adminProducts(request):
     if request.user.is_superuser:
@@ -205,6 +216,7 @@ def adminProducts(request):
     return redirect(adminLogin)
 
 
+@never_cache
 def addProducts(request):
     if request.user.is_superuser:
         VariantFormSet = modelformset_factory(Variant,form=VariantForm,extra=1)
@@ -263,6 +275,7 @@ def addProducts(request):
     return redirect(adminLogin)
 
 
+@never_cache
 def editProducts(request, id):
     if request.user.is_superuser:
         product = get_object_or_404(Products, id=id)
@@ -329,7 +342,7 @@ def editProducts(request, id):
     return redirect('adminLogin')
 
 
-
+@never_cache
 def addVariant(request):
     if request.method == 'POST':
         form = VariantForm(request.POST)
@@ -356,7 +369,7 @@ def addVariant(request):
 
 
 
-
+@never_cache
 def productSearch(request):
     if request.user.is_superuser:
         if request.method=='POST':
@@ -367,7 +380,9 @@ def productSearch(request):
                 product = Products.objects.all()
                 
             return render(request,'adminproducts.html',{'products':product})
-            
+
+
+@never_cache
 def removeProducts(request,id):
     if request.user.is_superuser:
         if request.user.is_authenticated:
@@ -400,7 +415,7 @@ def adminBrands(request):
         return render(request,'adminbrands.html',{'items':brand})
     return redirect(adminLogin)
 
-
+@never_cache
 def addBrands(request):
     if request.user.is_superuser:
         if request.method=='POST':
@@ -421,6 +436,7 @@ def addBrands(request):
     return redirect(adminLogin)
 
 
+@never_cache
 def removeBrands(request,id):
     if request.user.is_superuser:
         brand = Brand.objects.get(id=id)
@@ -429,7 +445,7 @@ def removeBrands(request,id):
         return redirect(adminBrands)
     return redirect(adminLogin)
 
-
+@never_cache
 def editBrands(request,id):
     if request.user.is_superuser:
         if request.method=='POST':
@@ -451,6 +467,7 @@ def editBrands(request,id):
     return redirect(adminLogin)
         
 
+@never_cache
 def brandSearch(request):
     if request.user.is_superuser:
         if request.method=='POST':
@@ -483,6 +500,7 @@ def adminOrders(request):
         return redirect(adminLogin)
 
 
+@never_cache
 def UpdateOrderStatus(request, order_item_id):
     if request.method == 'POST':
         order_item = get_object_or_404(OrderItem, id=order_item_id)
@@ -492,6 +510,7 @@ def UpdateOrderStatus(request, order_item_id):
         return redirect(adminOrders)
 
 
+@never_cache
 def orderSearch(request):
     if request.user.is_superuser:
         if request.method == 'POST':

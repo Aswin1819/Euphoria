@@ -4,7 +4,7 @@
 {% if messages %}
     <div class="alert-container" style="position: fixed; top: 0; left: 0; right: 0; z-index: 9999;">
         {% for message in messages %}
-            <div class="alert alert-warning alert-dismissible fade show" role="alert">
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
                 {{ message }}
                 <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
             </div>
@@ -70,7 +70,7 @@
                         <p class="mb-1">Brand: {{ item.product.brand.name }}</p>
                         <p class="mb-1">weight: {{ item.variant.weight }}g</p>
                         {% if item.variant.stock > 0 %}
-                            <p class="text-success">In Stock: {{ item.variant.stock }}</p>
+                            <p class="text-success">In Stock</p> <!--: {{ item.variant.stock }}-->
                         {% else %}
                             <p class="text-danger">Out of Stock</p>
                         {% endif %}
@@ -81,7 +81,8 @@
                         </div>                        
                     </div>
                     <div class="text-end">
-                        <p class="mb-0">₹{{ item.get_total_price }}</p>
+                        <p class="mb-0">₹{{ item.variant.price }}</p> 
+                        {% comment %} cart.get_total_price {% endcomment %}
                         {% comment %} <p class="text-success">{{ item.discount_percentage }}% Off</p> {% endcomment %}
                         <div>
                             <a href="{% url 'removeCartItems' item.product.id item.variant.id %}" class="btn btn-link btn-lg p-0">Remove</a>
@@ -124,21 +125,29 @@
                     <p id="total-amount">₹{{ cart.get_total_price }}</p>
                 </div>
                 {% comment %} <p class="text-success mt-2">You will save ₹{{ total_savings }} on this order</p> {% endcomment %}
-                {% if out_of_stock_items %}
-                    <div class="alert alert-danger mt-2">
-                        Some items in your cart are out of stock. Please remove them to proceed.
+                {% if is_cart_empty %}
+                    <div class="alert alert-info mt-2">
+                        Your cart is empty. Add some products to continue.
                     </div>
-                    <button class="btn btn-warning btn-lg w-100" disabled>Checkout <i class="fa-solid fa-arrow-right"></i></button>
-                {% else %}
-                    <a href="{% url 'user_checkout' %}" class="btn btn-warning btn-lg w-100">Checkout <i class="fa-solid fa-arrow-right"></i></a>
+                    <button id="checkoutButton" class="btn btn-warning btn-lg w-100" disabled>Checkout <i class="fa-solid fa-arrow-right"></i></button>
+                    {% elif out_of_stock_items %}
+                        <div class="alert alert-danger mt-2">
+                            Some items in your cart are out of stock. Please remove them to proceed.
+                        </div>
+                        <button id="checkoutButton" class="btn btn-warning btn-lg w-100" disabled>Checkout <i class="fa-solid fa-arrow-right"></i></button>
+                    {% else %}
+                        <a href="{% url 'user_checkout' %}" id="checkoutButton" class="btn btn-warning btn-lg w-100">Checkout <i class="fa-solid fa-arrow-right"></i></a>
                 {% endif %}
+
+
             </div>
         </div>
     </div>
 </div>
 
 <script>
-    // JavaScript to handle AJAX-based quantity update
+
+    
     function updateQuantity(productId, variantId, quantity) {
         fetch("{% url 'update_quantity' %}", {
             method: 'POST',
@@ -164,15 +173,16 @@
             }
         });
     }
+
     
-    // Handle increment and decrement buttons
+    
     document.querySelectorAll('.btn-increment').forEach(button => {
         button.addEventListener('click', function () {
-            const productId = this.dataset.productId; // Use itemId here
+            const productId = this.dataset.productId; 
             const variantId = this.dataset.variantId;
             const quantity = parseInt(this.previousElementSibling.value) + 1;
     
-            // Check if quantityInput is found
+           
             if (!quantity) {
                 console.error(`Quantity input for item ID not found.`);
                 return;
@@ -196,11 +206,11 @@
     
     document.querySelectorAll('.btn-decrement').forEach(button => {
         button.addEventListener('click', function () {
-            const productId = this.dataset.productId; // Use itemId here
+            const productId = this.dataset.productId; 
             const variantId = this.dataset.variantId;
             let quantity = parseInt(this.nextElementSibling.value) - 1;
     
-            // Check if quantityInput is found
+            
             if (!quantity) {
                 console.error(`Quantity input for item ID not found.`);
                 return;
@@ -214,7 +224,7 @@
         });
     });
 
-    // Function to set primary address via AJAX
+    
     function setPrimaryAddress(addressId) {
         fetch("{% url 'set_primary_address' %}", {
             method: 'POST',

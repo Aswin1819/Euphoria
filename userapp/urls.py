@@ -27,6 +27,10 @@ urlpatterns = [
     path('set-primary-address/', views.set_primary_address, name='set_primary_address'),
     path('user_checkout/',views.user_checkout,name='user_checkout'),
     
+    path('addToWishlist/',views.addToWishlist,name='addToWishlist'),
+    path('userWishlist/',views.userWishlist,name='userWishlist'),
+    path('removeFromWishlist/<int:item_id>/',views.removeFromWishlist,name='removeFromWishlist'),
+    
     path('placeOrder/',views.placeOrder,name='placeOrder'),
     path('userYourOrder/',views.userYourOrder,name='userYourOrder'),
     path('cancel_order_item/<int:item_id>/', views.cancel_order_item, name='cancel_order_item'),

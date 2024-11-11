@@ -30,33 +30,7 @@ class ProductForm(forms.ModelForm):
             raise forms.ValidationError('Enter a proper description')
         return description
     
-    def clean_image1(self):
-        return self.clean_image('image1')
-
-    def clean_image2(self):
-        return self.clean_image('image2')
-
-    def clean_image3(self):
-        return self.clean_image('image3')
-
-    def clean_image4(self):
-        return self.clean_image('image4')
-
-    def clean_image(self, image_field):
-        image = self.cleaned_data.get(image_field)
-        if image:
-            valid_extensions = ['jpg', 'jpeg', 'png']
-            file_extension = image.name.split('.')[-1].lower()
-
-            if file_extension not in valid_extensions:
-                raise forms.ValidationError("Image must be in JPG, JPEG, or PNG format.")
-            
-            
-            max_size = 5 * 1024 * 1024
-            if image.size > max_size:
-                raise forms.ValidationError("Image size must not exceed 5MB.")
-
-        return image
+   
         
     
     

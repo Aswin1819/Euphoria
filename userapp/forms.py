@@ -215,3 +215,16 @@ class ReviewForm(forms.ModelForm):
     class Meta:
         model = Review
         fields = ['rating', 'review_text']
+        
+    def clean_rating(self):
+        rating = self.cleaned_data.get('rating')
+        if rating not in [1,2,3,4,5]:
+            raise forms.ValidationError('Rating will be 1,2,3,4,5')
+        return rating
+    
+    def clean_review_text(self):
+        review_text = self.cleaned_data.get('review_text')
+        if not re.match(r'^[\w\s]+$',review_text):
+            raise forms.ValidationError('Review contain only alphabets numbers')
+        return review_text 
+            

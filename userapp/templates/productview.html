@@ -69,20 +69,21 @@
                 </select>
             </div>
     
-           
-            <form action="{% url 'addToCart' %}" method="POST">
-                {% csrf_token %}
-                <input type="hidden" name="product_id" value="{{ product.id }}">
-                <input type="hidden" name="variant_id" id="variant_id" value="{{ default_variant.id }}">
-                
-            
-                <button id="add-to-cart-btn" type="submit" class="btn btn-primary btn-lg">Add to Cart</button>
-              
-                
-
-                {% comment %} <button class="btn btn-success btn-lg ms-3">Buy Now</button>
-                <button class="btn btn-warning btn-lg ms-3">Add to Wishlist</button> {% endcomment %}
-            </form>
+            <div class="d-flex justify-content-cetner">
+                <form action="{% url 'addToCart' %}" method="POST">
+                    {% csrf_token %}
+                    <input type="hidden" name="product_id" value="{{ product.id }}">
+                    <input type="hidden" name="variant_id" id="variant_id" value="{{ default_variant.id }}">
+                    <button id="add-to-cart-btn" type="submit" class="btn btn-primary btn-lg">Add to Cart</button>
+                    {% comment %} <button class="btn btn-success btn-lg ms-3">Buy Now</button>{% endcomment %}
+                </form>
+                <form action="{% url 'addToWishlist' %}" method="POST">
+                    {% csrf_token %}
+                    <input type="hidden" name="product_id" value="{{ product.id }}">
+                    <input type="hidden" name="variant_id" id="variant_id" value="{{ default_variant.id }}">
+                    <button class="btn btn-warning btn-lg ms-3" type="submit">Add to Wishlist</button> 
+                </form>
+            </div>
             
         </div>
     </div>
@@ -90,24 +91,52 @@
     <!--Rating and Reviewss-->
     <div class="my-5">
         <h3>Reviews</h3>
-        {% for review in reviews %}
-            <div>
-                <p><strong>{{ review.user.username }}</strong> rated: {{ review.rating }}/5</p>
-                <p>{{ review.review_text }}</p>
-                <p><small>{{ review.created_at }}</small></p>
-            </div>
-        {% empty %}
-            <p>No reviews yet. Be the first to review this product!</p>
-        {% endfor %}
+        <div class="reviews-section mt-4">
+            {% for review in reviews %}
+                <div class="card mb-3 shadow-sm">
+                    <div class="card-body">
+                        <h5 class="card-title">
+                            <strong>{{ review.user.username }}</strong> 
+                            <span class="text-muted small">rated:</span> 
+                            <span class="badge bg-warning text-dark">{{ review.rating }}/5</span>
+                        </h5>
+                        <p class="card-text">{{ review.review_text }}</p>
+                        <p class="card-subtitle text-muted small">{{ review.created_at|date:"F j, Y, g:i a" }}</p>
+                    </div>
+                </div>
+            {% empty %}
+                <div class="alert alert-info">
+                    <p>No reviews yet. Be the first to review this product!</p>
+                </div>
+            {% endfor %}
+        </div>
+        
     </div>
     
     {% if user.is_authenticated and has_purchased and not has_reviewed %}
         <h4>Leave a Review</h4>
         <form method="post">
             {% csrf_token %}
-            {{ form.as_p }}
+            
+            <div class="form-group">
+                <label for="id_rating">Rating:</label>
+                {{ form.rating }}
+                {% for error in form.rating.errors %}
+                    <div class="text-danger">{{ error }}</div>
+                {% endfor %}
+            </div>
+        
+            <div class="form-group">
+                <label for="id_review_text">Review Text:</label>
+                {{ form.review_text }}
+                {% for error in form.review_text.errors %}
+                    <div class="text-danger">{{ error }}</div>
+                {% endfor %}
+            </div>
+        
             <button type="submit" class="btn btn-primary">Submit Review</button>
         </form>
+        
     {% elif not has_purchased %}
         <p class="text-muted">Only users who have purchased and received this product can leave a review.</p>
     {% elif has_reviewed %}

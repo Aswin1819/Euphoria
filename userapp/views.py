@@ -2,7 +2,7 @@ from django.shortcuts import render,redirect,get_object_or_404
 from django.contrib.auth import get_user_model
 from django.contrib.auth import login,logout,authenticate
 from django.contrib.auth.hashers import make_password
-from adminapp.models import EuphoUser,OTP,Products,Variant,Address,Cart,CartItem,Order,OrderItem,Category,PaymentMethod
+from adminapp.models import EuphoUser,OTP,Products,Variant,Address,Cart,CartItem,Order,OrderItem,Category,PaymentMethod,Wishlist,WishlistItem
 from decimal import Decimal
 from django.contrib import messages
 from userapp.userotp import generateAndSendOtp
@@ -20,7 +20,7 @@ import json
 from django.template.loader import render_to_string
 from django.views.decorators.http import require_POST
 from django.core.paginator import Paginator
-from django.db.models import Q
+from django.db.models import Q,Min,Avg
 from django.views.decorators.cache import never_cache
 
 # Create your views here.
@@ -137,7 +137,6 @@ def forgPassEmailVerification(request):
             if EuphoUser.objects.filter(email=email).exists():
                 otp = generateAndSendOtp(email)
                 OTP.objects.create(email=email,otp=otp)
-                # return render(request,'forg_pass_otp.html',{'email':email})
                 return render(request,'forg_pass_otp.html',{'email':email})
             else:
                 messages.warning(request,'email not exist')
@@ -221,7 +220,14 @@ def userhome(request):
 def shopNow(request):
     sort_option = request.GET.get('sort', 'popularity')
     search_query = request.GET.get('query','').strip()
-    products = Products.objects.filter(category__is_active=True, brand__is_active=True).prefetch_related('variants')
+    products = Products.objects.filter(
+        category__is_active=True,
+        brand__is_active=True,
+    ).annotate(
+        min_variant_price=Min('variants__price'),
+        average_rating=Avg('reviews__rating')
+    )
+    # .prefetch_related('variants')
     
     if search_query:
         products = products.filter(
@@ -230,11 +236,11 @@ def shopNow(request):
     
     # Sort options
     if sort_option == 'price_low_to_high':
-        products = products.order_by('variants__price')
+        products = products.order_by('min_variant_price')
     elif sort_option == 'price_high_to_low':
-        products = products.order_by('-variants__price')
+        products = products.order_by('-min_variant_price')
     elif sort_option == 'average_rating':
-        products = products.order_by('-average_rating')
+        products = products.order_by('average_rating')
     elif sort_option == 'featured':
         products = products.filter(is_featured=True)
     elif sort_option == 'new_arrivals':
@@ -268,7 +274,11 @@ def shopNow(request):
 
 
 def categoryProducts(request,category_id):
-    category = get_object_or_404(Category,id=category_id)
+    try:        
+        category = get_object_or_404(Category,id=category_id,is_active=True)
+    except:
+        return redirect(shopNow)
+    
     products = Products.objects.filter(category=category,is_active=True)
     return render(request,'categoryproductsview.html',{
         'category':category,
@@ -307,7 +317,7 @@ def productView(request, id):
             review.product = product
             review.user = request.user
             review.save()
-            return redirect('productView', id=id)  # Reload page to see the new review
+            return redirect('productView', id=id)  
     elif has_purchased and not has_reviewed:
         form = ReviewForm()
 
@@ -333,14 +343,12 @@ def productView(request, id):
 def userProfileInformation(request):
     user = request.user
 
-    # Handle profile form
     profile_form = ChangeProfileForm(instance=user)
     
-    # Handle password form
     password_form = ChangePasswordForm(user=user)
 
     if request.method == 'POST':
-        # Check which form is being submitted
+       
         if 'profile_submit' in request.POST:
             profile_form = ChangeProfileForm(request.POST, request.FILES, instance=user)
             if profile_form.is_valid():
@@ -399,7 +407,7 @@ def userManageAddress(request):
 @login_required(login_url='userlogin')
 @never_cache
 def editAddress(request, address_id):
-    # Get the address object for the given ID and user
+    
     address = get_object_or_404(Address, id=address_id, user=request.user , is_deleted=False)
 
     if request.method == 'POST':
@@ -428,6 +436,57 @@ def deleteAddress(request, address_id):
     address.save()
     messages.success(request,'Address deleted Successfully')
     return redirect(reverse('userManageAddress'))
+
+
+
+def addToWishlist(request):
+    if request.method=="POST":
+        product_id = request.POST.get('product_id')
+        variant_id = request.POST.get('variant_id')
+        
+        product = get_object_or_404(Products,id=product_id)
+        variant = get_object_or_404(Variant,id=variant_id)
+        
+        if request.user.is_authenticated:
+            wishlist,created = Wishlist.objects.get_or_create(user=request.user)
+        
+            wishlist_item,item_created = WishlistItem.objects.get_or_create(wishlist=wishlist,product=product,variant=variant)    
+            
+            if item_created:
+                messages.success(request,"Item added to wishlist!!!")
+            else:
+                messages.info(request,"This Items is already in your wishlist")
+            return redirect(userWishlist)
+        else:
+            messages.error(request,"Please Login to add items to your cart!!")
+            return redirect(userlogin)
+        
+    return redirect(userlogin)
+            
+            
+def userWishlist(request):
+    if request.user.is_authenticated:
+        wishlist = Wishlist.objects.filter(user=request.user).first()
+        wishlist_item = wishlist.items.all() if wishlist else []
+        
+        return render(request,'userwishlist.html',{'wishlist_items':wishlist_item})
+    
+def removeFromWishlist(request,item_id):
+    if request.user.is_authenticated:
+        wishlist_item = get_object_or_404(WishlistItem,id=item_id,wishlist__user=request.user)
+        wishlist_item.delete()
+        messages.success(request,"Item remvoed form wishilist!!")
+        return redirect(userWishlist)
+    return redirect(userlogin)
+        
+    
+                
+    
+
+
+
+
+
 
 
 @login_required(login_url='userlogin')
@@ -467,30 +526,34 @@ def cartDetails(request):
             first_address.is_primary = True
             first_address.save()
         
-        for item in cart_items:
-            if item.quantity > item.variant.stock:  
-                messages.warning(request, f"The quantity of {item.product.name} exceeds available stock.")
-                item.quantity = item.variant.stock
-                item.save()
-        
-        
+        is_cart_empty = not cart_items
         out_of_stock_items = []
         for item in cart_items:
+            if item.quantity > item.variant.stock:  
+                messages.warning(request, f"The quantity of {item.product.name} exceeds available stock.*Nos changed")
+                item.quantity = item.variant.stock
+                item.save()
             if item.variant.stock <= 0:
                 out_of_stock_items.append(item)
+        
             
         if out_of_stock_items:
             messages.warning(request, "Some items in your cart are out of stock. Please remove them to proceed.")    
         
-        return render(request,'usercart.html',{'cart':cart,'cart_items':cart_items,'user_addresses':user_addresses,'out_of_stock_items': out_of_stock_items})
+        return render(request,'usercart.html',{
+            'cart':cart,
+            'cart_items':cart_items,
+            'user_addresses':user_addresses,
+            'out_of_stock_items': out_of_stock_items,
+            'is_cart_empty':is_cart_empty,
+            })
     return render(request, 'usercart.html', {'cart': None, 'cart_items': [], 'user_addresses': []})
 
 @login_required(login_url='userlogin')
 def removeCartItems(request,product_id,variant_id):
     if request.user.is_authenticated:
         cart = Cart.objects.filter(user=request.user).first()
-    else:
-        cart = Cart.objects.filter(session_id=request.session.session_key).first()
+    
     
     if cart:
         cart_item = get_object_or_404(CartItem,cart=cart,product_id=product_id,variant_id=variant_id)
@@ -502,13 +565,12 @@ def removeCartItems(request,product_id,variant_id):
 @csrf_exempt
 def update_quantity(request):
     if request.user.is_authenticated:
-        # Extract data from the request body
+       
         data = json.loads(request.body)
         product_id = data.get('product_id')
         variant_id = data.get('variant_id')
         quantity = data.get('quantity')
 
-        # Retrieve the user's cart
         cart = Cart.objects.filter(user=request.user).first()
         
         if cart:
@@ -527,13 +589,12 @@ def update_quantity(request):
                     })
                 
                 if quantity > 4:
-                    quantity = 4  # Cap it at 4 if somehow bypassed on the client side
-
-                # Update quantity and save
+                    quantity = 4  
+                
                 cart_item.quantity = quantity
                 cart_item.save()
 
-                # Calculate the new total for display
+                
                 total_amount = sum(item.get_total_price() for item in cart.items.all())
 
                 return JsonResponse({
@@ -547,6 +608,10 @@ def update_quantity(request):
             return JsonResponse({'success': False, 'error': 'Cart not found.'})
 
     return JsonResponse({'success': False, 'error': 'Invalid request.'})
+
+
+
+
 
 
 @login_required(login_url='userlogin')
@@ -577,6 +642,15 @@ def user_checkout(request):
         cart = None
         cart_items = []
 
+    out_of_stock_items = []
+    for item in cart_items:
+        if item.quantity > item.variant.stock:
+            out_of_stock_items.append(item)
+    
+    if out_of_stock_items:
+        messages.warning(request, "Some items in your cart have insufficient stock. Please update your cart.")
+        return redirect(cartDetails)  
+
     
     total_price = sum(item.get_total_price() for item in cart_items)
     # total_discount = sum(item.get_discount_amount() for item in cart_items)
@@ -584,7 +658,7 @@ def user_checkout(request):
     # final_total_price = total_price - total_discount + shipping_fee
     final_total_price = total_price
 
-    # Context to pass to the template
+    
     context = {
         'user_addresses': user_addresses,
         'cart_items': cart_items,
@@ -594,8 +668,6 @@ def user_checkout(request):
         'payment_methods':payment_method,
     }
     
-    # 'total_discount': total_discount,
-    #     'shipping_fee': shipping_fee,
 
     return render(request, 'usercheckout.html', context)
 
@@ -607,7 +679,7 @@ def user_checkout(request):
 def placeOrder(request):
     if request.method == 'POST':
         try:
-            data = json.loads(request.body)  # Parse JSON data
+            data = json.loads(request.body)  
             user = request.user
             selected_address_id = data.get('address_id')
             payment_method_id = data.get('payment_method_id')
@@ -636,7 +708,7 @@ def placeOrder(request):
                     order=order,
                     product=cart_item.product,
                     quantity=cart_item.quantity,
-                    status="Pending",
+                    status="Shipped",
                     price=cart_item.variant.price
                 )
 
@@ -657,9 +729,8 @@ def placeOrder(request):
 @login_required(login_url='userlogin')
 def userYourOrder(request):
     user = request.user
-    status_filter = request.GET.get('status', 'all')  # Get the status filter from the URL, default to 'all'
-
-    # Retrieve orders based on the status filter
+    status_filter = request.GET.get('status', 'all') 
+    
     if status_filter == 'all':
         orders = OrderItem.objects.filter(order__user=user).prefetch_related('product').order_by('-last_updated')
     else:
@@ -685,14 +756,18 @@ def userYourOrder(request):
 @never_cache
 def cancel_order_item(request, item_id):
     try:
-        # Parse JSON request body to get the cancellation reason
+        
         data = json.loads(request.body)
         reason = data.get('reason', '')
 
-        # Get the specific OrderItem with 'Pending' status
-        order_item = OrderItem.objects.get(id=item_id, order__user=request.user, status='Pending')
         
-        # Update OrderItem status and cancellation reason
+        order_item = OrderItem.objects.get(
+        Q(status='Pending') | Q(status='Shipped'), 
+        id=item_id, 
+        order__user=request.user
+        )
+        
+        
         order_item.status = 'Cancelled'
         order_item.cancellation_reason = reason
         order_item.save()
@@ -715,14 +790,14 @@ def cancel_order_item(request, item_id):
 @never_cache
 def return_order_item(request, item_id):
     try:
-        # Parse JSON request body to get the return reason
+        
         data = json.loads(request.body)
         reason = data.get('reason', '')
 
-        # Get the specific OrderItem with 'Delivered' status
+       
         order_item = OrderItem.objects.get(id=item_id, order__user=request.user, status='Delivered')
 
-        # Update OrderItem status and return reason
+        
         order_item.status = 'Returned'
         order_item.return_reason = reason
         order_item.save()
@@ -737,15 +812,6 @@ def return_order_item(request, item_id):
         return JsonResponse({'success': True})
     except OrderItem.DoesNotExist:
         return JsonResponse({'success': False}, status=404)
-
-
-
-
-
-
-
-
-
 
 
 

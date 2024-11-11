@@ -189,9 +189,9 @@ class Address(models.Model):
     is_deleted = models.BooleanField(default=False)
     
     def save(self, *args, **kwargs):
-        # Check if there is already a primary address for the user
+       
         if not Address.objects.filter(user=self.user, is_primary=True).exists():
-            self.is_primary = True  # Make this the primary address if no other exists
+            self.is_primary = True  
         super(Address, self).save(*args, **kwargs)
 
     def __str__(self):
@@ -200,7 +200,7 @@ class Address(models.Model):
     
 class Cart(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, blank=True, null=True)
-    session_id = models.CharField(max_length=255, blank=True, null=True)  # For guests
+    session_id = models.CharField(max_length=255, blank=True, null=True)  
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -253,11 +253,35 @@ class OrderItem(models.Model):
         ("Cancelled", "Cancelled"),
         ("Returned", "Returned"),
         ("Refunded", "Refunded"),
-        ("Failed", "Failed")
-    ], default="Pending")
+        ("Failed", "Failed"),
+        ('Shipped','Shipped'),
+        ('Out of Delivery','Out of Delivery'),
+    ], default="Shipped")
     cancellation_reason = models.TextField(null=True,blank=True)
     return_reason = models.TextField(null=True,blank=True)
     last_updated = models.DateTimeField(auto_now=True)
     
     def get_total_price(self):
         return self.price * self.quantity
+    
+    
+
+class Wishlist(models.Model):
+    user = models.ForeignKey(EuphoUser,on_delete=models.CASCADE,related_name='wishlists')
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    def __str__(self):
+        return f"Wishlist of {self.user.username}"
+    
+
+
+class WishlistItem(models.Model):
+    wishlist = models.ForeignKey(Wishlist,on_delete=models.CASCADE,related_name='items')
+    product = models.ForeignKey(Products,on_delete=models.CASCADE)
+    variant = models.ForeignKey(Variant,on_delete=models.CASCADE)
+    added_at = models.DateTimeField(auto_now_add=True)
+    
+    def __str__(self):
+        return f"{self.product.name} - {self.variant.weight}"
+    
+    
