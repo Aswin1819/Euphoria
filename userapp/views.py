@@ -2,7 +2,7 @@ from django.shortcuts import render,redirect,get_object_or_404
 from django.contrib.auth import get_user_model
 from django.contrib.auth import login,logout,authenticate
 from django.contrib.auth.hashers import make_password
-from adminapp.models import EuphoUser,OTP,Products,Variant,Address,Cart,CartItem,Order,OrderItem,Category,PaymentMethod,Wishlist,WishlistItem
+from adminapp.models import EuphoUser,OTP,Products,Variant,Address,Cart,CartItem,Order,OrderItem,Category,PaymentMethod,Wishlist,WishlistItem,Coupon,UserCoupon
 from decimal import Decimal
 from django.contrib import messages
 from userapp.userotp import generateAndSendOtp
@@ -22,6 +22,7 @@ from django.views.decorators.http import require_POST
 from django.core.paginator import Paginator
 from django.db.models import Q,Min,Avg
 from django.views.decorators.cache import never_cache
+import razorpay
 
 # Create your views here.
 
@@ -290,7 +291,8 @@ def productView(request, id):
     product = get_object_or_404(Products, id=id)
     product.popularity += 1
     product.save()
-
+    
+    average_rating = int(product.average_rating())
     variants = Variant.objects.filter(product=product)
     default_variant = variants.first() if variants else None
 
@@ -332,7 +334,8 @@ def productView(request, id):
         'reviews': reviews,
         'form': form,
         'has_purchased': has_purchased,
-        'has_reviewed': has_reviewed
+        'has_reviewed': has_reviewed,
+        'average_rating':average_rating
     })
 
 
@@ -401,7 +404,6 @@ def userManageAddress(request):
         'addresses':user_address,
     }
     return render(request,'usermanageaddress.html',context)
-
 
 
 @login_required(login_url='userlogin')
@@ -519,8 +521,9 @@ def cartDetails(request):
         cart = Cart.objects.filter(user=request.user).first() 
         cart_items = cart.items.select_related('product').prefetch_related('product__variants') if cart else []
         user_addresses = request.user.addresses.filter(is_deleted=False)
-    
-            
+
+        available_coupons = Coupon.objects.filter(active=True)
+        
         if user_addresses and not user_addresses.filter(is_primary=True).exists():
             first_address = user_addresses.first()
             first_address.is_primary = True
@@ -546,8 +549,76 @@ def cartDetails(request):
             'user_addresses':user_addresses,
             'out_of_stock_items': out_of_stock_items,
             'is_cart_empty':is_cart_empty,
+            'available_coupons':available_coupons,
             })
     return render(request, 'usercart.html', {'cart': None, 'cart_items': [], 'user_addresses': []})
+
+
+
+@login_required
+def apply_coupon(request):
+    if request.method == "POST":
+        data = json.loads(request.body)
+        coupon_id = data.get("coupon_id")
+        remove = data.get('remove',False)
+        cart = Cart.objects.filter(user=request.user).first()
+        
+        if not cart:
+            return JsonResponse({"success": False, "error": "No active cart found."})
+        
+        if remove:
+            # Remove coupon and reset discount
+            cart.discount = 0
+            cart.coupon = None
+            cart.save()
+            return JsonResponse({
+                "success": True,
+                "total_amount": cart.get_total_price(),
+                "discounted_total": cart.get_discount_price(),
+                "discount": 0,
+                "removed": True  # Flag to indicate coupon removal
+            })
+    
+        try:
+            coupon = Coupon.objects.get(id=coupon_id)
+            print(coupon.is_valid())
+            if not coupon.is_valid():
+                return JsonResponse({'error': 'Coupon is expired or invalid'})
+            
+            usage_count = UserCoupon.objects.filter(user=request.user,coupon=coupon).count()
+            if usage_count >= coupon.max_usage_per_person:
+                return JsonResponse({'success':False,'error':f"This coupon has reached its usage limit of {coupon.max_usage_per_person} for your account."})
+            
+            if coupon.discount_amount:
+                discount = coupon.discount_amount
+            elif coupon.discount_percentage:
+                discount = (coupon.discount_percentage/100) * cart.get_total_price()
+                if coupon.max_discount_amount:
+                    discount = min(discount,coupon.max_discount_amount)
+            else:
+                discount = 0
+            
+            if cart.get_total_price() < coupon.minimum_order_amount:
+                return JsonResponse({'error': f'Minimum order amount of ₹{coupon.minimum_order_amount} is required'})
+                     
+            cart.discount = discount
+            cart.coupon = coupon
+            cart.save()
+            
+            return JsonResponse({
+                "success": True,
+                "total_amount": cart.get_total_price(),
+                "discounted_total": cart.get_discount_price(),
+                "discount":discount,
+                "removed":False
+                })
+            
+        except Coupon.DoesNotExist:
+            return JsonResponse({"success": False, "error": "Invalid coupon code."})
+    return JsonResponse({"success": False, "error": "Invalid request."})
+
+
+
 
 @login_required(login_url='userlogin')
 def removeCartItems(request,product_id,variant_id):
@@ -596,11 +667,13 @@ def update_quantity(request):
 
                 
                 total_amount = sum(item.get_total_price() for item in cart.items.all())
+                discounted_total = cart.get_discount_price()
 
                 return JsonResponse({
                     'success': True,
                     'new_quantity': cart_item.quantity,
-                    'total_amount': total_amount
+                    'total_amount': total_amount,
+                    'discounted_total':discounted_total,
                 })
             else:
                 return JsonResponse({'success': False, 'error': 'Cart item does not exist.'})
@@ -679,6 +752,7 @@ def user_checkout(request):
 def placeOrder(request):
     if request.method == 'POST':
         try:
+            print("Request Body:",request.body)
             data = json.loads(request.body)  
             user = request.user
             selected_address_id = data.get('address_id')
@@ -691,7 +765,9 @@ def placeOrder(request):
             if not cart.items.exists():
                 return JsonResponse({"error": "Your cart is empty"}, status=400)
 
-            total_amount = sum(item.variant.price * item.quantity for item in cart.items.all())
+            total_amount = cart.get_discount_price()
+            print(total_amount)
+            #sum(item.variant.price * item.quantity for item in cart.items.all())
             
             payment_method = get_object_or_404(PaymentMethod,id=payment_method_id)
 
@@ -714,14 +790,75 @@ def placeOrder(request):
 
                 cart_item.variant.stock -= cart_item.quantity
                 cart_item.variant.save()
-
+            if cart.coupon:
+                UserCoupon.objects.create(user=request.user,coupon=cart.coupon)
+            
             cart.items.all().delete()
-            return JsonResponse({"order_id": order.id}, status=200)
+            cart.discount = 0
+            cart.coupon = None
+            cart.save()
+            if payment_method.name.lower() == 'razorpay':
+                print("inside razorpay in placeorder")
+                return JsonResponse({"redirect_url": f"/initiate_payment/{order.id}/"}, status=200)
 
+            
+            order.is_paid = True
+            order.save()
+            return JsonResponse({"order_id": order.id}, status=200)
+        except json.JSONDecodeError:
+            return JsonResponse({"error": "Invalid JSON data"}, status=400)
         except Exception as e:
             return JsonResponse({"error": f"Order placement failed: {str(e)}"}, status=500)
 
     return JsonResponse({"error": "Invalid request method"}, status=405)
+
+
+@login_required(login_url='userlogin')
+def initiate_payment(request,order_id):
+    print("inside intiate_payment view")
+    order = get_object_or_404(Order,id=order_id)
+    
+    client = razorpay.Client(auth=(settings.RAZORPAY_KEY_ID, settings.RAZORPAY_KEY_SECRET))
+    
+    amount_in_paise = int(order.total_amount * 100)
+    
+    razorpay_order = client.order.create({
+        "amount": amount_in_paise,
+        "currency": "INR",
+        "payment_capture": "1"
+    })
+    
+    order.razorpay_payment_id = razorpay_order['id']
+    order.save()
+    
+    context = {
+        'order': order,
+        'razorpay_order_id': razorpay_order['id'],
+        'razorpay_key_id': settings.RAZORPAY_KEY_ID,
+        'total_amount': amount_in_paise,
+    }
+    return render(request, 'payment.html', context)
+    
+
+@csrf_exempt
+def payment_success(request):
+    if request.method == "POST":
+        razorpay_payment_id = request.POST.get('razorpay_payment_id')
+        razorpay_order_id = request.POST.get('razorpay_order_id')
+        print("inside payment_success view")
+
+        try:
+            order = Order.objects.get(razorpay_payment_id=razorpay_order_id)
+            order.is_paid = True
+            order.save()
+
+            return JsonResponse({"status": "success", "message": "Payment successful"}, status=200)
+        except Order.DoesNotExist:
+            return JsonResponse({"status": "error", "message": "Order not found"}, status=404)
+    return JsonResponse({"status": "error", "message": "Invalid request"}, status=400)
+
+
+
 
 
 

@@ -33,6 +33,11 @@ urlpatterns = [
     path('orderSearch/',views.orderSearch,name='orderSearch'),
     
     path('admincoupons/',views.adminCoupons,name ='adminCoupons'),
+    path('addCoupon/',views.addCoupon,name='addCoupon'),
+    path('editCoupon/<int:coupon_id>/',views.editCoupon,name='editCoupon'),
+    path('deleteCoupon/<int:coupon_id>/',views.deleteCoupon,name='deleteCoupon'),
+    path('searchCoupon/',views.searchCoupon,name='searchCoupon'),
+    
     path('adminLogout',views.adminLogout,name='adminLogout'),
    
 ]

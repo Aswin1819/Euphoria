@@ -11,7 +11,7 @@
         {% endfor %}
     </div>
 {% endif %}
-<div class="container">
+<div class="container ">
     <div class="row">
         <div class="text-center display-4 mb-5">MY WISHLIST</div>
         {% for item in wishlist_items %}
@@ -41,6 +41,7 @@
             {% endif %}
         {% empty %}
             <p class="text-center">Your wishlist is empty.</p>
+            <div class="vh-100"></div>
         {% endfor %}
     </div>
 </div>

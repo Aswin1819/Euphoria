@@ -134,6 +134,7 @@
                             <p><strong>Status:</strong> {{ item.status }}</p>
                             <p><strong>Order Date:</strong> {{ item.order.created_at|date:"Y-m-d" }}</p>
                             <p><strong>Total Price:</strong> &#8377;{{ item.get_total_price }}</p>
+                            <p><strong>Payment Status:</strong>{{ item.order.is_paid }}</p>
                             <hr>
 
                             <!-- Order Items Section -->

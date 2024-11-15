@@ -1,6 +1,5 @@
 from django.contrib import admin
-from .models import EuphoUser,Products,Variant,PaymentMethod,Images,Cart,Order,OrderItem,Wishlist,WishlistItem
-
+from .models import *
 
 admin.site.register(EuphoUser)
 admin.site.register(Products)
@@ -12,4 +11,6 @@ admin.site.register(Order)
 admin.site.register(OrderItem)
 admin.site.register(Wishlist)
 admin.site.register(WishlistItem)
+admin.site.register(Coupon)
+admin.site.register(UserCoupon)
 # Register your models here.

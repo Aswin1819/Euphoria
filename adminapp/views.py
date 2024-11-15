@@ -2,8 +2,8 @@ from django.shortcuts import render,redirect,get_object_or_404
 from django.contrib.auth import login,logout,authenticate
 from django.contrib import messages
 from django.contrib.auth import get_user_model
-from .models import EuphoUser,Category,Products,Images,Brand,Variant,Order,OrderItem
-from .forms import ProductForm, VariantForm
+from .models import EuphoUser,Category,Products,Images,Brand,Variant,Order,OrderItem,Coupon,UserCoupon
+from .forms import ProductForm, VariantForm,CouponForm
 from django.forms import modelformset_factory
 from django.db.models import Q
 from django.contrib.auth.decorators import login_required
@@ -528,5 +528,54 @@ def orderSearch(request):
 
 
 def adminCoupons(request):
-    return render(request,'admincoupons.html')
+    coupons = Coupon.objects.all()
+    
+    return render(request,'admincoupons.html',{'coupons':coupons})
+
+
+def addCoupon(request):
+    if request.method == 'POST':
+        form = CouponForm(request.POST)
+        if form.is_valid():
+            form.save()
+            messages.success(request,"Coupon added successfully!!!")
+            return redirect('adminCoupons')  # Redirect back to the coupons list page
+    else:
+        form = CouponForm()
+    return render(request, 'adminaddcoupons.html', {'form': form})
+
+
+
+def editCoupon(request,coupon_id):
+    coupon = get_object_or_404(Coupon,id=coupon_id)
+    
+    if request.method == "POST":
+        form = CouponForm(request.POST,instance=coupon)
+        if form.is_valid():
+            form.save()
+            messages.success(request,"Coupon edited Successfully!1")
+            return redirect(adminCoupons)
+    else:
+        form = CouponForm(instance=coupon)
+    return render(request,'admineditcoupons.html',{'form':form})
+        
+        
+def deleteCoupon(request,coupon_id):
+    coupon = get_object_or_404(Coupon,id=coupon_id)
+    coupon.active = not coupon.active
+    coupon.save()
+    messages.success(request,'Coupon Remove/Active Successfully!!')
+    return redirect(adminCoupons)
+
+def searchCoupon(request):
+    if request.user.is_superuser:
+        if request.method == "POST":
+            search = request.POST.get('search')
+            if search is not None:
+                coupons = Coupon.objects.filter(code__icontains=search)
+            else:
+                coupons = Coupon.objects.all()
+            return render(request,'admincoupons.html',{'coupons':coupons})
+            
+        
 

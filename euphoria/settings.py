@@ -120,3 +120,8 @@ SOCIALACCOUNT_ADAPTER = 'adminapp.adapters.CustomSocialAccountAdapter'
 # image uploading
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
+#razorpay setttings
+RAZORPAY_KEY_ID = config('RAZORPAY_KEY_ID')
+RAZORPAY_KEY_SECRET = config('RAZORPAY_KEY_SECRET')
+

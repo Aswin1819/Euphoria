@@ -42,8 +42,16 @@
         <!-- Product Details -->
         <div class="col-md-7">
             <h2>{{ product.name }}</h2>
-            <p class="ratings text-warning">&starf;&starf;&starf;&starf;({{ product_reviews.count }})</p>
-    
+            <p class="ratings text-warning">
+                {% for i in "12345" %}
+                {% if forloop.counter <= average_rating %}
+                        &starf; <!-- Filled star for each point up to average_rating -->
+                    {% else %}
+                        &star; <!-- Empty star for points beyond average_rating -->
+                    {% endif %}
+                {% endfor %}
+                ({{ product.reviews.count }})
+            </p>
             <!-- Display default variant price -->
             <p id="variant-price" class="display-4 mt-5">&#8377; {{ default_variant.price }}</p>
     

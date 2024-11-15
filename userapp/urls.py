@@ -26,15 +26,19 @@ urlpatterns = [
     path('update-quantity/', views.update_quantity, name='update_quantity'),
     path('set-primary-address/', views.set_primary_address, name='set_primary_address'),
     path('user_checkout/',views.user_checkout,name='user_checkout'),
+    path('apply_coupon/',views.apply_coupon,name='apply_coupon'),
     
     path('addToWishlist/',views.addToWishlist,name='addToWishlist'),
     path('userWishlist/',views.userWishlist,name='userWishlist'),
     path('removeFromWishlist/<int:item_id>/',views.removeFromWishlist,name='removeFromWishlist'),
     
+    
     path('placeOrder/',views.placeOrder,name='placeOrder'),
     path('userYourOrder/',views.userYourOrder,name='userYourOrder'),
     path('cancel_order_item/<int:item_id>/', views.cancel_order_item, name='cancel_order_item'),
     path('return_order_item/<int:item_id>/', views.return_order_item, name='return_order_item'),
+    path('initiate_payment/<int:order_id>/', views.initiate_payment, name='initiate_payment'),
+    path('payment_success/', views.payment_success, name='payment_success'),
 
     path('categoryProducts/<int:category_id>/',views.categoryProducts,name='categoryProducts'),
 ]

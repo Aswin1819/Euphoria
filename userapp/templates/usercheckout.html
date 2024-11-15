@@ -108,7 +108,7 @@
                     </div>
                     <div class="d-flex justify-content-between">
                         <p>Discount</p>
-                        <p class="text-success">- ₹{{ total_discount }}</p>
+                        <p class="text-success">- ₹{{ cart.discount }}</p>
                     </div>
                     <div class="d-flex justify-content-between">
                         <p>Shipping Fee</p>
@@ -117,7 +117,7 @@
                     <hr>
                     <div class="d-flex justify-content-between fw-bold">
                         <p>Total Amount</p>
-                        <p>₹{{ cart.get_total_price }}</p>
+                        <p>₹{{ cart.get_discount_price }}</p>
                     </div>
                     <button id="place-order-btn" type="submit" class="btn btn-warning btn-lg w-100 mt-3">Place Order</button>
                 </form>
@@ -130,12 +130,12 @@
 <script>
 
     document.getElementById('place-order-btn').addEventListener('click', function(event) {
-        // Gather necessary data
+        
         event.preventDefault();  
         const addressInput = document.querySelector('input[name="address_id"]');
         const addressId = addressInput ? addressInput.value : null;
         const paymentMethod = document.querySelector('select[name="payment_method_id"]').value;
-
+    
         if (!addressId) {
             Swal.fire({
                 icon: 'warning',
@@ -145,17 +145,16 @@
             });
             return; 
         }
-
+    
         console.log('Address ID:', addressId); 
         console.log('Payment Method:', paymentMethod);
-
     
-        // Make the AJAX request
+        
         fetch('/placeOrder/', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'X-CSRFToken': '{{ csrf_token }}'  
+                'X-CSRFToken': '{{ csrf_token }}'
             },
             body: JSON.stringify({
                 address_id: addressId,
@@ -165,24 +164,35 @@
         .then(response => {
             console.log('Response:', response);
             if (!response.ok) {
-                return response.json().then(errorData => { throw errorData; });
+                return response.text().then(errorText => { 
+                    throw { error: errorText || 'Unknown error occurred' };
+                });
             }
             return response.json();
-        })
+        })        
         .then(data => {
-            
-            Swal.fire({
-                icon: 'success',
-                title: 'Order Placed Successfully!',
-                text: `Your order ID is: ${data.order_id}`,
-                confirmButtonText: 'Okay'
-            }).then(() => {
+            console.log('Order Data:', data);
+    
+            if (paymentMethod == 2) {                
+                if (data.redirect_url) {
+                    window.location.href = data.redirect_url;
+                } else {
+                    throw { error: 'Failed to get the Razorpay payment URL' };
+                }
+            } else {
                 
-                window.location.href = '/userYourOrder/'; 
-            });
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Order Placed Successfully!',
+                    text: `Your order ID is: ${data.order_id}`,
+                    confirmButtonText: 'Okay'
+                }).then(() => {
+                    window.location.href = '/userYourOrder/';
+                });
+            }
         })
         .catch(error => {
-           
+            console.error('Error:', error);
             Swal.fire({
                 icon: 'error',
                 title: 'Error!',
@@ -191,6 +201,7 @@
             });
         });
     });
+    
 
 
 
@@ -211,5 +222,7 @@
             }
         });
     }
+
+
 </script>
 {% endblock %}

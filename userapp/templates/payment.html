@@ -1,0 +1,71 @@
+<!-- templates/payment.html -->
+<html>
+<head>
+    <title>Pay with Razorpay</title>
+</head>
+<body>
+    <h2>Complete Payment</h2>
+    
+    <button id="pay-now-btn">Pay Now</button>
+
+    <form id="razorpay-form" style="display:none;">
+        <script 
+            src="https://checkout.razorpay.com/v1/checkout.js"
+            data-key="{{ razorpay_key_id }}"
+            data-amount="{{ total_amount }}"
+            data-currency="INR"
+            data-order_id="{{ razorpay_order_id }}"
+            data-buttontext="Pay Now"
+            data-name="Your Store"
+            data-description="Order Payment"
+            data-prefill.name="{{ request.user.username }}"
+            data-prefill.email="{{ request.user.email }}"
+            data-theme.color="#F37254">
+        </script>
+        <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
+    </form>
+
+    <script>
+        document.getElementById('pay-now-btn').addEventListener('click', function() {
+            
+            var options = {
+                "key": "{{ razorpay_key_id }}",  
+                "amount": "{{ total_amount }}", 
+                "currency": "INR",
+                "order_id": "{{ razorpay_order_id }}",  
+                "name": "Your Store",
+                "description": "Order Payment",
+                "prefill": {
+                    "name": "{{ request.user.username }}",
+                    "email": "{{ request.user.email }}"
+                },
+                "theme": {
+                    "color": "#F37254"
+                },
+                "handler": function(response) {
+        
+                    fetch('/payment_success/', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded',
+                            'X-CSRFToken': '{{ csrf_token }}'
+                        },
+                        body: `razorpay_payment_id=${response.razorpay_payment_id}&razorpay_order_id=${response.razorpay_order_id}`
+                    }).then(response => response.json())
+                      .then(data => {
+                        if (data.status === 'success') {
+                            window.location.href = '/userYourOrder/';
+                        } else {
+                            alert('Payment Failed');
+                        }
+                    });
+                }
+            };
+
+            var rzp = new Razorpay(options);
+            rzp.open(); 
+        });
+    </script>
+
+</body>
+</html>

@@ -198,14 +198,51 @@ class Address(models.Model):
         return f'{self.address},{self.city}'
     
     
+    
+class Coupon(models.Model):
+    code = models.CharField(max_length=20,unique=True)
+    discount_amount = models.DecimalField(max_digits=10,decimal_places=2,null=True,blank=True)
+    discount_percentage = models.DecimalField(max_digits=5,decimal_places=2,null=True,blank=True)
+    valid_from = models.DateTimeField()
+    valid_to = models.DateTimeField()
+    minimum_order_amount = models.DecimalField(max_digits=10,decimal_places=2,default=0)
+    max_discount_amount = models.DecimalField(max_digits=10,decimal_places=2,blank=True,null=True)
+    max_usage_per_person = models.PositiveIntegerField(default=1)
+    active = models.BooleanField(default=True)
+    
+    def __str__(self):
+        return self.code
+    
+    def is_valid(self):
+        now = timezone.now()
+        return self.active and self.valid_from <= now <= self.valid_to
+    
+
+class UserCoupon(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    coupon = models.ForeignKey(Coupon,on_delete=models.Case)
+    used_at = models.DateTimeField(auto_now_add=True)
+    
+    def __str__(self):
+        return f"{self.user} used {self.coupon.code}"    
+
+     
+    
+    
 class Cart(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, blank=True, null=True)
     session_id = models.CharField(max_length=255, blank=True, null=True)  
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    discount = models.DecimalField(max_digits=10,decimal_places=2,default=0)
+    coupon = models.ForeignKey(Coupon,on_delete=models.SET_NULL,null=True,blank=True)
 
     def __str__(self):
         return f"Cart - User: {self.user or 'Guest'}"
+    
+    def get_discount_price(self):
+        total = sum(item.get_total_price() for item in self.items.all())
+        return total - self.discount
     
     def get_total_price(self):
         return sum(item.get_total_price() for item in self.items.all())
@@ -228,6 +265,12 @@ class PaymentMethod(models.Model):
     def __str__(self):
         return self.name
     
+    
+
+
+    
+    
+    
 
 
 
@@ -237,6 +280,10 @@ class Order(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     paymentmethod = models.ForeignKey(PaymentMethod,on_delete=models.SET_NULL,null=True,default=1)
     address = models.ForeignKey(Address,on_delete=models.PROTECT,null=True,blank=True)
+    
+    #razorpay_fieldss
+    razorpay_payment_id = models.CharField(max_length=100,blank=True,null=True)
+    is_paid = models.BooleanField(default=False)
     
     
     def __str__(self):

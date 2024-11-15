@@ -1,0 +1,83 @@
+<!-- addcoupons.html -->
+{% extends 'adminbase.html' %}
+
+{% block title %}Add Coupon{% endblock %}
+
+{% block content %}
+<div class="col-md-10">
+    <div class="d-flex justify-content-between align-items-center mt-0 mb-4 dash-head py-2 rounded text-white px-2" style="background-color: #8b5e34;">
+        <h3 class="mb-3 mb-md-0">Add Coupon</h3>
+    </div>
+
+    <div class="card p-4" style="background-color: #8b5e34;">
+        <form method="post" action="{% url 'addCoupon' %}">
+            {% csrf_token %}
+            
+            <!-- Coupon Details Section -->
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <label for="id_code" class="form-label text-white">Coupon Code*</label>
+                    {{ form.code }}
+                    {{ form.code.errors }}
+                </div>
+                <div class="col-md-6">
+                    <label for="id_discount_amount" class="form-label text-white">Discount Amount</label>
+                    {{ form.discount_amount }}
+                    {{ form.discount_amount.errors }}
+                </div>
+            </div>
+
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <label for="id_discount_percentage" class="form-label text-white">Discount Percentage</label>
+                    {{ form.discount_percentage }}
+                    {{ form.discount_percentage.errors }}
+                </div>
+                <div class="col-md-6">
+                    <label for="id_minimum_order_amount" class="form-label text-white">Minimum Order Amount</label>
+                    {{ form.minimum_order_amount }}
+                    {{ form.minimum_order_amount.errors }}
+                </div>
+            </div>
+
+            <!-- Validity Period Section -->
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <label for="id_valid_from" class="form-label text-white">Valid From</label>
+                    {{ form.valid_from }}
+                </div>
+                <div class="col-md-6">
+                    <label for="id_valid_to" class="form-label text-white">Valid To</label>
+                    {{ form.valid_to }}
+                    {% if form.non_field_errors %}
+                        {% for error in form.non_field_errors %}
+                            <p >{{ error }}</p>
+                        {% endfor %}
+                    
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Limits and Status Section -->
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <label for="id_max_discount_amount" class="form-label text-white">Max Discount Amount</label>
+                    {{ form.max_discount_amount }}
+                    {{ form.max_discount_amount.errors }}
+                </div>
+                <div class="col-md-6">
+                    <label for="id_max_usage_per_person" class="form-label text-white">Max Usage Per Person</label>
+                    {{ form.max_usage_per_person }}
+                    {{ form.max_usage_per_person.errors }}
+                </div>
+            </div>
+
+            
+
+            <!-- Submit Button -->
+            <button type="submit" class="btn btn-success">Add Coupon</button>
+            <a href="{% url 'adminCoupons' %}" class="btn btn-secondary">Cancel</a>
+        </form>
+    </div>
+</div>
+{% endblock %}
