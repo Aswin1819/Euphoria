@@ -13,4 +13,6 @@ admin.site.register(Wishlist)
 admin.site.register(WishlistItem)
 admin.site.register(Coupon)
 admin.site.register(UserCoupon)
+admin.site.register(Wallet)
+admin.site.register(Transaction)
 # Register your models here.

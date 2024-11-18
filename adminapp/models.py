@@ -314,7 +314,7 @@ class OrderItem(models.Model):
     
 
 class Wishlist(models.Model):
-    user = models.ForeignKey(EuphoUser,on_delete=models.CASCADE,related_name='wishlists')
+    user = models.ForeignKey(settings.AUTH_USER_MODEL,on_delete=models.CASCADE,related_name='wishlists')
     created_at = models.DateTimeField(auto_now_add=True)
     
     def __str__(self):
@@ -331,4 +331,38 @@ class WishlistItem(models.Model):
     def __str__(self):
         return f"{self.product.name} - {self.variant.weight}"
     
+
+class Wallet(models.Model):
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="wallet")
+    balance = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+
+    def credit(self, amount):
+        """Increase the wallet balance."""
+        self.balance += amount
+        self.save()
+
+    def debit(self, amount):
+        """Decrease the wallet balance, if sufficient funds exist."""
+        if self.balance >= amount:
+            self.balance -= amount
+            self.save()
+            return True
+        return False
     
+
+class Transaction(models.Model):
+    TRANSACTION_TYPES = [
+        ('credit', 'Credit'),
+        ('debit', 'Debit'),
+    ]
+    
+    wallet = models.ForeignKey(Wallet, on_delete=models.CASCADE, related_name="transactions")
+    amount = models.DecimalField(max_digits=10, decimal_places=2)
+    transaction_type = models.CharField(max_length=10, choices=TRANSACTION_TYPES)
+    description = models.CharField(max_length=255)
+    timestamp = models.DateTimeField(default=timezone.now)
+    product = models.ForeignKey(Products, on_delete=models.SET_NULL, null=True, blank=True, related_name="transactions")
+
+    def __str__(self):
+        return f"{self.transaction_type.capitalize()} of ₹{self.amount} on {self.timestamp.strftime('%Y-%m-%d')}"
+

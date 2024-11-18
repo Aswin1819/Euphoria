@@ -2,7 +2,7 @@ from django.shortcuts import render,redirect,get_object_or_404
 from django.contrib.auth import get_user_model
 from django.contrib.auth import login,logout,authenticate
 from django.contrib.auth.hashers import make_password
-from adminapp.models import EuphoUser,OTP,Products,Variant,Address,Cart,CartItem,Order,OrderItem,Category,PaymentMethod,Wishlist,WishlistItem,Coupon,UserCoupon
+from adminapp.models import EuphoUser,OTP,Products,Variant,Address,Cart,CartItem,Order,OrderItem,Category,PaymentMethod,Wishlist,WishlistItem,Coupon,UserCoupon,Wallet,Transaction
 from decimal import Decimal
 from django.contrib import messages
 from userapp.userotp import generateAndSendOtp
@@ -23,6 +23,7 @@ from django.core.paginator import Paginator
 from django.db.models import Q,Min,Avg
 from django.views.decorators.cache import never_cache
 import razorpay
+from .utils import refund_to_wallet
 
 # Create your views here.
 
@@ -915,6 +916,16 @@ def cancel_order_item(request, item_id):
             variant.save()
         else:
             pritn('variant not found')
+            
+        order = order_item.order  
+        if order.paymentmethod.name == 'Razorpay' and order.is_paid:
+            refund_amount = order_item.price * order_item.quantity
+            refund_to_wallet(
+                user=request.user,
+                amount=refund_amount,
+                product=order_item.product,
+                description="Order cancellation")
+
 
         return JsonResponse({'success': True})
     except OrderItem.DoesNotExist:
@@ -945,10 +956,105 @@ def return_order_item(request, item_id):
             variant.save()
         else:
             print("variant not found")
+            
+        refund_amount = order_item.price * order_item.quantity
+        refund_to_wallet(
+            user=request.user,
+            amount=refund_amount, 
+            product=order_item.product, 
+            description="Product return")
 
         return JsonResponse({'success': True})
     except OrderItem.DoesNotExist:
         return JsonResponse({'success': False}, status=404)
+
+@login_required
+def wallet_view(request):
+    wallet = Wallet.objects.get(user=request.user)
+    transactions = wallet.transactions.all().order_by('-timestamp')  # Retrieves all transactions in descending order
+    return render(request, 'user_wallet.html', {
+        'wallet': wallet,
+        'transactions': transactions,
+    })
+
+@login_required(login_url='userlogin')
+def initiate_wallet_recharge(request):
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            recharge_amount = data.get('amount')
+
+            if not recharge_amount or float(recharge_amount) <= 0:
+                return JsonResponse({"error": "Invalid amount"}, status=400)
+
+            client = razorpay.Client(auth=(settings.RAZORPAY_KEY_ID, settings.RAZORPAY_KEY_SECRET))
+
+            amount_in_paise = int(float(recharge_amount) * 100)
+
+            razorpay_order = client.order.create({
+                "amount": amount_in_paise,
+                "currency": "INR",
+                "payment_capture": "1"
+            })
+
+            request.session['wallet_recharge_order'] = {
+                "amount": recharge_amount,
+                "razorpay_order_id": razorpay_order['id']
+            }
+
+            return JsonResponse({
+                "razorpay_order_id": razorpay_order['id'],
+                "razorpay_key_id": settings.RAZORPAY_KEY_ID,
+                "amount": recharge_amount
+            }, status=200)
+        except Exception as e:
+            return JsonResponse({"error": f"Failed to initiate recharge: {str(e)}"}, status=500)
+    return JsonResponse({"error": "Invalid request method"}, status=405)
+
+@csrf_exempt
+def wallet_recharge_success(request):
+    if request.method == "POST":
+        try:
+            data = json.loads(request.body)
+            razorpay_payment_id = data.get('razorpay_payment_id')
+            razorpay_order_id = data.get('razorpay_order_id')
+            
+            session_order = request.session.get('wallet_recharge_order')
+            print("Session Order:", session_order)
+            print("Session razorpay_order_id:", session_order.get('razorpay_order_id') if session_order else None)
+            print("Received razorpay_order_id:", razorpay_order_id)
+            
+            # Check if session data exists and matches received order ID
+            if not session_order or session_order.get('razorpay_order_id') != razorpay_order_id:
+                return JsonResponse({"status": "error", "message": "Order not found or mismatched"}, status=404)
+
+            # Process the payment
+            user = request.user
+            amount = Decimal(session_order['amount'])
+
+            # Update wallet balance
+            wallet = Wallet.objects.get(user=user)
+            wallet.credit(amount)
+
+            # Log the transaction
+            Transaction.objects.create(
+                wallet=wallet,
+                amount=amount,
+                transaction_type='credit',
+                description='Wallet recharge via Razorpay'
+            )
+
+            # Clear session to prevent duplicate transactions
+            del request.session['wallet_recharge_order']
+
+            return JsonResponse({"status": "success", "message": "Wallet recharge successful"}, status=200)
+
+        except Wallet.DoesNotExist:
+            return JsonResponse({"status": "error", "message": "Wallet not found"}, status=404)
+        except Exception as e:
+            return JsonResponse({"status": "error", "message": f"Recharge failed: {str(e)}"}, status=500)
+
+    return JsonResponse({"status": "error", "message": "Invalid request"}, status=400)
 
 
 
