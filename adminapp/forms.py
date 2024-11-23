@@ -1,5 +1,5 @@
 from django import forms
-from .models import Products,Variant,Images,Coupon
+from .models import Products,Variant,Images,Coupon,Offer
 import re
 
 class ProductForm(forms.ModelForm):
@@ -140,4 +140,75 @@ class CouponForm(forms.ModelForm):
         if max_usage_per_person <= 0 :
             raise forms.ValidationError("This field cant be less than 1")
         return max_usage_per_person
+    
+    
+
+
+
+class OfferForm(forms.ModelForm):
+    class Meta:
+        model = Offer
+        fields = ['name', 'description', 'discount_percentage', 'discount_amount', 'start_date', 'end_date', 'products', 'categories']
+        widgets = {
+            'name': forms.TextInput(attrs={'placeholder': 'Offer Name', 'class': 'form-control', 'required': True}),
+            'description': forms.Textarea(attrs={'placeholder': 'Offer Description', 'class': 'form-control', 'rows': 3}),
+            'discount_percentage': forms.NumberInput(attrs={'placeholder': 'Discount Percentage', 'class': 'form-control'}),
+            'discount_amount': forms.NumberInput(attrs={'placeholder': 'Discount Amount', 'class': 'form-control'}),
+            'start_date': forms.DateTimeInput(attrs={'type': 'datetime-local', 'class': 'form-control'}),
+            'end_date': forms.DateTimeInput(attrs={'type': 'datetime-local', 'class': 'form-control'}),
+            'products': forms.SelectMultiple(attrs={'class': 'form-control'}),
+            'categories': forms.SelectMultiple(attrs={'class': 'form-control'}),
+        }
+        
+    def clean_name(self):
+        name = self.cleaned_data.get('name')
+        if not name:
+            raise forms.ValidationError("Name can't be Empty")
+        if not name.isalnum():
+            raise forms.ValidationError("Enter a valid name")
+        return name    
+    
+    def clean_description(self):
+        description = self.cleaned_data.get('description')
+        if not description:
+            raise forms.ValidationError("Description can't be Empty")
+        if not re.match(r'^[\w\s]+$', description):
+            raise forms.ValidationError("Enter a valid description")
+        return description
+    
+    
+    
+    
+    def clean(self):
+        cleaned_data = super().clean()
+        discount_percentage = cleaned_data.get('discount_percentage')
+        discount_amount = cleaned_data.get('discount_amount')
+        products = cleaned_data.get('products')
+        categories = cleaned_data.get('categories')
+        start_date = cleaned_data.get('start_date')
+        end_date = cleaned_data.get('end_date')
+
+        # Ensure at least one type of discount is provided
+        if not discount_percentage and not discount_amount:
+            raise forms.ValidationError("You must specify either a discount percentage or a discount amount.")
+
+        # Ensure discount values are within valid range
+        if discount_percentage and (discount_percentage <= 0 or discount_percentage > 100):
+            raise forms.ValidationError("Discount percentage must be between 1 and 100.")
+
+        if discount_amount and discount_amount <= 0:
+            raise forms.ValidationError("Discount amount must be greater than 0.")
+        
+        if not products.exists() and not categories.exists():
+            raise forms.ValidationError("An offer must target at least one product or category.")
+
+        if products.exists() and categories.exists():
+            raise forms.ValidationError("An offer cannot target both products and categories simultaneously.")
+        
+        if start_date and end_date and end_date <= start_date:
+            raise forms.ValidationError("End date must be greater than the start date")
+        
+
+        return cleaned_data
+
     

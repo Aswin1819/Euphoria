@@ -42,7 +42,11 @@
                                         <td>{{ transaction.timestamp|date:"Y-m-d" }}</td>
                                         <td>₹{{ transaction.amount }}</td>
                                         <td>{{ transaction.description }}</td>
-                                        <td class="text-success">{{ transaction.transaciton_type}}Credited</td>
+                                        {% if transaction.transaction_type == 'credit' %}
+                                        <td class="text-success">{{ transaction.transaction_type}}</td>
+                                        {% else %}
+                                        <td class="text-danger">{{ transaction.transaction_type}}</td>
+                                        {% endif %}
                                     </tr>
                                 {% endif %}
                             {% endfor %}

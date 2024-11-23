@@ -81,7 +81,7 @@
                         </div>                        
                     </div>
                     <div class="text-end">
-                        <p class="mb-0">₹{{ item.variant.price }}</p> 
+                        <p class="mb-0">₹{{ item.variant.price }}</p> <!--item.variant.price-->
                         {% comment %} cart.get_total_price {% endcomment %}
                         {% comment %} <p class="text-success">{{ item.discount_percentage }}% Off</p> {% endcomment %}
                         <div>
@@ -100,41 +100,62 @@
             <div class="card p-3">
                 <h5 class="card-title">PRICE DETAILS</h5>
 
+                
                 <label for="coupon-select">Apply Coupon</label>
                 <select id="coupon-select" class="form-select mb-3">
                     <option value="">Select Coupon</option>
                     {% for coupon in available_coupons %}
                         {% if coupon.is_valid %}
-                        <option value="{{ coupon.id }}">{{ coupon.code }}</option><!--- {{ coupon.discount_percentage }}%-->
+                        <option value="{{ coupon.id }}" 
+                                {% if applied_coupon and coupon.id == applied_coupon.id %}selected{% endif %}>
+                            {{ coupon.code }}
+                        </option>
                         {% endif %}
                     {% endfor %}
                 </select>
-                <button id="apply-coupon-btn" class="btn btn-primary">Apply Coupon</button>
+                <button id="apply-coupon-btn" class="btn btn-primary">
+                    {% if applied_coupon %}Remove Coupon{% else %}Apply Coupon{% endif %}
+                </button>
+
 
                 <!-- Error message display for coupons -->
                 <div id="coupon-error" class="text-danger mt-2"></div>
 
-                <div class="d-flex justify-content-between">
+                {% comment %} <div class="d-flex justify-content-between">
                     <p>Price ({{ cart_items|length }} items)</p>
                     <p id="overall-amount">₹{{ cart.get_total_price }}</p>
-                </div>
+                </div> {% endcomment %}
                 <div class="d-flex justify-content-between">
+                    <p>Original Price ({{ cart_items|length }} items)</p>
+                    <p id="original-amount">₹{{ cart.get_original_price }}</p>
+                </div>
+                {% comment %} <div class="d-flex justify-content-between">
                     <p>Discount</p>
                     <p id="discount-amount"class="text-success">- ₹{{ cart.discount }}</p>
-                </div>
-                {% comment %} <div class="d-flex justify-content-between">
-                    <p>Coupons for you</p>
-                    <p class="text-success">- ₹Nil{{ coupon_discount }}</p>
-                </div> {% endcomment %}
-                {% comment %} <div class="d-flex justify-content-between">
-                    <p>Platform Fee</p>
-                    <p>₹Nil{{ platform_fee }}</p>
-                </div> {% endcomment %}
+                    </div> {% endcomment %}
+                   
+                   
+                    <div class="d-flex justify-content-between">
+                        <p>Coupon Discount</p>
+                        <p id="coupon-amount" class="text-success">- ₹{{ cart.discount }}</p>
+                    </div>
+                   
+                   
+                    <div class="d-flex justify-content-between">
+                        <p>Discount</p>
+                        <p id="discount-amount" class="text-success">- ₹{{ cart.get_savings }}</p>
+                    </div>
+                    
+                    
                 <div class="d-flex justify-content-between">
                     <p>Delivery Charges</p>
                     <p class="text-success">Free</p>
                 </div>
                 <hr>
+                {% comment %} <div class="d-flex justify-content-between fw-bold">
+                    <p>Total Amount</p>
+                    <p id="total-amount">₹{{ cart.get_discount_price }}</p>
+                </div> {% endcomment %}
                 <div class="d-flex justify-content-between fw-bold">
                     <p>Total Amount</p>
                     <p id="total-amount">₹{{ cart.get_discount_price }}</p>
@@ -159,10 +180,12 @@
         </div>
     </div>
 </div>
+{% comment %} document.getElementById("original-amount").innerText = `₹${data.total_amount}`; {% endcomment %}
 
 <script>
 
     
+   
     function updateQuantity(productId, variantId, quantity) {
         fetch("{% url 'update_quantity' %}", {
             method: 'POST',
@@ -175,46 +198,48 @@
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                document.querySelector(`[data-product-id="${productId}"][data-variant-id="${variantId}"]`).nextElementSibling.value = data.new_quantity; 
-                document.getElementById("overall-amount").innerText = `₹${data.total_amount}`;
+                
+                document.getElementById("original-amount").innerText = `₹${data.original_price}`;
+                document.getElementById("discount-amount").innerText = `- ₹${data.savings}`;
+                document.getElementById("coupon-amount").innerText = `- ₹${data.coupon_discount}`;
                 document.getElementById("total-amount").innerText = `₹${data.discounted_total}`;
-            } else if(data.error) {
+            } else if (data.error) {
                 Swal.fire({
-                    icon : 'warning',
-                    title : 'Quantity Limit Exceeded',
-                    text : data.error,
-                    confirmButtonText : 'Okay',
+                    icon: 'warning',
+                    title: 'Quantity Limit Exceeded',
+                    text: data.error,
+                    confirmButtonText: 'Okay',
                 });
             }
         });
     }
-
+    
     
     
     document.querySelectorAll('.btn-increment').forEach(button => {
         button.addEventListener('click', function () {
             const productId = this.dataset.productId; 
             const variantId = this.dataset.variantId;
-            const quantity = parseInt(this.previousElementSibling.value) + 1;
-    
-           
-            if (!quantity) {
-                console.error(`Quantity input for item ID not found.`);
+            //const quantity = parseInt(this.previousElementSibling.value) + 1;
+            const quantityInput = this.previousElementSibling; // Select the input field
+            let quantity = parseInt(quantityInput.value) + 1;
+
+            if (isNaN(quantity)) {
+                console.error('Quantity input is not a valid number.');
                 return;
             }
-    
-            
-            const newQuantity = quantity;
-    
-            if (newQuantity > 4) {
-                Swal.fire({
-                    icon: 'warning',
-                    title: 'Quantity Limit Exceeded',
-                    text: 'You can only purchase a maximum of 4 units of this product.',
-                    confirmButtonText: 'Okay'
-                });
+           
+       
+           if (quantity > 4) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Quantity Limit Exceeded',
+                text: 'You can only purchase a maximum of 4 units of this product.',
+                confirmButtonText: 'Okay'
+            });
             } else {
-                updateQuantity(productId, variantId, newQuantity);
+            quantityInput.value = quantity; // Update the input value
+            updateQuantity(productId, variantId, quantity);
             }
         });
     });
@@ -223,19 +248,22 @@
         button.addEventListener('click', function () {
             const productId = this.dataset.productId; 
             const variantId = this.dataset.variantId;
-            let quantity = parseInt(this.nextElementSibling.value) - 1;
-    
-            
-            if (!quantity) {
-                console.error(`Quantity input for item ID not found.`);
+            //let quantity = parseInt(this.nextElementSibling.value) - 1;
+            const quantityInput = this.nextElementSibling; // Select the input field
+            let quantity = parseInt(quantityInput.value) - 1;
+
+            if (isNaN(quantity)) {
+                console.error('Quantity input is not a valid number.');
                 return;
             }
-    
-            let newQuantity = quantity;
-    
-            if (newQuantity > 0) {
-                updateQuantity(productId, variantId, newQuantity);
+            
+            if (quantity > 0) {
+                quantityInput.value = quantity; // Update the input value
+                updateQuantity(productId, variantId, quantity);
+            } else {
+                console.warn('Quantity cannot be less than 1.');
             }
+    
         });
     });
 
@@ -257,51 +285,67 @@
         });
     }
 
-    document.getElementById('apply-coupon-btn').addEventListener('click', function() {
-        const couponId = document.getElementById('coupon-select').value;
-        const errorDiv = document.getElementById('coupon-error');
-        const isRemoving = this.classList.contains('remove-coupon');  // Check if we are removing the coupon
     
-        if (!isRemoving && !couponId) {
-            errorDiv.textContent = "Please select a coupon to apply.";
-            return;
+
+    document.addEventListener('DOMContentLoaded', () => {
+        const applyCouponButton = document.getElementById('apply-coupon-btn');
+        const couponSelect = document.getElementById('coupon-select');
+    
+        // Check if a coupon is applied based on button text
+        const isCouponApplied = applyCouponButton.innerText.trim() === 'Remove Coupon';
+    
+        if (isCouponApplied) {
+            // Disable dropdown if a coupon is applied
+            couponSelect.disabled = true;
+            applyCouponButton.classList.add('remove-coupon');
         }
     
-        fetch("{% url 'apply_coupon' %}", {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': '{{ csrf_token }}'
-            },
-            body: JSON.stringify({ 
-                coupon_id: couponId, 
-                remove: isRemoving  // Toggle between apply and remove based on button state
-            })
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                // Update the displayed totals and discount
-                document.getElementById("overall-amount").innerText = `₹${data.total_amount}`;
-                document.getElementById("total-amount").innerText = `₹${data.discounted_total}`;
-                document.getElementById("discount-amount").innerText = `₹${data.discount}`;
-                
+        applyCouponButton.addEventListener('click', function () {
+            const couponId = couponSelect.value;
+            const isRemoving = this.classList.contains('remove-coupon'); // Check if removing coupon
+            const errorDiv = document.getElementById('coupon-error');
     
-                // Toggle button between Apply and Remove
-                if (isRemoving) {
-                    document.getElementById('apply-coupon-btn').classList.remove('remove-coupon');
-                    document.getElementById('apply-coupon-btn').innerText = 'Apply Coupon';
-                    document.getElementById('coupon-select').disabled = false;
-                } else {
-                    document.getElementById('apply-coupon-btn').classList.add('remove-coupon');
-                    document.getElementById('apply-coupon-btn').innerText = 'Remove Coupon';
-                    document.getElementById('coupon-select').disabled = true;  // Disable select when a coupon is applied
-                }
-            } else {
-                errorDiv.textContent = data.error;
+            if (!isRemoving && !couponId) {
+                errorDiv.textContent = "Please select a coupon to apply.";
+                return;
             }
+    
+            fetch("{% url 'apply_coupon' %}", {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                body: JSON.stringify({
+                    coupon_id: couponId,
+                    remove: isRemoving, // True when removing a coupon
+                })
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        document.getElementById("original-amount").innerText = `₹${data.original_price}`;
+                        document.getElementById("discount-amount").innerText = `- ₹${data.savings}`;
+                        document.getElementById("coupon-amount").innerText = `- ₹${data.coupon_discount}`;
+                        document.getElementById("total-amount").innerText = `₹${data.discounted_total}`;
+    
+                        // Toggle button and dropdown states
+                        if (isRemoving) {
+                            applyCouponButton.classList.remove('remove-coupon');
+                            applyCouponButton.innerText = 'Apply Coupon';
+                            couponSelect.disabled = false;
+                        } else {
+                            applyCouponButton.classList.add('remove-coupon');
+                            applyCouponButton.innerText = 'Remove Coupon';
+                            couponSelect.disabled = true;
+                        }
+                    } else {
+                        errorDiv.textContent = data.error;
+                    }
+                });
         });
     });
+    
     
 </script>
 

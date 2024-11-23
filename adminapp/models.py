@@ -240,23 +240,36 @@ class Cart(models.Model):
     def __str__(self):
         return f"Cart - User: {self.user or 'Guest'}"
     
-    def get_discount_price(self):
-        total = sum(item.get_total_price() for item in self.items.all())
-        return total - self.discount
+    # def get_discount_price(self):
+    #     total = sum(item.get_total_price() for item in self.items.all())
+    #     return total - self.discount
     
     def get_total_price(self):
         return sum(item.get_total_price() for item in self.items.all())
+    
+    def get_discount_price(self):
+        # Total price after applying the discount
+        return self.get_total_price() - self.discount
+    
+    def get_original_price(self):
+        # Total price without any discounts
+        return sum(item.variant.price * item.quantity for item in self.items.all())
+    
+    def get_savings(self):
+        # Total savings (original price - discounted price + additional discount)
+        return self.get_original_price() - self.get_total_price() + self.discount
     
 class CartItem(models.Model):
     cart = models.ForeignKey(Cart, on_delete=models.CASCADE, related_name="items")
     product = models.ForeignKey(Products, on_delete=models.CASCADE)
     quantity = models.PositiveIntegerField(default=1)
     variant = models.ForeignKey(Variant, on_delete=models.CASCADE)
+    price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     def __str__(self):
         return f"{self.quantity} of {self.product.name} - {self.variant.weight}g"
     
     def get_total_price(self):
-        return self.variant.price * self.quantity
+        return (self.price or self.variant.price) * self.quantity
     
 
 class PaymentMethod(models.Model):
@@ -268,8 +281,6 @@ class PaymentMethod(models.Model):
     
 
 
-    
-    
     
 
 
@@ -366,3 +377,20 @@ class Transaction(models.Model):
     def __str__(self):
         return f"{self.transaction_type.capitalize()} of ₹{self.amount} on {self.timestamp.strftime('%Y-%m-%d')}"
 
+class Offer(models.Model):
+    name = models.CharField(max_length=255)
+    description = models.TextField(blank=True,null=True)
+    discount_percentage = models.DecimalField(max_digits=5,decimal_places=2,blank=True,null=True)
+    discount_amount = models.DecimalField(max_digits=5,decimal_places=2,null=True,blank=True)
+    products = models.ManyToManyField(Products,related_name='offers',blank=True)
+    categories = models.ManyToManyField(Category,related_name='offers',blank=True)
+    is_active = models.BooleanField(default=True)
+    start_date = models.DateTimeField()
+    end_date = models.DateTimeField()
+    last_updated = models.DateTimeField(auto_now=True)
+    
+    def __str__(self):
+        return self.name
+
+    
+    

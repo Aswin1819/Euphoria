@@ -1,0 +1,84 @@
+{% extends "adminbase.html" %}
+{% block content %}
+<div class="col-md-10">
+    <div class="d-flex justify-content-between align-items-center mt-0 mb-0 dash-head py-2 rounded text-white px-2">
+        <h3>Dashboard</h3>
+    </div>
+
+    <!-- Filter Form -->
+    <div class="my-3">
+        <form method="GET" action="">
+            <div class="row">
+                <div class="col-md-4">
+                    <label for="start_date">Start Date:</label>
+                    <input type="date" name="start_date" id="start_date" class="form-control" value="{{ start_date }}">
+                </div>
+                <div class="col-md-4">
+                    <label for="end_date">End Date:</label>
+                    <input type="date" name="end_date" id="end_date" class="form-control" value="{{ end_date }}">
+                </div>
+                <div class="col-md-4 d-flex align-items-end">
+                    <button type="submit" class="btn card_bg_color w-100">Filter</button>
+                </div>
+            </div>
+        </form>
+    </div>
+    <div class="my-3">
+        <a href="{% url 'export_to_excel' %}?start_date={{ start_date }}&end_date={{ end_date }}" class="btn card_bg_color">Download Excel</a>
+        <a href="{% url 'export_to_pdf' %}?start_date={{ start_date }}&end_date={{ end_date }}" class="btn card_bg_color">Download PDF</a>
+    </div>
+
+    <!-- Summary Section -->
+    <div class="row text-center mb-4">
+        <div class="col-md-4 ">
+            <div class="card shadow-sm p-3 card_bg_color">
+                <h5>Total Sales</h5>
+                <h3>₹{{ total_sales }}</h3>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card shadow-sm p-3 card_bg_color">
+                <h5>Total Discounts</h5>
+                <h3>₹{{ total_discounts }}</h3>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card shadow-sm p-3 card_bg_color">
+                <h5>Total Orders</h5>
+                <h3>{{ total_orders }}</h3>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sales Report Cards (Daily, Weekly, Monthly) -->
+    <div class="row my-4">
+        <!-- Daily Sales Card -->
+        <div class="col-md-4">
+            <div class="card shadow-sm p-3 card_bg_color">
+                <h5 class="text-center">Daily Sales</h5>
+                <p>Total Sales: ₹{{ daily.sales }}</p>
+                <p>Total Discounts: ₹{{ daily.discounts }}</p>
+            </div>
+        </div>
+        
+        <!-- Weekly Sales Card -->
+        <div class="col-md-4">
+            <div class="card shadow-sm p-3 card_bg_color">
+                <h5 class="text-center">Weekly Sales</h5>
+                <p>Total Sales: ₹{{ weekly.sales }}</p>
+                <p>Total Discounts: ₹{{ weekly.discounts }}</p>
+            </div>
+        </div>
+        
+        <!-- Monthly Sales Card -->
+        <div class="col-md-4">
+            <div class="card shadow-sm p-3 card_bg_color">
+                <h5 class="text-center">Monthly Sales</h5>
+                <p>Total Sales: ₹{{ monthly.sales }}</p>
+                <p>Total Discounts: ₹{{ monthly.discounts }}</p>
+            </div>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

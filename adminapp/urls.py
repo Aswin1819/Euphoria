@@ -38,6 +38,16 @@ urlpatterns = [
     path('deleteCoupon/<int:coupon_id>/',views.deleteCoupon,name='deleteCoupon'),
     path('searchCoupon/',views.searchCoupon,name='searchCoupon'),
     
+    path('adminOffers/',views.adminOffers,name='adminOffers'),
+    path('adminAddOffers/',views.adminAddOffers,name='adminAddOffers'),
+    path('adminEditOffers/<int:offer_id>/',views.adminEditOffers,name='adminEditOffers'),
+    path('adminDeleteOffer/<int:offer_id>/',views.adminDeleteOffer,name='adminDeleteOffer'),
+    path('adminSearchOffers/',views.adminSearchOffers,name='adminSearchOffers'),
+    
+    path('adminDashboard/',views.adminDashboard,name='adminDashboard'),
+    path('export-to-excel/', views.export_to_excel, name='export_to_excel'),
+    path('export-to-pdf/', views.export_to_pdf, name='export_to_pdf'),
+    
     path('adminLogout',views.adminLogout,name='adminLogout'),
    
 ]

@@ -1,0 +1,87 @@
+{% extends 'adminbase.html' %}
+
+
+{% block content %}
+    <div class="col-md-10">
+        <div class="d-flex justify-content-between align-items-center mt-0 mb-4 dash-head py-2 rounded text-white px-2" style="background-color: #8b5e34;">
+            <h3 class="mb-3 mb-md-0">Add Offer</h3>
+        </div>
+    
+        <div class="card p-4" style="background-color: #8b5e34;">
+            <form method="POST" action="{% url 'adminAddOffers' %}">
+                {% csrf_token %}
+                
+                <div class="row mb-3">
+                    <!-- Offer Name -->
+                    <div class="col-md-6">
+                        <label for="id_name" class="form-label">Offer Name*</label>
+                        {{ form.name }}
+                        {{ form.name.errors }}
+                    </div>
+                    
+                    <!-- Discount Percentage -->
+                    <div class="col-md-6">
+                        <label for="id_discount_percentage" class="form-label">Discount Percentage</label>
+                        {{ form.discount_percentage }}
+                        {{ form.discount_percentage.errors }}
+                    </div>
+                </div>
+                
+                <div class="row mb-3">
+                    <!-- Description -->
+                    <div class="col-md-6">
+                        <label for="id_description" class="form-label">Description</label>
+                        {{ form.description }}
+                        {{ form.description.errors }}
+                    </div>
+
+                    <!-- Discount Amount -->
+                    <div class="col-md-6">
+                        <label for="id_discount_amount" class="form-label">Discount Amount</label>
+                        {{ form.discount_amount }}
+                        {{ form.discount_amount.errors }}
+                    </div>
+                </div>
+                
+                <div class="row mb-3">
+                    <!-- Start Date -->
+                    <div class="col-md-6">
+                        <label for="id_start_date" class="form-label">Valid From</label>
+                        {{ form.start_date }}
+                        {{ form.start_date.errors }}
+                    </div>
+                    
+                    <!-- End Date -->
+                    <div class="col-md-6">
+                        <label for="id_end_date" class="form-label">Valid To</label>
+                        {{ form.end_date }}
+                        {{ form.end_date.errors }}
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <!-- Products -->
+                    <div class="col-md-6">
+                        <label for="id_products" class="form-label">Products</label>
+                        {{ form.products }}
+                        {{ form.products.errors }}
+                    </div>
+
+                    <!-- Categories -->
+                    <div class="col-md-6">
+                        <label for="id_categories" class="form-label">Categories</label>
+                        {{ form.categories }}
+                        {{ form.categories.errors }}
+                    </div>
+                </div>
+                
+                <!-- Buttons -->
+                <div class="d-flex justify-content-between mt-3">
+                    <button type="submit" class="btn btn-success px-4">Add Offer</button>
+                    <a href="{% url 'adminOffers' %}" class="btn btn-light px-4">Cancel</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+{% endblock %}

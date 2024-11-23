@@ -2,13 +2,20 @@ from django.shortcuts import render,redirect,get_object_or_404
 from django.contrib.auth import login,logout,authenticate
 from django.contrib import messages
 from django.contrib.auth import get_user_model
-from .models import EuphoUser,Category,Products,Images,Brand,Variant,Order,OrderItem,Coupon,UserCoupon
-from .forms import ProductForm, VariantForm,CouponForm
+from .models import EuphoUser,Category,Products,Images,Brand,Variant,Order,OrderItem,Coupon,UserCoupon,Offer
+from .forms import ProductForm, VariantForm,CouponForm,OfferForm
 from django.forms import modelformset_factory
-from django.db.models import Q
+from django.db.models import Q,Sum,Count,F,DecimalField
+from django.utils.timezone import now, make_aware
+from datetime import datetime, timedelta
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
 from django.views.decorators.cache import never_cache
+from django.http import HttpResponse
+from openpyxl import Workbook
+from openpyxl.utils import get_column_letter
+from reportlab.lib.pagesizes import letter
+from reportlab.pdfgen import canvas
 #imagecropping modules
 from django.core.files.base import ContentFile
 import base64
@@ -579,3 +586,258 @@ def searchCoupon(request):
             
         
 
+def adminOffers(request):
+    offers = Offer.objects.all().order_by('-last_updated')
+    return render(request,'adminoffers.html',{'offers':offers})
+
+def adminAddOffers(request):
+    if request.method == 'POST':
+        form = OfferForm(request.POST)
+        if form.is_valid():
+            form.save()
+            messages.success(request,"Offers added Successfully!!!")
+            return redirect(adminOffers)
+        else:
+            messages.warning(request,'Please correct the errors below')
+            
+    else:
+        form = OfferForm()
+    return render(request,'adminaddoffers.html',{'form':form})
+
+
+def adminEditOffers(request,offer_id):
+    
+    try:
+        offer = get_object_or_404(Offer,id=offer_id)
+    except:
+        messages.error(request,"Offer not found!")
+        return redirect(adminOffers)
+    if request.method == "POST":
+        form = OfferForm(request.POST,instance=offer)
+        if form.is_valid():
+            offer.products.clear()
+            offer.categories.clear()
+            form.save()
+            messages.success(request,"Offer Edited Successfully")
+            return redirect(adminOffers)
+        else:
+            messages.warning(request,"Please correct the errors below")
+    else:
+        form = OfferForm(instance=offer)
+    return render(request,'admineditoffers.html',{'form':form,'offer':offer})
+
+
+def adminDeleteOffer(request,offer_id):
+    if request.method=="POST":
+        offer = get_object_or_404(Offer,id=offer_id)
+        offer.is_active = not offer.is_active
+        offer.save()
+        return redirect(adminOffers)
+    
+        
+        
+
+def adminSearchOffers(request):
+    if request.method=="POST":
+        search = request.POST.get('search')
+        if search:
+            offers = Offer.objects.filter(name__icontains=search)
+        else:
+            offers = Offer.objects.all()
+        return render(request,'adminoffers.html',{'offers':offers})
+   
+    
+def adminDashboard(request):
+    # Get date filters from request
+    start_date = request.GET.get('start_date')
+    end_date = request.GET.get('end_date')
+    
+    # Default to the last 7 days if no filter is applied
+    if not start_date or not end_date:
+        end_date = now()
+        start_date = end_date - timedelta(days=7)
+    else:
+        # Convert to timezone-aware datetime objects
+        start_date = make_aware(datetime.strptime(start_date, "%Y-%m-%d"))
+        end_date = make_aware(datetime.strptime(end_date, "%Y-%m-%d"))
+    print(start_date)
+    print(end_date)
+        
+    
+    # Query orders within the date range
+    orders = Order.objects.filter(created_at__range=[start_date, end_date])
+    
+    # Calculate total sales and discounts for the custom date range
+    total_sales = orders.aggregate(Sum('total_amount'))['total_amount__sum'] or 0
+    total_discounts = (
+        orders.aggregate(
+            total_discount=Sum(F('order_items__price') * F('order_items__quantity'), output_field=DecimalField())
+        )['total_discount'] or 0
+    ) - total_sales if orders.exists() else 0
+    
+    total_orders = orders.count()
+
+    # Daily, Weekly, and Monthly Reports
+    today = now().date()
+    start_of_week = today - timedelta(days=today.weekday())  # Start of the current week
+    start_of_month = today.replace(day=1)  # Start of the current month
+
+    # Daily sales
+    daily_orders = Order.objects.filter(created_at__date=today)
+    daily_sales = daily_orders.aggregate(total=Sum('total_amount'))['total'] or 0
+    daily_discounts = (
+        daily_orders.aggregate(
+            discount=Sum(F('order_items__price') * F('order_items__quantity'), output_field=DecimalField())
+        )['discount'] or 0
+    ) - daily_sales if daily_orders.exists() else 0
+
+    # Weekly sales
+    weekly_orders = Order.objects.filter(created_at__date__gte=start_of_week, created_at__date__lte=today)
+    weekly_sales = weekly_orders.aggregate(total=Sum('total_amount'))['total'] or 0
+    weekly_discounts = (
+        weekly_orders.aggregate(
+            discount=Sum(F('order_items__price') * F('order_items__quantity'), output_field=DecimalField())
+        )['discount'] or 0
+    ) - weekly_sales if weekly_orders.exists() else 0
+    
+
+    # Monthly sales
+    monthly_orders = Order.objects.filter(created_at__date__gte=start_of_month, created_at__date__lte=today)
+    monthly_sales = monthly_orders.aggregate(total=Sum('total_amount'))['total'] or 0
+    monthly_discounts = (
+        monthly_orders.aggregate(
+            discount=Sum(F('order_items__price') * F('order_items__quantity'), output_field=DecimalField())
+        )['discount'] or 0
+    ) - monthly_sales if monthly_orders.exists() else 0
+
+    # Context to pass to template
+    context = {
+        'total_sales': total_sales,
+        'total_discounts': total_discounts,
+        'total_orders': total_orders,
+        'start_date': start_date.strftime('%Y-%m-%d'), 
+        'end_date': end_date.strftime('%Y-%m-%d'),  
+        'daily': {'sales': daily_sales, 'discounts': daily_discounts},
+        'weekly': {'sales': weekly_sales, 'discounts': weekly_discounts},
+        'monthly': {'sales': monthly_sales, 'discounts': monthly_discounts},
+    }
+    
+    return render(request, 'admindashboard.html', context)
+    
+    
+def export_to_excel(request):
+    
+    start_date_str = request.GET.get('start_date')
+    end_date_str = request.GET.get('end_date')
+
+    # Try to parse the date, handle different formats (e.g. "Nov. 8, 2024" to "2024-11-08")
+    try:
+        start_date = datetime.strptime(start_date_str, "%b. %d, %Y")  # Format like 'Nov. 8, 2024'
+    except ValueError:
+        start_date = datetime.strptime(start_date_str, "%Y-%m-%d")  # Format like '2024-11-08'
+
+    try:
+        end_date = datetime.strptime(end_date_str, "%b. %d, %Y")  # Format like 'Nov. 14, 2024'
+    except ValueError:
+        end_date = datetime.strptime(end_date_str, "%Y-%m-%d") 
+        
+    start_date = make_aware(start_date)
+    end_date = make_aware(end_date)
+
+    # Query orders within the date range
+    orders = Order.objects.filter(created_at__range=[start_date, end_date])
+
+    # Create a workbook and add a worksheet
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Sales Report"
+    
+    # Define the column headers
+    headers = ["Order ID", "Customer", "Total Amount", "Total Discount", "Order Date"]
+    ws.append(headers)
+
+    # Add sales data rows
+    for order in orders:
+        total_discount = sum(item.get_total_price() for item in order.order_items.all())  # or calculate discounts in any other way
+        ws.append([order.id, order.user.username, order.total_amount, total_discount, order.created_at.strftime('%Y-%m-%d')])
+
+    # Adjust column widths
+    for col_num in range(1, len(headers) + 1):
+        column = get_column_letter(col_num)
+        max_length = 0
+        for row in ws.iter_rows(min_col=col_num, max_col=col_num):
+            for cell in row:
+                try:
+                    if len(str(cell.value)) > max_length:
+                        max_length = len(cell.value)
+                except:
+                    pass
+        adjusted_width = (max_length + 2)
+        ws.column_dimensions[column].width = adjusted_width
+
+    # Create an HTTP response with the file content
+    response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    response['Content-Disposition'] = f'attachment; filename=Sales_Report_{start_date.strftime("%Y-%m-%d")}_to_{end_date.strftime("%Y-%m-%d")}.xlsx'
+    wb.save(response)
+    return response
+    
+
+
+
+
+def export_to_pdf(request):
+    # Get date filters from request
+    start_date_str = request.GET.get('start_date')
+    end_date_str = request.GET.get('end_date')
+
+    # Try to parse the date, handle different formats (e.g. "Nov. 8, 2024" to "2024-11-08")
+    try:
+        start_date = datetime.strptime(start_date_str, "%b. %d, %Y")  # Format like 'Nov. 8, 2024'
+    except ValueError:
+        start_date = datetime.strptime(start_date_str, "%Y-%m-%d")  # Format like '2024-11-08'
+
+    try:
+        end_date = datetime.strptime(end_date_str, "%b. %d, %Y")  # Format like 'Nov. 14, 2024'
+    except ValueError:
+        end_date = datetime.strptime(end_date_str, "%Y-%m-%d")  
+    
+    start_date = make_aware(start_date)
+    end_date = make_aware(end_date)
+    # Query orders within the date range
+    orders = Order.objects.filter(created_at__range=[start_date, end_date])
+
+    # Create a HttpResponse object with content type for PDF
+    response = HttpResponse(content_type='application/pdf')
+    response['Content-Disposition'] = f'attachment; filename=Sales_Report_{start_date.strftime("%Y-%m-%d")}_to_{end_date.strftime("%Y-%m-%d")}.pdf'
+
+    # Create a PDF canvas object
+    p = canvas.Canvas(response, pagesize=letter)
+    width, height = letter
+
+    # Add a title to the PDF
+    p.setFont("Helvetica", 14)
+    p.drawString(100, height - 40, f"Sales Report from {start_date.strftime('%Y-%m-%d')} to {end_date.strftime('%Y-%m-%d')}")
+
+    # Add table headers
+    p.setFont("Helvetica", 10)
+    p.drawString(100, height - 80, "Order ID")
+    p.drawString(200, height - 80, "Customer")
+    p.drawString(300, height - 80, "Total Amount")
+    p.drawString(400, height - 80, "Total Discount")
+    p.drawString(500, height - 80, "Order Date")
+
+    # Add order data to the PDF
+    y_position = height - 100
+    for order in orders:
+        total_discount = sum(item.get_total_price() for item in order.order_items.all())  # or calculate discounts in any other way
+        p.drawString(100, y_position, str(order.id))
+        p.drawString(200, y_position, order.user.username)
+        p.drawString(300, y_position, f"Rs.{order.total_amount}")
+        p.drawString(400, y_position, f"Rs.{total_discount}")
+        p.drawString(500, y_position, order.created_at.strftime('%Y-%m-%d'))
+        y_position -= 20  # Move down for the next row
+
+    # Save the PDF
+    p.showPage()
+    p.save()
+    return response

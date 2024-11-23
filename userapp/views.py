@@ -23,7 +23,7 @@ from django.core.paginator import Paginator
 from django.db.models import Q,Min,Avg
 from django.views.decorators.cache import never_cache
 import razorpay
-from .utils import refund_to_wallet
+from .utils import refund_to_wallet,calculate_discounted_price
 
 # Create your views here.
 
@@ -231,6 +231,21 @@ def shopNow(request):
     )
     # .prefetch_related('variants')
     
+    products_with_prices = []
+    for product in products:
+        variants = product.variants.all()
+        min_price_variant = min(
+            variants, 
+            key=lambda variant: calculate_discounted_price(variant)['discounted_price'],
+            default=None
+        )
+        if min_price_variant:
+            products_with_prices.append({
+                "product": product,
+                "min_discounted_price": calculate_discounted_price(min_price_variant)['discounted_price'],
+            })
+    
+    
     if search_query:
         products = products.filter(
             Q(name__icontains=search_query)|Q(brand__name__icontains=search_query)
@@ -296,6 +311,15 @@ def productView(request, id):
     average_rating = int(product.average_rating())
     variants = Variant.objects.filter(product=product)
     default_variant = variants.first() if variants else None
+    default_variant_price_details = calculate_discounted_price(default_variant) if default_variant else None
+    
+    variant_prices = [
+        {
+            "variant": variant,
+            "price_details": calculate_discounted_price(variant)
+        }
+        for variant in variants
+    ]
 
     related_products = Products.objects.filter(
         brand=product.brand,
@@ -332,6 +356,8 @@ def productView(request, id):
         'related_products': related_products,
         'variants': variants,
         'default_variant': default_variant,
+        'variant_prices': variant_prices,
+        'default_variant_price_details': default_variant_price_details,
         'reviews': reviews,
         'form': form,
         'has_purchased': has_purchased,
@@ -497,8 +523,9 @@ def addToCart(request):
     if request.method=="POST":
         product_id = request.POST.get('product_id')       
         variant_id = request.POST.get('variant_id')  
-        print(variant_id)  
-        quantity = request.POST.get('quantity')
+        # variant_price = request.POST.get('variant-price')
+        discounted_price = request.POST.get('discounted_price')
+        quantity = request.POST.get('quantity',1)
    
         product = get_object_or_404(Products,id=product_id)
         product.popularity+=1
@@ -509,9 +536,18 @@ def addToCart(request):
             cart,created = Cart.objects.get_or_create(user=request.user)
         
         
-        cart_item,created = CartItem.objects.get_or_create(cart=cart,product=product,variant=variant,defaults={'quantity':1})
+        cart_item,created = CartItem.objects.get_or_create(
+            cart=cart,
+            product=product,
+            variant=variant,
+            defaults={
+                'quantity':quantity,
+                'price':discounted_price,
+                })
+        
         if not created:
             cart_item.quantity += 1
+        cart_item.price = discounted_price
         cart_item.save()
         return redirect(cartDetails)
     return redirect(productView)
@@ -522,7 +558,7 @@ def cartDetails(request):
         cart = Cart.objects.filter(user=request.user).first() 
         cart_items = cart.items.select_related('product').prefetch_related('product__variants') if cart else []
         user_addresses = request.user.addresses.filter(is_deleted=False)
-
+        applied_coupon = cart.coupon if cart and cart.coupon else None
         available_coupons = Coupon.objects.filter(active=True)
         
         if user_addresses and not user_addresses.filter(is_primary=True).exists():
@@ -551,6 +587,7 @@ def cartDetails(request):
             'out_of_stock_items': out_of_stock_items,
             'is_cart_empty':is_cart_empty,
             'available_coupons':available_coupons,
+            'applied_coupon':applied_coupon,
             })
     return render(request, 'usercart.html', {'cart': None, 'cart_items': [], 'user_addresses': []})
 
@@ -573,10 +610,16 @@ def apply_coupon(request):
             cart.coupon = None
             cart.save()
             return JsonResponse({
+                # "success": True,
+                # "total_amount": cart.get_total_price(),
+                # "discounted_total": cart.get_discount_price(),
+                # "discount": 0,
                 "success": True,
                 "total_amount": cart.get_total_price(),
                 "discounted_total": cart.get_discount_price(),
-                "discount": 0,
+                "original_price": cart.get_original_price(),
+                "coupon_discount": 0,
+                "savings": cart.get_savings(),
                 "removed": True  # Flag to indicate coupon removal
             })
     
@@ -607,10 +650,16 @@ def apply_coupon(request):
             cart.save()
             
             return JsonResponse({
+                # "success": True,
+                # "total_amount": cart.get_total_price(),
+                # "discounted_total": cart.get_discount_price(),
+                # "discount":discount,
                 "success": True,
                 "total_amount": cart.get_total_price(),
                 "discounted_total": cart.get_discount_price(),
-                "discount":discount,
+                "original_price": cart.get_original_price(),
+                "coupon_discount": discount,
+                "savings": cart.get_savings(),
                 "removed":False
                 })
             
@@ -667,14 +716,26 @@ def update_quantity(request):
                 cart_item.save()
 
                 
-                total_amount = sum(item.get_total_price() for item in cart.items.all())
+                # total_amount = sum(item.get_total_price() for item in cart.items.all())
+                # discounted_total = cart.get_discount_price()
+                total_amount = cart.get_total_price()
                 discounted_total = cart.get_discount_price()
+                savings = cart.get_savings()
+                original_price = cart.get_original_price()
+                coupon_discount = cart.discount
 
                 return JsonResponse({
                     'success': True,
                     'new_quantity': cart_item.quantity,
                     'total_amount': total_amount,
-                    'discounted_total':discounted_total,
+                    'discounted_total': discounted_total,
+                    'original_price': original_price,
+                    'coupon_discount': coupon_discount,
+                    'savings': savings
+                    # 'success': True,
+                    # 'new_quantity': cart_item.quantity,
+                    # 'total_amount': total_amount,
+                    # 'discounted_total':discounted_total,
                 })
             else:
                 return JsonResponse({'success': False, 'error': 'Cart item does not exist.'})
@@ -798,6 +859,26 @@ def placeOrder(request):
             cart.discount = 0
             cart.coupon = None
             cart.save()
+            
+            if payment_method.name.lower() == 'wallet':
+                wallet = Wallet.objects.get(user=user)
+                
+                if wallet.balance < total_amount:
+                    return JsonResponse({"error":"Insufficient Wallet Balance"},status=400)
+
+                wallet.debit(total_amount)
+                
+                Transaction.objects.create(
+                    wallet = wallet,
+                    amount = total_amount,
+                    transaction_type = 'debit',
+                    description = f"Payment for order {order.id}"
+                )
+                
+                order.is_paid = True
+                order.save()
+                return JsonResponse({"order_id":order.id,"message":"Order placed using wallet successfully"},status=200)
+                           
             if payment_method.name.lower() == 'razorpay':
                 print("inside razorpay in placeorder")
                 return JsonResponse({"redirect_url": f"/initiate_payment/{order.id}/"}, status=200)

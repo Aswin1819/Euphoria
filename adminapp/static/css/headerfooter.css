@@ -35,6 +35,14 @@
 }
 
 
+
+/* dashboard card design*/
+
+.card_bg_color {
+    background-color: #7A5011;
+    color: white;
+}
+
 /* Main content styling */
 
 .dash-head{

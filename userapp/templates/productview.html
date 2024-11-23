@@ -53,7 +53,33 @@
                 ({{ product.reviews.count }})
             </p>
             <!-- Display default variant price -->
-            <p id="variant-price" class="display-4 mt-5">&#8377; {{ default_variant.price }}</p>
+
+            
+
+            {% if default_variant_price_details.discount is not 0 %}
+                <!-- Default Variant Price Display -->
+                <div class="price-details mt-4">
+                    <p class="fs-5 text-muted mb-1" id="original-price">
+                        <span style="text-decoration: line-through;">&#8377; {{ default_variant_price_details.original_price }}</span>
+                        <span>Original Price</span>
+                    </p>
+                    <p class="fs-5 text-success mb-2" id="discount">
+                        <span>Save:</span>
+                        <span class="fw-bold">&#8377; {{ default_variant_price_details.discount }}</span>
+                    </p>
+                    <p class="fs-3 text-primary fw-bold mt-3" id="variant-price">
+                        <span>Discounted Price:</span>
+                        <span>&#8377; {{ default_variant_price_details.discounted_price }}</span>
+                    </p>
+                </div>
+            {% else %}
+                <p id="variant-price" class="display-4 mt-5">&#8377; {{ default_variant.price }}</p>
+                <input id="original-price" type="hidden"  value="{{ product.id }}"><!--these two are dummy fields to pass the values from js-->
+                <input id="discount" type="hidden"  value="{{ product.id }}">
+            {% endif %}
+            
+            
+
     
             {% comment %} {% if default_variant.stock == 0 %}
                 <p class="text-danger">Stock Out</p>
@@ -68,13 +94,19 @@
             <div class="variant-selection my-4">
                 <label for="variant-weight" class="form-label">Select Weight:</label>
                 <select id="variant-weight" class="form-control" onchange="updateVariant()" name="variant_id">
-                    {% for variant in variants %}
-                        <option value="{{ variant.id }}" data-price="{{ variant.price }}" data-stock="{{ variant.stock }}">
-                            {% if variant.id == default_variant.id %}selected{% endif %}
-                            {{ variant.weight }}g
+                    {% for item in variant_prices %}
+                        <option 
+                            value="{{ item.variant.id }}"
+                            data-price="{{ item.price_details.discounted_price }}"
+                            data-original-price="{{ item.price_details.original_price }}"
+                            data-discount="{{ item.price_details.discount }}"
+                            data-stock="{{ item.variant.stock }}"
+                            {% if item.variant.id == default_variant.id %}selected{% endif %}>
+                            {{ item.variant.weight }}g
                         </option>
                     {% endfor %}
                 </select>
+
             </div>
     
             <div class="d-flex justify-content-cetner">
@@ -82,6 +114,8 @@
                     {% csrf_token %}
                     <input type="hidden" name="product_id" value="{{ product.id }}">
                     <input type="hidden" name="variant_id" id="variant_id" value="{{ default_variant.id }}">
+                    {% comment %} <input type="hidden" name="variant-price" id="variant-price" value="{{ default_variant.price }}"> {% endcomment %}
+                    <input type="hidden" name="discounted_price" id="discounted_price" value="{{ default_variant_price_details.discounted_price }}">
                     <button id="add-to-cart-btn" type="submit" class="btn btn-primary btn-lg">Add to Cart</button>
                     {% comment %} <button class="btn btn-success btn-lg ms-3">Buy Now</button>{% endcomment %}
                 </form>
@@ -226,12 +260,17 @@ function updateVariant() {
     var variantSelect = document.getElementById('variant-weight');
     var selectedOption = variantSelect.options[variantSelect.selectedIndex];
     var price = selectedOption.getAttribute('data-price');
+    var originalPrice = selectedOption.getAttribute('data-original-price');
+    var discount = selectedOption.getAttribute('data-discount');
     var stock = selectedOption.getAttribute('data-stock');
     var variantId = selectedOption.value;
-   
-    console.log(variantId);
-    // Update price
+
+    document.getElementById('discounted_price').value = price;
+    // Update price display
     document.getElementById('variant-price').innerText = `₹ ${price}`;
+    document.getElementById('original-price').innerHTML = `<span style="text-decoration: line-through;">₹ ${originalPrice}</span>`;
+    document.getElementById('discount').innerHTML = `Save: <span class="fw-bold">₹ ${discount}</span>`;
+
 
     // Update stock message
     var stockMessage = '';

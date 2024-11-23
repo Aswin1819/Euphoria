@@ -1,0 +1,73 @@
+{% extends 'adminbase.html' %}
+{% block content %}
+{% if messages %}
+    <div class="alert-container" style="position: fixed; top: 0; left: 0; right: 0; z-index: 9999;">
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {% endfor %}
+    </div>
+{% endif %}
+
+<div class="col-md-10">
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-center mt-0 mb-2 dash-head py-2 rounded text-white px-2" style="background-color: #8b5e34;">
+        <h3 class="mb-3 mb-md-0">Offers</h3>
+        
+        <div class="d-flex flex-column flex-md-row align-items-center">
+            <a href="{% url 'adminAddOffers' %}" class="btn btn-light mb-2 mb-md-0 me-md-2 rounded">
+                Add Offers
+            </a>
+            
+            <form class="d-flex flex-column flex-md-row align-items-center" role="search" method="POST" action="{% url 'adminSearchOffers' %}" >
+                {% csrf_token %}
+                <input class="form-control me-0 me-md-2 mb-2 mb-md-0" type="search" placeholder="Search Offers" aria-label="Search" name="search">
+                <button class="btn btn-outline-success" type="submit">Search</button>
+            </form>
+        </div>
+    </div>
+
+    <table class="table table-bordered">
+        <thead class="table-light">
+            <tr>
+                <th>#</th>
+                <th>Name</th>
+                <th>Type</th>
+                <th>Discount</th>
+                <th>Validity</th>
+                <th>Status</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for offer in offers %}
+            <tr>
+                <td>{{ forloop.counter }}</td>
+                <td>{{ offer.name }}</td>
+                <td>
+                    {% if offer.categories.count > 0 %}Category{% elif offer.products.count > 0 %}Product{% else %}General{% endif %}
+                </td>
+                <td>
+                    {% if offer.discount_percentage %}{{ offer.discount_percentage }}%{% elif offer.discount_amount %}₹{{ offer.discount_amount }}{% else %}-{% endif %}
+                </td>
+                <td>{{ offer.start_date|date:"d M Y" }} - {{ offer.end_date|date:"d M Y" }}</td>
+                <td>{{ offer.is_active|yesno:"Active,Inactive" }}</td>
+                <td>
+                    <form method='POST' action="{% url 'adminDeleteOffer' offer.id %}">
+                        {% csrf_token %}
+                        <a href="{% url 'adminEditOffers' offer.id %}" class="btn btn-sm btn-primary">Edit</a>
+                        {% if offer.is_active %}
+                            <button type="submit" class="btn btn-danger btn-sm">Remove</button>
+                        {% else %}
+                            <button type="submit" class="btn btn-sm btn-success">Active</button>
+                        {% endif %}
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% endblock %}
