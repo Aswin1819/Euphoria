@@ -648,26 +648,26 @@ def adminSearchOffers(request):
    
     
 def adminDashboard(request):
-    # Get date filters from request
+  
     start_date = request.GET.get('start_date')
     end_date = request.GET.get('end_date')
     
-    # Default to the last 7 days if no filter is applied
+   
     if not start_date or not end_date:
         end_date = now()
         start_date = end_date - timedelta(days=7)
     else:
-        # Convert to timezone-aware datetime objects
+      
         start_date = make_aware(datetime.strptime(start_date, "%Y-%m-%d"))
         end_date = make_aware(datetime.strptime(end_date, "%Y-%m-%d"))
     print(start_date)
     print(end_date)
         
     
-    # Query orders within the date range
+    
     orders = Order.objects.filter(created_at__range=[start_date, end_date])
     
-    # Calculate total sales and discounts for the custom date range
+   
     total_sales = orders.aggregate(Sum('total_amount'))['total_amount__sum'] or 0
     total_discounts = (
         orders.aggregate(
@@ -677,12 +677,12 @@ def adminDashboard(request):
     
     total_orders = orders.count()
 
-    # Daily, Weekly, and Monthly Reports
+    
     today = now().date()
-    start_of_week = today - timedelta(days=today.weekday())  # Start of the current week
-    start_of_month = today.replace(day=1)  # Start of the current month
+    start_of_week = today - timedelta(days=today.weekday()) 
+    start_of_month = today.replace(day=1) 
 
-    # Daily sales
+    
     daily_orders = Order.objects.filter(created_at__date=today)
     daily_sales = daily_orders.aggregate(total=Sum('total_amount'))['total'] or 0
     daily_discounts = (
@@ -691,7 +691,7 @@ def adminDashboard(request):
         )['discount'] or 0
     ) - daily_sales if daily_orders.exists() else 0
 
-    # Weekly sales
+    
     weekly_orders = Order.objects.filter(created_at__date__gte=start_of_week, created_at__date__lte=today)
     weekly_sales = weekly_orders.aggregate(total=Sum('total_amount'))['total'] or 0
     weekly_discounts = (
@@ -701,7 +701,7 @@ def adminDashboard(request):
     ) - weekly_sales if weekly_orders.exists() else 0
     
 
-    # Monthly sales
+   
     monthly_orders = Order.objects.filter(created_at__date__gte=start_of_month, created_at__date__lte=today)
     monthly_sales = monthly_orders.aggregate(total=Sum('total_amount'))['total'] or 0
     monthly_discounts = (
@@ -710,7 +710,7 @@ def adminDashboard(request):
         )['discount'] or 0
     ) - monthly_sales if monthly_orders.exists() else 0
 
-    # Context to pass to template
+    
     context = {
         'total_sales': total_sales,
         'total_discounts': total_discounts,
@@ -730,38 +730,37 @@ def export_to_excel(request):
     start_date_str = request.GET.get('start_date')
     end_date_str = request.GET.get('end_date')
 
-    # Try to parse the date, handle different formats (e.g. "Nov. 8, 2024" to "2024-11-08")
+   
     try:
-        start_date = datetime.strptime(start_date_str, "%b. %d, %Y")  # Format like 'Nov. 8, 2024'
+        start_date = datetime.strptime(start_date_str, "%b. %d, %Y")  
     except ValueError:
-        start_date = datetime.strptime(start_date_str, "%Y-%m-%d")  # Format like '2024-11-08'
+        start_date = datetime.strptime(start_date_str, "%Y-%m-%d") 
 
     try:
-        end_date = datetime.strptime(end_date_str, "%b. %d, %Y")  # Format like 'Nov. 14, 2024'
+        end_date = datetime.strptime(end_date_str, "%b. %d, %Y")  
     except ValueError:
         end_date = datetime.strptime(end_date_str, "%Y-%m-%d") 
         
     start_date = make_aware(start_date)
     end_date = make_aware(end_date)
 
-    # Query orders within the date range
     orders = Order.objects.filter(created_at__range=[start_date, end_date])
 
-    # Create a workbook and add a worksheet
+    
     wb = Workbook()
     ws = wb.active
     ws.title = "Sales Report"
     
-    # Define the column headers
+    
     headers = ["Order ID", "Customer", "Total Amount", "Total Discount", "Order Date"]
     ws.append(headers)
 
-    # Add sales data rows
+    
     for order in orders:
-        total_discount = sum(item.get_total_price() for item in order.order_items.all())  # or calculate discounts in any other way
+        total_discount = sum(item.get_total_price() for item in order.order_items.all())  
         ws.append([order.id, order.user.username, order.total_amount, total_discount, order.created_at.strftime('%Y-%m-%d')])
 
-    # Adjust column widths
+    
     for col_num in range(1, len(headers) + 1):
         column = get_column_letter(col_num)
         max_length = 0
@@ -775,7 +774,7 @@ def export_to_excel(request):
         adjusted_width = (max_length + 2)
         ws.column_dimensions[column].width = adjusted_width
 
-    # Create an HTTP response with the file content
+    
     response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
     response['Content-Disposition'] = f'attachment; filename=Sales_Report_{start_date.strftime("%Y-%m-%d")}_to_{end_date.strftime("%Y-%m-%d")}.xlsx'
     wb.save(response)
@@ -786,39 +785,39 @@ def export_to_excel(request):
 
 
 def export_to_pdf(request):
-    # Get date filters from request
+   
     start_date_str = request.GET.get('start_date')
     end_date_str = request.GET.get('end_date')
 
-    # Try to parse the date, handle different formats (e.g. "Nov. 8, 2024" to "2024-11-08")
+   
     try:
-        start_date = datetime.strptime(start_date_str, "%b. %d, %Y")  # Format like 'Nov. 8, 2024'
+        start_date = datetime.strptime(start_date_str, "%b. %d, %Y")  
     except ValueError:
-        start_date = datetime.strptime(start_date_str, "%Y-%m-%d")  # Format like '2024-11-08'
+        start_date = datetime.strptime(start_date_str, "%Y-%m-%d")  
 
     try:
-        end_date = datetime.strptime(end_date_str, "%b. %d, %Y")  # Format like 'Nov. 14, 2024'
+        end_date = datetime.strptime(end_date_str, "%b. %d, %Y")  
     except ValueError:
         end_date = datetime.strptime(end_date_str, "%Y-%m-%d")  
     
     start_date = make_aware(start_date)
     end_date = make_aware(end_date)
-    # Query orders within the date range
+    
     orders = Order.objects.filter(created_at__range=[start_date, end_date])
 
-    # Create a HttpResponse object with content type for PDF
+    
     response = HttpResponse(content_type='application/pdf')
     response['Content-Disposition'] = f'attachment; filename=Sales_Report_{start_date.strftime("%Y-%m-%d")}_to_{end_date.strftime("%Y-%m-%d")}.pdf'
 
-    # Create a PDF canvas object
+    
     p = canvas.Canvas(response, pagesize=letter)
     width, height = letter
 
-    # Add a title to the PDF
+   
     p.setFont("Helvetica", 14)
     p.drawString(100, height - 40, f"Sales Report from {start_date.strftime('%Y-%m-%d')} to {end_date.strftime('%Y-%m-%d')}")
 
-    # Add table headers
+   
     p.setFont("Helvetica", 10)
     p.drawString(100, height - 80, "Order ID")
     p.drawString(200, height - 80, "Customer")
@@ -826,18 +825,18 @@ def export_to_pdf(request):
     p.drawString(400, height - 80, "Total Discount")
     p.drawString(500, height - 80, "Order Date")
 
-    # Add order data to the PDF
+   
     y_position = height - 100
     for order in orders:
-        total_discount = sum(item.get_total_price() for item in order.order_items.all())  # or calculate discounts in any other way
+        total_discount = sum(item.get_total_price() for item in order.order_items.all()) 
         p.drawString(100, y_position, str(order.id))
         p.drawString(200, y_position, order.user.username)
         p.drawString(300, y_position, f"Rs.{order.total_amount}")
         p.drawString(400, y_position, f"Rs.{total_discount}")
         p.drawString(500, y_position, order.created_at.strftime('%Y-%m-%d'))
-        y_position -= 20  # Move down for the next row
+        y_position -= 20  
 
-    # Save the PDF
+    
     p.showPage()
     p.save()
     return response
