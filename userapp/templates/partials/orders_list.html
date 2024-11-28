@@ -1,17 +1,12 @@
-{% for item in orders %}
+{% comment %} {% for item in orders %}
     <div class="card mb-3 shadow-sm">
+        <a href="{% url 'download_invoice' item.order.id  %}" class="btn btn-primary">Download Invoice</a>
         <div class="row g-0">
             <div class="col-md-3">
                 <img src="{{ item.product.product_images.first.images.url }}" class="img-fluid rounded-start" alt="{{ item.product.name }}">
             </div>
             <div class="col-md-9">
                 <div class="card-body">
-                    {% comment %} <h5 class="card-title">{{ item.product.name }}</h5>
-                    <p class="card-text mb-1">Quantity: {{ item.quantity }}</p>
-                    <p class="card-text mb-1">Total Amount: ₹{{ item.get_total_price }}</p>
-                    <p class="card-text mb-1">Status: {{ item.status }}</p>
-                    <p class="card-text mb-1">Address: {{ item.order.user.get_primary_address }}</p>
-                    <p class="card-text mb-1">Ordered: {{ item.order.created_at|date:"d-m-y" }}</p> {% endcomment %}
                     <h5 class="card-title">{{ item.product.name }}</h5>
 
                     <div class="d-flex justify-content-between">
@@ -66,6 +61,91 @@
     </div>
 {% empty %}
     <p>No orders found.</p>
+{% endfor %} {% endcomment %}
+{% for order in orders %}
+<div class="card mb-3 shadow-sm">
+    <div class="card-body">
+        <h5 class="card-title">Order ID: {{ order.id }}</h5>
+        <p>Order Date: {{ order.created_at|date:"d-m-Y" }}</p>
+        <p>Total Amount: ₹{{ order.total_amount }}</p>
+        <p>Payment Method: {{ order.paymentmethod }}</p>
+
+        <!-- Download Invoice Button -->
+        <a href="{% url 'download_invoice' order.id %}" class="btn btn-info">Download Invoice</a>
+
+        <div class="mt-3">
+            <h6>Items:</h6>
+            <ul>
+                {% for item in order.order_items.all %}
+                {% comment %} <li>
+                    {{ item.product.name }} - {{ item.quantity }} pcs - ₹{{ item.get_total_price }}
+                </li> {% endcomment %}
+                <div class="card mb-3 shadow-sm">
+                    <div class="row g-0">
+                        <div class="col-md-3">
+                            <img src="{{ item.product.product_images.first.images.url }}" class="img-fluid rounded-start" alt="{{ item.product.name }}">
+                        </div>
+                        <div class="col-md-9">
+                            <div class="card-body">
+                                <h5 class="card-title">{{ item.product.name }}</h5>
+            
+                                <div class="d-flex justify-content-between">
+                                    <p class="card-text mb-1">Quantity: {{ item.quantity }}</p>
+                                    <p class="card-text mb-1">Address: {{ item.order.address.address }} ,{{ item.order.address.pincode}}</p>
+                                </div>
+                            
+                                <div class="d-flex justify-content-between">
+                                    <p class="card-text mb-1">Total Amount: ₹{{ item.get_total_price }}</p>
+                                    <p class="card-text mb-1">Ordered: {{ item.order.created_at|date:"d-m-y" }}</p>
+                                </div>
+                            
+                                <div class="d-flex justify-content-between">
+                                    <p class="card-text mb-1">Status: {{ item.status }}</p>
+                                    <p class="card-text mb-1">
+                                        {% if item.status == 'Delivered' %}
+                                            Delivered on: {{ item.last_updated|date:"d-m-y" }}
+                                        {% elif item.status == 'Cancelled' %}
+                                            Cancelled on: {{ item.last_updated|date:"d-m-y" }}
+                                        {% elif item.status == 'Returned' %}
+                                            Returned on: {{ item.last_updated|date:"d-m-y" }}
+                                        {% endif %}
+                                    </p>
+                                </div>
+                                <div class="d-flex justify-content-between">
+                                    <p class="card-text"><small class="text-muted">Order ID: {{ item.order.id }}</small></p>
+                                    <p class="card-text mb-1">Payment: {{ item.order.paymentmethod }}</p>
+                                </div>
+                                
+            
+                                <!-- Progress Bar for Order Item Status -->
+                                <div class="progress mt-3 mb-2" style="height: 10px;">
+                                    <div class="progress-bar 
+                                        {% if item.status == 'Shipped' %}bg-warning{% elif item.status == 'Out of Delivery' %}bg-primary{% elif item.status == 'Delivered' %}bg-success{% else %}bg-danger{% endif %}"
+                                        role="progressbar"
+                                        style="width: 
+                                            {% if item.status == 'Shipped' %}25{% elif item.status == 'Out of Delivery' %}75{% elif item.status == 'Delivered' %}100{% elif item.status == 'Returned' or item.status == 'Cancelled' %}100{% endif %}%;"
+                                        aria-valuenow="{% if item.status == 'Shipped' %}25{% elif item.status == 'Out of Delivery' %}75{% elif item.status == 'Delivered' %}100{% else %}50{% endif %}"
+                                        aria-valuemin="0" aria-valuemax="100">
+                                    </div>
+                                </div>
+            
+                                <!-- Action Button for Cancel or Return based on OrderItem status -->
+                                {% if item.status in  'Pending , Shipped' %}
+                                    <button class="btn btn-danger" onclick="cancelOrder('{{ item.id }}')">Cancel Order</button>
+                                {% elif item.status == 'Delivered' %}
+                                    <button class="btn btn-warning" onclick="returnOrder('{{ item.id }}')">Return Order</button>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+</div>
+{% empty %}
+<p>No orders found.</p>
 {% endfor %}
 
 

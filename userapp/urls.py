@@ -42,6 +42,7 @@ urlpatterns = [
     path('wallet_view/',views.wallet_view,name='wallet_view'),
     path("initiate_wallet_recharge/", views.initiate_wallet_recharge, name="initiate_wallet_recharge"),
     path("wallet_recharge_success/", views.wallet_recharge_success, name="wallet_recharge_success"),
+    path('download_invoice/<int:order_id>/', views.download_invoice, name='download_invoice'),
 
     path('categoryProducts/<int:category_id>/',views.categoryProducts,name='categoryProducts'),
 ]

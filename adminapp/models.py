@@ -282,7 +282,7 @@ class PaymentMethod(models.Model):
 
 
     
-
+    
 
 
 class Order(models.Model):

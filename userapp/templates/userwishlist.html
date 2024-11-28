@@ -28,12 +28,23 @@
                                 <h5 class="card-title text-muted">{{ item.product.brand }}</h5>
                                 <h6 class="card-title">{{ item.product.name }}</h6>
                                 <p class="card-text">Price: <strong>&#8377; {{ item.variant.price }}</strong></p>
-                                <p class="card-text d-flex justify-content-between align-items-center">
-                                    Weight: {{ item.variant.weight }}g
-                                    <a href="{% url 'removeFromWishlist' item.id %}" class="text-danger ms-2" title="Remove from Wishlist">
-                                        <i class="fas fa-trash-alt"></i> <!-- Font Awesome trash icon -->
-                                    </a>
-                                </p>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <!-- Weight on the left -->
+                                    <span>Weight: {{ item.variant.weight }}g</span>
+                                    <!-- Cart and Trash icons on the right -->
+                                    <div>
+                                        <button class="btn btn-sm btn-primary add-to-cart me-2" 
+                                                data-product-id="{{ item.product.id }}" 
+                                                data-variant-id="{{ item.variant.id }}" 
+                                                data-discounted-price="{{ item.variant.price }}" 
+                                                title="Add to Cart">
+                                            <i class="fas fa-cart-plus"></i>
+                                        </button>
+                                        <a href="{% url 'removeFromWishlist' item.id %}" class="text-warning" title="Remove from Wishlist">
+                                            <i class="fas fa-trash-alt"></i>
+                                        </a>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </a>
@@ -45,4 +56,50 @@
         {% endfor %}
     </div>
 </div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", () => {
+        const addToCartButtons = document.querySelectorAll(".add-to-cart");
+    
+        addToCartButtons.forEach(button => {
+            button.addEventListener("click", (event) => {
+                event.preventDefault();
+    
+                const productId = button.getAttribute("data-product-id");
+                const variantId = button.getAttribute("data-variant-id");
+                const discountedPrice = button.getAttribute("data-discounted-price");
+                const quantity = 1; // Default quantity
+    
+                fetch("{% url 'addToCart' %}", {
+                    method: "POST",
+                    headers: {
+                        "X-CSRFToken": "{{ csrf_token }}",
+                        "Content-Type": "application/json",
+                        "X-Requested-With": "XMLHttpRequest"
+                    },
+                    body: JSON.stringify({
+                        product_id: productId,
+                        variant_id: variantId,
+                        discounted_price: discountedPrice,
+                        quantity: quantity
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        Swal.fire("Success", data.message, "success");
+                    } else {
+                        Swal.fire("Error", data.message, "error");
+                    }
+                })
+                .catch(error => {
+                    Swal.fire("Error", "An error occurred while adding to the cart!", "error");
+                    console.error("Error:", error);
+                });
+            });
+        });
+    });
+    
+
+</script>
 {% endblock %}

@@ -24,7 +24,13 @@ from django.db.models import Q,Min,Avg
 from django.views.decorators.cache import never_cache
 import razorpay
 from .utils import refund_to_wallet,calculate_discounted_price
-
+from django.http import HttpResponse
+from io import BytesIO
+from reportlab.pdfgen import canvas
+from reportlab.lib import colors
+from reportlab.lib.pagesizes import letter
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph
+from reportlab.lib.styles import getSampleStyleSheet
 # Create your views here.
 
 
@@ -273,13 +279,22 @@ def shopNow(request):
     paginator = Paginator(products, 20)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
-
-
+    
+    user_wishlist = []
+    if request.user.is_authenticated:
+        wishlist = Wishlist.objects.filter(user=request.user).first()
+        if wishlist:
+            user_wishlist = [item.product for item in wishlist.items.all()]
+        
+    
     is_ajax_request = request.headers.get('x-requested-with') == 'XMLHttpRequest'
     print("Is AJAX request:", is_ajax_request)
     
     if is_ajax_request:
-        html = render_to_string('partials/product_list.html', {'page_obj': page_obj})
+        html = render_to_string('partials/product_list.html', {
+            'page_obj': page_obj,
+            'user_wishlist':user_wishlist
+            })
         return JsonResponse({'html': html})
 
 
@@ -287,6 +302,7 @@ def shopNow(request):
         'page_obj': page_obj,
         'sort_option': sort_option,
         'search_query':search_query,
+        'user_wishlist':user_wishlist,
     })
 
 
@@ -468,29 +484,57 @@ def deleteAddress(request, address_id):
 
 
 
-def addToWishlist(request):
-    if request.method=="POST":
-        product_id = request.POST.get('product_id')
-        variant_id = request.POST.get('variant_id')
+# def addToWishlist(request):
+#     if request.method=="POST":
+#         product_id = request.POST.get('product_id')
+#         variant_id = request.POST.get('variant_id')
         
-        product = get_object_or_404(Products,id=product_id)
-        variant = get_object_or_404(Variant,id=variant_id)
+#         product = get_object_or_404(Products,id=product_id)
+#         variant = get_object_or_404(Variant,id=variant_id)
         
-        if request.user.is_authenticated:
-            wishlist,created = Wishlist.objects.get_or_create(user=request.user)
+#         if request.user.is_authenticated:
+#             wishlist,created = Wishlist.objects.get_or_create(user=request.user)
         
-            wishlist_item,item_created = WishlistItem.objects.get_or_create(wishlist=wishlist,product=product,variant=variant)    
+#             wishlist_item,item_created = WishlistItem.objects.get_or_create(wishlist=wishlist,product=product,variant=variant)    
             
-            if item_created:
-                messages.success(request,"Item added to wishlist!!!")
-            else:
-                messages.info(request,"This Items is already in your wishlist")
-            return redirect(userWishlist)
-        else:
-            messages.error(request,"Please Login to add items to your cart!!")
-            return redirect(userlogin)
+#             if item_created:
+#                 messages.success(request,"Item added to wishlist!!!")
+#             else:
+#                 messages.info(request,"This Items is already in your wishlist")
+#             return redirect(userWishlist)
+#         else:
+#             messages.error(request,"Please Login to add items to your cart!!")
+#             return redirect(userlogin)
         
-    return redirect(userlogin)
+#     return redirect(userlogin)
+
+
+
+def addToWishlist(request):
+    if request.method == "POST":
+        if not request.user.is_authenticated:
+            return JsonResponse({"success": False, "message": "Please login to add items to your wishlist!"})
+        
+        try:
+            data = json.loads(request.body)  # Parse JSON payload
+            product_id = data.get('product_id')
+            variant_id = data.get('variant_id')
+
+            product = get_object_or_404(Products, id=product_id)
+            variant = get_object_or_404(Variant, id=variant_id)
+            
+            wishlist, created = Wishlist.objects.get_or_create(user=request.user)
+            wishlist_item, item_created = WishlistItem.objects.get_or_create(wishlist=wishlist, product=product, variant=variant)
+
+            if item_created:
+                return JsonResponse({"success": True, "message": "Item added to wishlist!"})
+            else:
+                return JsonResponse({"success": False, "message": "This item is already in your wishlist!"})
+        except json.JSONDecodeError:
+            return JsonResponse({"success": False, "message": "Invalid data!"})
+    return JsonResponse({"success": False, "message": "Invalid request!"})
+
+
             
             
 def userWishlist(request):
@@ -518,39 +562,88 @@ def removeFromWishlist(request,item_id):
 
 
 
+# @login_required(login_url='userlogin')
+# def addToCart(request):
+#     if request.method=="POST":
+#         product_id = request.POST.get('product_id')       
+#         variant_id = request.POST.get('variant_id')  
+#         # variant_price = request.POST.get('variant-price')
+#         discounted_price = request.POST.get('discounted_price')
+#         quantity = request.POST.get('quantity',1)
+   
+#         product = get_object_or_404(Products,id=product_id)
+#         product.popularity+=1
+#         product.save()
+#         variant = get_object_or_404(Variant,id=variant_id)
+        
+#         if request.user.is_authenticated:
+#             cart,created = Cart.objects.get_or_create(user=request.user)
+        
+        
+#         cart_item,created = CartItem.objects.get_or_create(
+#             cart=cart,
+#             product=product,
+#             variant=variant,
+#             defaults={
+#                 'quantity':quantity,
+#                 'price':discounted_price,
+#                 })
+        
+#         if not created:
+#             cart_item.quantity += 1
+#         cart_item.price = discounted_price
+#         cart_item.save()
+#         return redirect(cartDetails)
+#     return redirect(productView)
+
+
+
 @login_required(login_url='userlogin')
 def addToCart(request):
-    if request.method=="POST":
-        product_id = request.POST.get('product_id')       
-        variant_id = request.POST.get('variant_id')  
-        # variant_price = request.POST.get('variant-price')
-        discounted_price = request.POST.get('discounted_price')
-        quantity = request.POST.get('quantity',1)
-   
-        product = get_object_or_404(Products,id=product_id)
-        product.popularity+=1
-        product.save()
-        variant = get_object_or_404(Variant,id=variant_id)
-        
-        if request.user.is_authenticated:
-            cart,created = Cart.objects.get_or_create(user=request.user)
-        
-        
-        cart_item,created = CartItem.objects.get_or_create(
-            cart=cart,
-            product=product,
-            variant=variant,
-            defaults={
-                'quantity':quantity,
-                'price':discounted_price,
+    if request.method == "POST" and request.headers.get('x-requested-with') == 'XMLHttpRequest':
+        try:
+            data = json.loads(request.body)  # Parse JSON data
+            product_id = data.get('product_id')       
+            variant_id = data.get('variant_id')  
+            discounted_price = data.get('discounted_price')
+            quantity = data.get('quantity', 1)
+       
+            product = get_object_or_404(Products, id=product_id)
+            product.popularity += 1
+            product.save()
+            
+            variant = get_object_or_404(Variant, id=variant_id)
+            
+            if request.user.is_authenticated:
+                cart, created = Cart.objects.get_or_create(user=request.user)
+            
+            cart_item, created = CartItem.objects.get_or_create(
+                cart=cart,
+                product=product,
+                variant=variant,
+                defaults={
+                    'quantity': quantity,
+                    'price': discounted_price,
                 })
-        
-        if not created:
-            cart_item.quantity += 1
-        cart_item.price = discounted_price
-        cart_item.save()
-        return redirect(cartDetails)
-    return redirect(productView)
+            
+            if cart_item.quantity >=4:
+                return JsonResponse({"success":False,"message":"Cart limit 4 is reached"},status=400)
+            if not created:
+                cart_item.quantity += 1
+            
+            cart_item.price = discounted_price
+            cart_item.save()
+            
+            return JsonResponse({"success": True, "message": "Product added to cart successfully!"})
+        except Exception as e:
+            return JsonResponse({"success": False, "message": str(e)}, status=400)
+    
+    return JsonResponse({"success": False, "message": "Invalid request method or headers"}, status=400)
+
+
+
+
+
 
 @login_required(login_url='userlogin')
 def cartDetails(request):
@@ -814,7 +907,6 @@ def user_checkout(request):
 def placeOrder(request):
     if request.method == 'POST':
         try:
-            print("Request Body:",request.body)
             data = json.loads(request.body)  
             user = request.user
             selected_address_id = data.get('address_id')
@@ -829,9 +921,15 @@ def placeOrder(request):
 
             total_amount = cart.get_discount_price()
             print(total_amount)
+            
             #sum(item.variant.price * item.quantity for item in cart.items.all())
             
             payment_method = get_object_or_404(PaymentMethod,id=payment_method_id)
+            print(payment_method)
+            
+            if payment_method.name.lower() == 'cash on delivery' and total_amount > 1000:
+                return JsonResponse({"error": "COD is only valid for order below 1000"}, status=400)
+                
 
             order = Order.objects.create(
                 user=user,
@@ -945,27 +1043,175 @@ def payment_success(request):
 
 
 
+# @login_required(login_url='userlogin')
+# def userYourOrder(request):
+#     user = request.user
+#     status_filter = request.GET.get('status', 'all') 
+    
+#     if status_filter == 'all':
+#         orders = OrderItem.objects.filter(order__user=user).prefetch_related('product').order_by('-last_updated')
+#     else:
+#         orders = OrderItem.objects.filter(order__user=user, status=status_filter.capitalize()).prefetch_related('product').order_by('-last_updated')
+        
+#     is_ajax_request = request.headers.get('x-requested-with') == 'XMLHttpRequest'
+#     print("Is AJAX request:", is_ajax_request)
+    
+#     if is_ajax_request:
+#         orders_html = render_to_string('partials/orders_list.html', {'orders': orders})
+#         return JsonResponse({'orders_html': orders_html})
+    
+#     return render(request, 'user_your_order.html', {
+#         'orders': orders,
+#         'status_filter': status_filter
+#     })
+
 @login_required(login_url='userlogin')
 def userYourOrder(request):
     user = request.user
-    status_filter = request.GET.get('status', 'all') 
-    
+    status_filter = request.GET.get('status', 'all')
+
     if status_filter == 'all':
-        orders = OrderItem.objects.filter(order__user=user).prefetch_related('product').order_by('-last_updated')
+        orders = Order.objects.filter(user=user).prefetch_related('order_items__product').order_by('-created_at')
     else:
-        orders = OrderItem.objects.filter(order__user=user, status=status_filter.capitalize()).prefetch_related('product').order_by('-last_updated')
-        
+        orders = Order.objects.filter(user=user, order_items__status=status_filter.capitalize()).distinct().order_by('-created_at')
+
     is_ajax_request = request.headers.get('x-requested-with') == 'XMLHttpRequest'
-    print("Is AJAX request:", is_ajax_request)
-    
     if is_ajax_request:
         orders_html = render_to_string('partials/orders_list.html', {'orders': orders})
         return JsonResponse({'orders_html': orders_html})
-    
+
     return render(request, 'user_your_order.html', {
         'orders': orders,
         'status_filter': status_filter
     })
+    
+    
+
+# @login_required(login_url='userlogin')
+# def download_invoice(request, order_id):
+#     # Fetch the order for the user
+#     order = Order.objects.filter(id=order_id, user=request.user).first()
+#     if not order:
+#         return HttpResponse("Unauthorized", status=401)
+
+#     # Create a PDF
+#     buffer = BytesIO()
+#     p = canvas.Canvas(buffer)
+#     p.setFont("Helvetica", 12)
+#     p.drawString(100, 800, f"Invoice for Order ID: {order.id}")
+#     p.drawString(100, 780, f"Date: {order.created_at.strftime('%d-%m-%Y')}")
+#     p.drawString(100, 760, f"Customer: {order.user.username}")
+#     p.drawString(100, 740, f"Payment Method: {order.paymentmethod}")
+
+#     y = 720
+#     p.drawString(100, y, "Items:")
+#     for item in order.order_items.all():
+#         y -= 20
+#         p.drawString(120, y, f"{item.product.name} - Quantity: {item.quantity} - ₹{item.get_total_price()}")
+
+#     y -= 40
+#     p.drawString(100, y, f"Total Amount: ₹{order.total_amount}")
+
+#     p.showPage()
+#     p.save()
+
+#     buffer.seek(0)
+#     return HttpResponse(buffer, content_type="application/pdf", headers={
+#         'Content-Disposition': f'attachment; filename=invoice_{order.id}.pdf',
+#     })
+
+
+@login_required(login_url='userlogin')
+def download_invoice(request, order_id):
+    
+    order = Order.objects.filter(id=order_id, user=request.user).first()
+    if not order:
+        return HttpResponse("Unauthorized", status=401)
+
+    # Create a PDF
+    buffer = BytesIO()
+    pdf = SimpleDocTemplate(buffer, pagesize=letter)
+    elements = []  # Holds the PDF components
+    styles = getSampleStyleSheet()
+
+    # Title
+    title = Paragraph(f"<b>Invoice for Order ID: {order.id}</b>", styles["Title"])
+    elements.append(title)
+
+    # Order details
+    order_details = [
+        ["Date", order.created_at.strftime('%d-%m-%Y')],
+        ["Customer", order.user.username],
+        ["Payment Method", order.paymentmethod],
+    ]
+    details_table = Table(order_details, colWidths=[150, 350])
+    details_table.setStyle(
+        TableStyle([
+            ("BACKGROUND", (0, 0), (-1, 0), colors.grey),
+            ("TEXTCOLOR", (0, 0), (-1, 0), colors.whitesmoke),
+            ("ALIGN", (0, 0), (-1, -1), "LEFT"),
+            ("FONTNAME", (0, 0), (-1, -1), "Helvetica"),
+            ("FONTSIZE", (0, 0), (-1, -1), 10),
+            ("BOTTOMPADDING", (0, 0), (-1, -1), 6),
+        ])
+    )
+    elements.append(details_table)
+    elements.append(Paragraph("<br/>", styles["Normal"]))
+
+    # Items Table
+    items_data = [["Item", "Quantity", "Price (Rs)", "Total (Rs)"]]  # Table Header
+    for item in order.order_items.all():
+        items_data.append(
+            [item.product.name, item.quantity, item.price, item.get_total_price()]
+        )
+
+    items_table = Table(items_data, colWidths=[200, 100, 100, 100])
+    items_table.setStyle(
+        TableStyle([
+            ("BACKGROUND", (0, 0), (-1, 0), colors.grey),
+            ("TEXTCOLOR", (0, 0), (-1, 0), colors.whitesmoke),
+            ("ALIGN", (0, 0), (-1, -1), "CENTER"),
+            ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+            ("FONTSIZE", (0, 0), (-1, 0), 10),
+            ("BOTTOMPADDING", (0, 0), (-1, 0), 6),
+            ("GRID", (0, 0), (-1, -1), 1, colors.black),
+            ("FONTNAME", (0, 1), (-1, -1), "Helvetica"),
+            ("FONTSIZE", (0, 1), (-1, -1), 10),
+            ("ALIGN", (0, 1), (-1, -1), "LEFT"),
+        ])
+    )
+    elements.append(items_table)
+    elements.append(Paragraph("<br/>", styles["Normal"]))
+
+    # Total Amount
+    total_table = Table(
+        [["Total Amount", f"Rs {order.total_amount}"]],
+        colWidths=[450, 100]
+    )
+    total_table.setStyle(
+        TableStyle([
+            ("BACKGROUND", (0, 0), (-1, 0), colors.lightgrey),
+            ("TEXTCOLOR", (0, 0), (-1, -1), colors.black),
+            ("ALIGN", (0, 0), (-1, -1), "RIGHT"),
+            ("FONTNAME", (0, 0), (-1, -1), "Helvetica-Bold"),
+            ("FONTSIZE", (0, 0), (-1, -1), 12),
+            ("BOTTOMPADDING", (0, 0), (-1, -1), 10),
+            ("TOPPADDING", (0, 0), (-1, -1), 10),
+        ])
+    )
+    elements.append(total_table)
+
+    # Generate the PDF  
+    pdf.build(elements)
+
+    buffer.seek(0)
+    return HttpResponse(buffer, content_type="application/pdf", headers={
+        'Content-Disposition': f'attachment; filename=invoice_{order.id}.pdf',
+    })
+
+
+
+
 
 
 

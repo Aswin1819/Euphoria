@@ -110,21 +110,25 @@
             </div>
     
             <div class="d-flex justify-content-cetner">
-                <form action="{% url 'addToCart' %}" method="POST">
+                {% comment %} <form action="{% url 'addToCart' %}" method="POST">
                     {% csrf_token %}
                     <input type="hidden" name="product_id" value="{{ product.id }}">
                     <input type="hidden" name="variant_id" id="variant_id" value="{{ default_variant.id }}">
-                    {% comment %} <input type="hidden" name="variant-price" id="variant-price" value="{{ default_variant.price }}"> {% endcomment %}
                     <input type="hidden" name="discounted_price" id="discounted_price" value="{{ default_variant_price_details.discounted_price }}">
                     <button id="add-to-cart-btn" type="submit" class="btn btn-primary btn-lg">Add to Cart</button>
-                    {% comment %} <button class="btn btn-success btn-lg ms-3">Buy Now</button>{% endcomment %}
-                </form>
-                <form action="{% url 'addToWishlist' %}" method="POST">
-                    {% csrf_token %}
-                    <input type="hidden" name="product_id" value="{{ product.id }}">
-                    <input type="hidden" name="variant_id" id="variant_id" value="{{ default_variant.id }}">
-                    <button class="btn btn-warning btn-lg ms-3" type="submit">Add to Wishlist</button> 
-                </form>
+                    
+                </form> {% endcomment %}
+                <input type="hidden" name="product_id" value="{{ product.id }}">
+                <input type="hidden" name="variant_id" id="variant_id" value="{{ default_variant.id }}">
+                <input type="hidden" name="discounted_price" id="discounted_price" value="{{ default_variant_price_details.discounted_price }}">
+
+                <button id="add-to-cart-btn" type="button" class="btn btn-primary btn-lg">Add to Cart</button>
+                <button
+                    class="btn btn-warning add-to-wishlist ms-3" 
+                    data-product-id="{{ product.id }}" 
+                    data-variant-id="{{ default_variant.id }}">
+                    Add to Wishlist     
+                </button>
             </div>
             
         </div>
@@ -289,6 +293,82 @@ function updateVariant() {
     document.getElementById('variant_id').value = variantId;
 }
 updateVariant()
+
+document.addEventListener("DOMContentLoaded", () => {
+    const wishlistButtons = document.querySelectorAll(".add-to-wishlist");
+
+    wishlistButtons.forEach(button => {
+        button.addEventListener("click", () => {
+            const productId = button.getAttribute("data-product-id");
+            const variantId = button.getAttribute("data-variant-id");
+
+            fetch("{% url 'addToWishlist' %}", {
+                method: "POST",
+                headers: {
+                    "X-CSRFToken": "{{ csrf_token }}",
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({ product_id: productId, variant_id: variantId })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    Swal.fire("Success", data.message, "success");
+                } else {
+                    Swal.fire("Info", data.message, "info");
+                }
+            })
+            .catch(error => {
+                Swal.fire("Error", "An error occurred while adding to the wishlist!", "error");
+                console.error("Error:", error);
+            });
+        });
+    });
+});
+
+
+document.addEventListener("DOMContentLoaded", () => {
+    const addToCartButton = document.querySelector("#add-to-cart-btn");
+
+    if (addToCartButton) {
+        addToCartButton.addEventListener("click", (event) => {
+            event.preventDefault();
+
+            const productId = document.querySelector("input[name='product_id']").value;
+            const variantId = document.querySelector("input[name='variant_id']").value;
+            const discountedPrice = document.querySelector("input[name='discounted_price']").value;
+            const quantity = 1; // Default quantity, adjust if dynamic
+
+            fetch("{% url 'addToCart' %}", {
+                method: "POST",
+                headers: {
+                    "X-CSRFToken": "{{ csrf_token }}",
+                    "Content-Type": "application/json",
+                    "X-Requested-With": "XMLHttpRequest"
+                },
+                body: JSON.stringify({
+                    product_id: productId,
+                    variant_id: variantId,
+                    discounted_price: discountedPrice,
+                    quantity: quantity
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    Swal.fire("Success", data.message, "success");
+                } else {
+                    Swal.fire("Error", data.message, "error");
+                }
+            })
+            .catch(error => {
+                Swal.fire("Error", "An error occurred while adding to the cart!", "error");
+                console.error("Error:", error);
+            });
+        });
+    }
+});
+
 
 
 </script>
