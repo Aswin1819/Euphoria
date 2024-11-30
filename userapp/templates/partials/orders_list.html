@@ -6,8 +6,20 @@
         <p>Total Amount: ₹{{ order.total_amount }}</p>
         <p>Payment Method: {{ order.paymentmethod }}</p>
 
+        {% if not order.is_paid and order.paymentmethod.name == 'Razorpay' %}
+        <p class="text-danger">Payment Pending</p>
+        <a href="{% url 'initiate_payment' order.id %}" class="btn btn-warning">Pay Now</a>
+        <a href="{% url 'cancelUnpaidOrder' order.id %}" class=" ms-2 btn btn-danger">Delete</a>
+    
+
+        {% comment %} {% else %}
+        <p class="text-success">Payment Completed</p> {% endcomment %}
+        {% endif %}
+
         <!-- Download Invoice Button -->
-        <a href="{% url 'download_invoice' order.id %}" class="btn btn-info">Download Invoice</a>
+        {% if order.is_paid %}
+            <a href="{% url 'download_invoice' order.id %}" class="btn btn-info">Download Invoice</a>
+        {% endif %}
 
         <div class="mt-3">
             <h6>Items:</h6>
@@ -90,8 +102,8 @@
                                 </div>
                                 
                                 <!-- Action Button for Cancel or Return based on OrderItem status -->
-                                {% if item.status in 'Pending, Shipped' %}
-                                    <button class="btn btn-danger" onclick="cancelOrder('{{ item.id }}')">Cancel Order</button>
+                                {% if item.status == 'Shipped' %}
+                                    <button class="btn btn-danger" onclick="cancelOrder('{{ item.id }}')">Cancel Item</button>
                                 {% elif item.status == 'Delivered' %}
                                     <button class="btn btn-warning" onclick="returnOrder('{{ item.id }}')">Return Order</button>
                                 {% endif %}

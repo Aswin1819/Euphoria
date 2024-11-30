@@ -39,10 +39,13 @@ urlpatterns = [
     path('return_order_item/<int:item_id>/', views.return_order_item, name='return_order_item'),
     path('initiate_payment/<int:order_id>/', views.initiate_payment, name='initiate_payment'),
     path('payment_success/', views.payment_success, name='payment_success'),
+    path('download_invoice/<int:order_id>/', views.download_invoice, name='download_invoice'),
+    path('cancelUnpaidOrder/<int:order_id>/',views.cancelUnpaidOrder,name='cancelUnpaidOrder'),
+    
+    
     path('wallet_view/',views.wallet_view,name='wallet_view'),
     path("initiate_wallet_recharge/", views.initiate_wallet_recharge, name="initiate_wallet_recharge"),
     path("wallet_recharge_success/", views.wallet_recharge_success, name="wallet_recharge_success"),
-    path('download_invoice/<int:order_id>/', views.download_invoice, name='download_invoice'),
 
     path('categoryProducts/<int:category_id>/',views.categoryProducts,name='categoryProducts'),
 ]

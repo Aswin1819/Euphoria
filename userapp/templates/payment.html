@@ -1,9 +1,6 @@
-<!-- templates/payment.html -->
-<html>
-<head>
-    <title>Pay with Razorpay</title>
-</head>
-<body>
+{% extends 'userbase.html' %}
+
+{% block content %}
 
     <div class="text-center p-4 bg-white rounded shadow-lg">
         <h2 class="mb-4 text-primary">Complete Payment</h2>
@@ -69,5 +66,4 @@
         });
     </script>
 
-</body>
-</html>
+{% endblock %}

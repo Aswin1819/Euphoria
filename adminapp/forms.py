@@ -114,9 +114,19 @@ class CouponForm(forms.ModelForm):
         cleaned_data = super().clean()
         valid_from = cleaned_data.get('valid_from')
         valid_to = cleaned_data.get('valid_to')
+        discount_amount = cleaned_data.get('discount_amount')
+        minimum_order_amount = cleaned_data.get('minimum_order_amount')
+        discount_percentage = cleaned_data.get('discount_percentage')
+        
 
         if valid_from and valid_to and valid_to <= valid_from:
             raise forms.ValidationError("Valid To must be later than Valid From.")
+        if discount_amount > minimum_order_amount:
+            raise forms.ValidationError("Discount amount must be less than minimum order")
+        if not discount_percentage and not discount_amount:
+            raise forms.ValidationError("You must specify either a discount percentage or a discount amount.")
+        if discount_percentage and (discount_percentage <= 0 or discount_percentage > 100):
+            raise forms.ValidationError("Discount percentage must be between 1 and 100.")
         
         return cleaned_data
     def clean_minimum_order_amount(self):

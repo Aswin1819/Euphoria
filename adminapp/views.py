@@ -20,6 +20,8 @@ from userapp.utils import refund_to_wallet
 import json
 from django.views.decorators.http import require_POST
 from django.db.models import F
+from django.db.models.functions import TruncDay, TruncWeek, TruncMonth, TruncYear
+from django.http import JsonResponse
 #imagecropping modules
 from django.core.files.base import ContentFile
 import base64
@@ -655,6 +657,24 @@ def adminDashboard(request):
   
     start_date = request.GET.get('start_date')
     end_date = request.GET.get('end_date')
+    order = Order.objects.all()
+    
+    top_products = order.values('order_items__product__name').annotate(
+        total_quantity=Sum('order_items__quantity'),
+        total_revenue=Sum('total_amount')
+    ).order_by('-total_quantity')[:10]
+
+    # Top 10 categories
+    top_categories = order.values('order_items__product__category__name').annotate(
+        total_quantity=Sum('order_items__quantity'),
+        total_revenue=Sum('total_amount')
+    ).order_by('-total_quantity')[:10]
+
+    # Top 10 brands
+    top_brands = order.values('order_items__product__brand__name').annotate(
+        total_quantity=Sum('order_items__quantity'),
+        total_revenue=Sum('total_amount')
+    ).order_by('-total_quantity')[:10] 
     
    
     if not start_date or not end_date:
@@ -714,6 +734,33 @@ def adminDashboard(request):
         )['discount'] or 0
     ) - monthly_sales if monthly_orders.exists() else 0
 
+    # chart starts here
+    chart_filter = request.GET.get('filter', 'weekly')
+    if chart_filter == 'weekly':
+        chart_data = orders.annotate(period=TruncWeek('created_at')).values('period').annotate(
+            total_sales=Sum('total_amount')
+        ).order_by('period')
+    elif chart_filter == 'monthly':
+        chart_data = orders.annotate(period=TruncMonth('created_at')).values('period').annotate(
+            total_sales=Sum('total_amount')
+        ).order_by('period')
+    elif chart_filter == 'yearly':
+        chart_data = orders.annotate(period=TruncYear('created_at')).values('period').annotate(
+            total_sales=Sum('total_amount')
+        ).order_by('period')
+    elif chart_filter == 'daily':
+        chart_data = orders.annotate(period=TruncDay('created_at')).values('period').annotate(
+            total_sales=Sum('total_amount')
+        ).order_by('period')
+
+    # Extract labels and data for the chart
+    chart_labels = [data['period'].strftime('%Y-%m-%d') for data in chart_data]
+    chart_values = [float(data['total_sales']) or 0 for data in chart_data]
+
+    print("Chart Labels:", chart_labels)
+    print("Chart Data:", chart_values)
+
+
     
     context = {
         'total_sales': total_sales,
@@ -724,9 +771,50 @@ def adminDashboard(request):
         'daily': {'sales': daily_sales, 'discounts': daily_discounts},
         'weekly': {'sales': weekly_sales, 'discounts': weekly_discounts},
         'monthly': {'sales': monthly_sales, 'discounts': monthly_discounts},
+        'top_products': top_products,
+        'top_categories': top_categories,
+        'top_brands': top_brands,
+        'chart_labels': json.dumps(chart_labels),  # Pass as JSON
+        'chart_data': json.dumps(chart_values),
     }
     
     return render(request, 'admindashboard.html', context)
+
+
+
+def admin_dashboard_chart(request):
+    filter_type = request.GET.get('filter', 'weekly')
+    today = now().date()
+
+    if filter_type == 'weekly':
+        chart_data = Order.objects.annotate(period=TruncWeek('created_at')).values('period').annotate(
+            total_sales=Sum('total_amount')
+        ).order_by('period')
+    elif filter_type == 'monthly':
+        chart_data = Order.objects.annotate(period=TruncMonth('created_at')).values('period').annotate(
+            total_sales=Sum('total_amount')
+        ).order_by('period')
+    elif filter_type == 'yearly':
+        chart_data = Order.objects.annotate(period=TruncYear('created_at')).values('period').annotate(
+            total_sales=Sum('total_amount')
+        ).order_by('period')
+    elif filter_type == 'daily' :
+        chart_data = Order.objects.annotate(period=TruncDay('created_at')).values('period').annotate(
+            total_sales=Sum('total_amount')
+        ).order_by('period')
+
+    labels = [data['period'].strftime('%Y-%m-%d') for data in chart_data]
+    data = [float(data['total_sales']) or 0 for data in chart_data]
+    
+    print("Dynamic Chart Labels:", labels)
+    print("Dynamic Chart Data:", data)
+
+
+    return JsonResponse({'labels': labels, 'data': data})
+
+
+
+
     
     
 def export_to_excel(request):

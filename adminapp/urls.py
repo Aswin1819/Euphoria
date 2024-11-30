@@ -48,6 +48,7 @@ urlpatterns = [
     path('adminSearchOffers/',views.adminSearchOffers,name='adminSearchOffers'),
     
     path('adminDashboard/',views.adminDashboard,name='adminDashboard'),
+    path('admin-dashboard-chart/',views.admin_dashboard_chart, name='admin_dashboard_chart'),
     path('export-to-excel/', views.export_to_excel, name='export_to_excel'),
     path('export-to-pdf/', views.export_to_pdf, name='export_to_pdf'),
     

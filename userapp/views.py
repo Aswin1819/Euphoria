@@ -944,19 +944,16 @@ def placeOrder(request):
                     order=order,
                     product=cart_item.product,
                     quantity=cart_item.quantity,
-                    status="Shipped",
+                    status="Pending",
                     price=cart_item.variant.price
                 )
 
                 cart_item.variant.stock -= cart_item.quantity
                 cart_item.variant.save()
+            
             if cart.coupon:
                 UserCoupon.objects.create(user=request.user,coupon=cart.coupon)
             
-            cart.items.all().delete()
-            cart.discount = 0
-            cart.coupon = None
-            cart.save()
             
             if payment_method.name.lower() == 'wallet':
                 wallet = Wallet.objects.get(user=user)
@@ -975,6 +972,12 @@ def placeOrder(request):
                 
                 order.is_paid = True
                 order.save()
+                
+                cart.items.all().delete()
+                cart.discount = 0
+                cart.coupon = None
+                cart.save()
+                
                 return JsonResponse({"order_id":order.id,"message":"Order placed using wallet successfully"},status=200)
                            
             if payment_method.name.lower() == 'razorpay':
@@ -984,6 +987,12 @@ def placeOrder(request):
             
             order.is_paid = True
             order.save()
+            
+            cart.items.all().delete()
+            cart.discount = 0
+            cart.coupon = None
+            cart.save()
+            
             return JsonResponse({"order_id": order.id}, status=200)
         except json.JSONDecodeError:
             return JsonResponse({"error": "Invalid JSON data"}, status=400)
@@ -1031,6 +1040,12 @@ def payment_success(request):
             order = Order.objects.get(razorpay_payment_id=razorpay_order_id)
             order.is_paid = True
             order.save()
+            
+            cart = Cart.objects.get(user=order.user)
+            cart.items.all().delete()
+            cart.discount = 0
+            cart.coupon = None
+            cart.save()
 
             return JsonResponse({"status": "success", "message": "Payment successful"}, status=200)
         except Order.DoesNotExist:
@@ -1065,29 +1080,88 @@ def payment_success(request):
 #         'status_filter': status_filter
 #     })
 
+# @login_required(login_url='userlogin')
+# def userYourOrder(request):
+#     user = request.user
+#     status_filter = request.GET.get('status', 'all')
+
+#     if status_filter == 'all':
+#         orders = Order.objects.filter(user=user).prefetch_related('order_items__product').order_by('-created_at')
+#     else:
+#         orders = Order.objects.filter(user=user, order_items__status=status_filter.capitalize()).distinct().order_by('-created_at')
+
+#     unpaid_orders = Order.objects.filter(user=user, is_paid=False).order_by('-created_at')
+    
+#     orders = (orders | unpaid_orders).distinct().order_by('-created_at')
+    
+#     is_ajax_request = request.headers.get('x-requested-with') == 'XMLHttpRequest'
+#     if is_ajax_request:
+#         orders_html = render_to_string('partials/orders_list.html', {'orders': orders,})
+#         return JsonResponse({'orders_html': orders_html})
+
+#     return render(request, 'user_your_order.html', {
+#         'orders': orders,
+#         'status_filter': status_filter,
+        
+#     })
+    
+
+
+
+
+
 @login_required(login_url='userlogin')
 def userYourOrder(request):
     user = request.user
     status_filter = request.GET.get('status', 'all')
 
-    if status_filter == 'all':
-        orders = Order.objects.filter(user=user).prefetch_related('order_items__product').order_by('-created_at')
-    else:
-        orders = Order.objects.filter(user=user, order_items__status=status_filter.capitalize()).distinct().order_by('-created_at')
+    # Base query for user orders
+    order_query = Q(user=user)
 
-    
-    
+    # Apply status filter if it's not 'all'
+    if status_filter != 'all':
+        order_query &= Q(order_items__status=status_filter.capitalize())
+
+    # Include unpaid orders explicitly
+    order_query |= Q(user=user, is_paid=False)
+
+    # Fetch orders based on the combined query
+    orders = Order.objects.filter(order_query).prefetch_related('order_items__product').distinct().order_by('-created_at')
+
+    # Handle AJAX requests for filtering
     is_ajax_request = request.headers.get('x-requested-with') == 'XMLHttpRequest'
     if is_ajax_request:
-        orders_html = render_to_string('partials/orders_list.html', {'orders': orders,})
+        orders_html = render_to_string('partials/orders_list.html', {'orders': orders})
         return JsonResponse({'orders_html': orders_html})
 
+    # Render the template
     return render(request, 'user_your_order.html', {
         'orders': orders,
         'status_filter': status_filter,
-        
     })
+
+
+
+def cancelUnpaidOrder(request,order_id):
+    try:        
+        order = get_object_or_404(Order,id=order_id,user=request.user,is_paid=False)
+        
+        # order.order_items.update(status="Cancelled")
+        with transaction.atomic():
+            order.delete()
+            
+        messages.success(request,"Your unpaid order has been successfully deleted.")
+        return redirect(userYourOrder)
+    except Order.DoesNotExist:
+        
+        messages.error(request,"Order not found or already paid!")
+        return redirect(userYourOrder)
     
+        
+
+
+
+
     
 
 # @login_required(login_url='userlogin')
