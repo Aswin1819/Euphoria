@@ -314,6 +314,10 @@ class OrderItem(models.Model):
         ("Failed", "Failed"),
         ('Shipped','Shipped'),
         ('Out of Delivery','Out of Delivery'),
+        ('Processing',"Processing"),
+        ('Approved','Approved'),
+        ('Rejected','Rejected'),
+        
     ], default="Shipped")
     cancellation_reason = models.TextField(null=True,blank=True)
     return_reason = models.TextField(null=True,blank=True)
@@ -322,6 +326,13 @@ class OrderItem(models.Model):
     def get_total_price(self):
         return self.price * self.quantity
     
+    
+    
+
+    
+
+
+
     
 
 class Wishlist(models.Model):

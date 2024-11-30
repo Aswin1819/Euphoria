@@ -1075,14 +1075,17 @@ def userYourOrder(request):
     else:
         orders = Order.objects.filter(user=user, order_items__status=status_filter.capitalize()).distinct().order_by('-created_at')
 
+    
+    
     is_ajax_request = request.headers.get('x-requested-with') == 'XMLHttpRequest'
     if is_ajax_request:
-        orders_html = render_to_string('partials/orders_list.html', {'orders': orders})
+        orders_html = render_to_string('partials/orders_list.html', {'orders': orders,})
         return JsonResponse({'orders_html': orders_html})
 
     return render(request, 'user_your_order.html', {
         'orders': orders,
-        'status_filter': status_filter
+        'status_filter': status_filter,
+        
     })
     
     
@@ -1215,49 +1218,111 @@ def download_invoice(request, order_id):
 
 
 
+# @login_required(login_url='userlogin')
+# @require_POST
+# @csrf_exempt
+# @never_cache
+# def cancel_order_item(request, item_id):
+#     try:
+        
+#         data = json.loads(request.body)
+#         reason = data.get('reason', '')
+
+        
+#         order_item = OrderItem.objects.get(
+#         Q(status='Pending') | Q(status='Shipped'), 
+#         id=item_id, 
+#         order__user=request.user
+#         )
+        
+        
+#         order_item.status = 'Cancelled'
+#         order_item.cancellation_reason = reason
+#         order_item.save()
+        
+#         variant = Variant.objects.filter(product=order_item.product).first()
+#         if variant:                    
+#             variant.stock += order_item.quantity          
+#             variant.save()
+#         else:
+#             pritn('variant not found')
+            
+#         order = order_item.order  
+#         if order.paymentmethod.name == 'Razorpay' and order.is_paid:
+#             refund_amount = order_item.price * order_item.quantity
+#             refund_to_wallet(
+#                 user=request.user,
+#                 amount=refund_amount,
+#                 product=order_item.product,
+#                 description="Order cancellation")
+
+
+#         return JsonResponse({'success': True})
+#     except OrderItem.DoesNotExist:
+#         return JsonResponse({'success': False}, status=404)
+
+
+
 @login_required(login_url='userlogin')
 @require_POST
 @csrf_exempt
 @never_cache
 def cancel_order_item(request, item_id):
     try:
-        
         data = json.loads(request.body)
         reason = data.get('reason', '')
-
-        
         order_item = OrderItem.objects.get(
-        Q(status='Pending') | Q(status='Shipped'), 
-        id=item_id, 
-        order__user=request.user
+            Q(status='Pending') | Q(status='Shipped'),
+            id=item_id,
+            order__user=request.user
         )
-        
-        
-        order_item.status = 'Cancelled'
+        order_item.status = "Processing"
         order_item.cancellation_reason = reason
         order_item.save()
-        
-        variant = Variant.objects.filter(product=order_item.product).first()
-        if variant:                    
-            variant.stock += order_item.quantity          
-            variant.save()
-        else:
-            pritn('variant not found')
-            
-        order = order_item.order  
-        if order.paymentmethod.name == 'Razorpay' and order.is_paid:
-            refund_amount = order_item.price * order_item.quantity
-            refund_to_wallet(
-                user=request.user,
-                amount=refund_amount,
-                product=order_item.product,
-                description="Order cancellation")
-
-
-        return JsonResponse({'success': True})
+      
+        return JsonResponse({'success': True, 'message': 'Cancellation request submitted for approval.'})
     except OrderItem.DoesNotExist:
-        return JsonResponse({'success': False}, status=404)
+        return JsonResponse({'success': False, 'message': 'Order item not found.'}, status=404)
     
+
+# @login_required(login_url='userlogin')
+# @require_POST
+# @csrf_exempt
+# @never_cache
+# def return_order_item(request, item_id):
+#     try:
+        
+#         data = json.loads(request.body)
+#         reason = data.get('reason', '')
+
+       
+#         order_item = OrderItem.objects.get(id=item_id, order__user=request.user, status='Delivered')
+
+        
+#         order_item.status = 'Returned'
+#         order_item.return_reason = reason
+#         order_item.save()
+        
+#         variant = Variant.objects.filter(product=order_item.product).first()
+#         if variant:
+#             variant.stock += order_item.quantity
+#             variant.save()
+#         else:
+#             print("variant not found")
+            
+#         refund_amount = order_item.price * order_item.quantity
+#         refund_to_wallet(
+#             user=request.user,
+#             amount=refund_amount, 
+#             product=order_item.product, 
+#             description="Product return")
+
+#         return JsonResponse({'success': True})
+#     except OrderItem.DoesNotExist:
+#         return JsonResponse({'success': False}, status=404)
+
+
+
 
 @login_required(login_url='userlogin')
 @require_POST
@@ -1265,35 +1330,26 @@ def cancel_order_item(request, item_id):
 @never_cache
 def return_order_item(request, item_id):
     try:
-        
         data = json.loads(request.body)
         reason = data.get('reason', '')
-
-       
-        order_item = OrderItem.objects.get(id=item_id, order__user=request.user, status='Delivered')
-
+        order_item = OrderItem.objects.get(
+            id=item_id,
+            order__user=request.user,
+            status='Delivered'
+        )
         
-        order_item.status = 'Returned'
+        order_item.status = "Processing"
         order_item.return_reason = reason
         order_item.save()
         
-        variant = Variant.objects.filter(product=order_item.product).first()
-        if variant:
-            variant.stock += order_item.quantity
-            variant.save()
-        else:
-            print("variant not found")
-            
-        refund_amount = order_item.price * order_item.quantity
-        refund_to_wallet(
-            user=request.user,
-            amount=refund_amount, 
-            product=order_item.product, 
-            description="Product return")
-
-        return JsonResponse({'success': True})
+       
+        return JsonResponse({'success': True, 'message': 'Return request submitted for approval.'})
     except OrderItem.DoesNotExist:
-        return JsonResponse({'success': False}, status=404)
+        return JsonResponse({'success': False, 'message': 'Order item not found.'}, status=404)
+
+
+
+
 
 @login_required
 def wallet_view(request):

@@ -1,0 +1,68 @@
+{% extends 'adminbase.html' %}
+
+{% block content %}
+{% if messages %}
+    <div class="alert-container" style="position: fixed; top: 0; left: 0; right: 0; z-index: 9999;">
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {% endfor %}
+    </div>
+{% endif %}
+<div class="col-md-10">
+    <div class="d-flex justify-content-between align-items-center mt-0 mb-4 dash-head py-2 rounded text-white px-2">
+        <h3>Manage Requests</h3>
+    </div>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>Product</th>
+                <th>Order ID</th>
+                <th>User</th>
+                <th>Request Type</th>
+                <th>Reason</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for request in requests %}
+            <tr>
+                <td>{{ forloop.counter }}</td>
+                <td>{{ request.product.name }}</td>
+                <td>{{ request.order.id }}</td>
+                <td>{{ request.order.user.username }}</td>
+                <td>{{ request.status }}</td>
+                <td>
+                    {% if request.status == "Processing" %}
+                        {% if request.cancellation_reason %}
+                            {{request.cancellation_reason}}
+                        {% else %}
+                            {{request.return_reason}}
+                        {% endif %}
+                    {% else %}
+                        ---
+                    {% endif %}
+                </td>
+                <td>
+                    <form action="{% url 'approve_request' request.id %}" method="post" class="d-inline">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-success btn-sm">Approve</button>
+                    </form>
+                    <form action="{% url 'reject_request' request.id %}" method="post" class="d-inline">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-danger btn-sm">Reject</button>
+                    </form>
+                </td>
+            </tr>
+            {% empty %}
+                <tr>
+                    <td colspan="12" class="text-center">No request available</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

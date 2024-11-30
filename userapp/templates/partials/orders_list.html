@@ -1,67 +1,3 @@
-{% comment %} {% for item in orders %}
-    <div class="card mb-3 shadow-sm">
-        <a href="{% url 'download_invoice' item.order.id  %}" class="btn btn-primary">Download Invoice</a>
-        <div class="row g-0">
-            <div class="col-md-3">
-                <img src="{{ item.product.product_images.first.images.url }}" class="img-fluid rounded-start" alt="{{ item.product.name }}">
-            </div>
-            <div class="col-md-9">
-                <div class="card-body">
-                    <h5 class="card-title">{{ item.product.name }}</h5>
-
-                    <div class="d-flex justify-content-between">
-                        <p class="card-text mb-1">Quantity: {{ item.quantity }}</p>
-                        <p class="card-text mb-1">Address: {{ item.order.address.address }} ,{{ item.order.address.pincode}}</p>
-                    </div>
-                
-                    <div class="d-flex justify-content-between">
-                        <p class="card-text mb-1">Total Amount: ₹{{ item.get_total_price }}</p>
-                        <p class="card-text mb-1">Ordered: {{ item.order.created_at|date:"d-m-y" }}</p>
-                    </div>
-                
-                    <div class="d-flex justify-content-between">
-                        <p class="card-text mb-1">Status: {{ item.status }}</p>
-                        <p class="card-text mb-1">
-                            {% if item.status == 'Delivered' %}
-                                Delivered on: {{ item.last_updated|date:"d-m-y" }}
-                            {% elif item.status == 'Cancelled' %}
-                                Cancelled on: {{ item.last_updated|date:"d-m-y" }}
-                            {% elif item.status == 'Returned' %}
-                                Returned on: {{ item.last_updated|date:"d-m-y" }}
-                            {% endif %}
-                        </p>
-                    </div>
-                    <div class="d-flex justify-content-between">
-                        <p class="card-text"><small class="text-muted">Order ID: {{ item.order.id }}</small></p>
-                        <p class="card-text mb-1">Payment: {{ item.order.paymentmethod }}</p>
-                    </div>
-                    
-
-                    <!-- Progress Bar for Order Item Status -->
-                    <div class="progress mt-3 mb-2" style="height: 10px;">
-                        <div class="progress-bar 
-                            {% if item.status == 'Shipped' %}bg-warning{% elif item.status == 'Out of Delivery' %}bg-primary{% elif item.status == 'Delivered' %}bg-success{% else %}bg-danger{% endif %}"
-                            role="progressbar"
-                            style="width: 
-                                {% if item.status == 'Shipped' %}25{% elif item.status == 'Out of Delivery' %}75{% elif item.status == 'Delivered' %}100{% elif item.status == 'Returned' or item.status == 'Cancelled' %}100{% endif %}%;"
-                            aria-valuenow="{% if item.status == 'Shipped' %}25{% elif item.status == 'Out of Delivery' %}75{% elif item.status == 'Delivered' %}100{% else %}50{% endif %}"
-                            aria-valuemin="0" aria-valuemax="100">
-                        </div>
-                    </div>
-
-                    <!-- Action Button for Cancel or Return based on OrderItem status -->
-                    {% if item.status in  'Pending , Shipped' %}
-                        <button class="btn btn-danger" onclick="cancelOrder('{{ item.id }}')">Cancel Order</button>
-                    {% elif item.status == 'Delivered' %}
-                        <button class="btn btn-warning" onclick="returnOrder('{{ item.id }}')">Return Order</button>
-                    {% endif %}
-                </div>
-            </div>
-        </div>
-    </div>
-{% empty %}
-    <p>No orders found.</p>
-{% endfor %} {% endcomment %}
 {% for order in orders %}
 <div class="card mb-3 shadow-sm">
     <div class="card-body">
@@ -76,10 +12,7 @@
         <div class="mt-3">
             <h6>Items:</h6>
             <ul>
-                {% for item in order.order_items.all %}
-                {% comment %} <li>
-                    {{ item.product.name }} - {{ item.quantity }} pcs - ₹{{ item.get_total_price }}
-                </li> {% endcomment %}
+            {% for item in order.order_items.all %}
                 <div class="card mb-3 shadow-sm">
                     <div class="row g-0">
                         <div class="col-md-3">
@@ -91,7 +24,7 @@
             
                                 <div class="d-flex justify-content-between">
                                     <p class="card-text mb-1">Quantity: {{ item.quantity }}</p>
-                                    <p class="card-text mb-1">Address: {{ item.order.address.address }} ,{{ item.order.address.pincode}}</p>
+                                    <p class="card-text mb-1">Address: {{ item.order.address.address }}, {{ item.order.address.pincode }}</p>
                                 </div>
                             
                                 <div class="d-flex justify-content-between">
@@ -106,6 +39,10 @@
                                             Delivered on: {{ item.last_updated|date:"d-m-y" }}
                                         {% elif item.status == 'Cancelled' %}
                                             Cancelled on: {{ item.last_updated|date:"d-m-y" }}
+                                        {% elif item.status == 'Rejected' %}
+                                            Rejected on: {{ item.last_updated|date:"d-m-y" }}
+                                        {% elif item.status == 'Refunded' %}
+                                            Refunded on: {{ item.last_updated|date:"d-m-y" }}
                                         {% elif item.status == 'Returned' %}
                                             Returned on: {{ item.last_updated|date:"d-m-y" }}
                                         {% endif %}
@@ -115,22 +52,45 @@
                                     <p class="card-text"><small class="text-muted">Order ID: {{ item.order.id }}</small></p>
                                     <p class="card-text mb-1">Payment: {{ item.order.paymentmethod }}</p>
                                 </div>
-                                
-            
+
                                 <!-- Progress Bar for Order Item Status -->
+                            
                                 <div class="progress mt-3 mb-2" style="height: 10px;">
-                                    <div class="progress-bar 
-                                        {% if item.status == 'Shipped' %}bg-warning{% elif item.status == 'Out of Delivery' %}bg-primary{% elif item.status == 'Delivered' %}bg-success{% else %}bg-danger{% endif %}"
-                                        role="progressbar"
-                                        style="width: 
-                                            {% if item.status == 'Shipped' %}25{% elif item.status == 'Out of Delivery' %}75{% elif item.status == 'Delivered' %}100{% elif item.status == 'Returned' or item.status == 'Cancelled' %}100{% endif %}%;"
-                                        aria-valuenow="{% if item.status == 'Shipped' %}25{% elif item.status == 'Out of Delivery' %}75{% elif item.status == 'Delivered' %}100{% else %}50{% endif %}"
-                                        aria-valuemin="0" aria-valuemax="100">
-                                    </div>
+                                    {% with status=item.status %}
+                                        <div 
+                                            class="progress-bar 
+                                                {% if status == 'Pending' or status == 'Processing' %}bg-danger
+                                                {% elif status == 'Shipped' or status == 'Approved' %}bg-warning
+                                                {% elif status == 'Failed' or status == 'Rejected' %}bg-danger
+                                                {% elif status == 'Out of Delivery' %}bg-primary
+                                                {% elif status == 'Delivered' or status == 'Refunded' %}bg-success
+                                                {% elif status == 'Cancelled' or status == 'Returned' %}bg-secondary
+                                                {% else %}bg-info{% endif %}" 
+                                            role="progressbar"
+                                            style="width: 
+                                                {% if status == 'Pending' or status == 'Processing' %}10%
+                                                {% elif status == 'Shipped' or status == 'Approved' %}25%
+                                                {% elif status == 'Failed' or status == 'Rejected' %}100%
+                                                {% elif status == 'Out of Delivery' %}50%
+                                                {% elif status == 'Delivered' or status == 'Refunded' %}100%
+                                                {% elif status == 'Cancelled' or status == 'Returned' %}100%
+                                                {% else %}0%{% endif %};"
+                                            aria-valuenow="
+                                                {% if status == 'Pending' or status == 'Processing' %}10
+                                                {% elif status == 'Shipped' or status == 'Approved' %}25
+                                                {% elif status == 'Failed' or status == 'Rejected' %}100
+                                                {% elif status == 'Out of Delivery' %}50
+                                                {% elif status == 'Delivered' or status == 'Refunded' %}100
+                                                {% elif status == 'Cancelled' or status == 'Returned' %}100
+                                                {% else %}0{% endif %}"
+                                            aria-valuemin="0" 
+                                            aria-valuemax="100">
+                                        </div>
+                                    {% endwith %}
                                 </div>
-            
+                                
                                 <!-- Action Button for Cancel or Return based on OrderItem status -->
-                                {% if item.status in  'Pending , Shipped' %}
+                                {% if item.status in 'Pending, Shipped' %}
                                     <button class="btn btn-danger" onclick="cancelOrder('{{ item.id }}')">Cancel Order</button>
                                 {% elif item.status == 'Delivered' %}
                                     <button class="btn btn-warning" onclick="returnOrder('{{ item.id }}')">Return Order</button>
@@ -139,7 +99,7 @@
                         </div>
                     </div>
                 </div>
-                {% endfor %}
+            {% endfor %}
             </ul>
         </div>
     </div>
@@ -147,6 +107,9 @@
 {% empty %}
 <p>No orders found.</p>
 {% endfor %}
+
+
+
 
 
 
@@ -228,6 +191,7 @@
         .then(data => {
             if (data.success) {
                 alert("Order item cancelled successfully!");
+                //Swal.fire(data.message);
                 location.reload();
             } else {
                 alert("Error cancelling order item.");

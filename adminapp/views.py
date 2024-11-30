@@ -16,6 +16,10 @@ from openpyxl import Workbook
 from openpyxl.utils import get_column_letter
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
+from userapp.utils import refund_to_wallet
+import json
+from django.views.decorators.http import require_POST
+from django.db.models import F
 #imagecropping modules
 from django.core.files.base import ContentFile
 import base64
@@ -821,8 +825,8 @@ def export_to_pdf(request):
     p.setFont("Helvetica", 10)
     p.drawString(100, height - 80, "Order ID")
     p.drawString(200, height - 80, "Customer")
+    p.drawString(400, height - 80, "Discount Amount")
     p.drawString(300, height - 80, "Total Amount")
-    p.drawString(400, height - 80, "Total Discount")
     p.drawString(500, height - 80, "Order Date")
 
    
@@ -831,8 +835,8 @@ def export_to_pdf(request):
         total_discount = sum(item.get_total_price() for item in order.order_items.all()) 
         p.drawString(100, y_position, str(order.id))
         p.drawString(200, y_position, order.user.username)
-        p.drawString(300, y_position, f"Rs.{order.total_amount}")
-        p.drawString(400, y_position, f"Rs.{total_discount}")
+        p.drawString(300, y_position, f"Rs.{total_discount}")
+        p.drawString(400, y_position, f"Rs.{order.total_amount}")
         p.drawString(500, y_position, order.created_at.strftime('%Y-%m-%d'))
         y_position -= 20  
 
@@ -840,3 +844,46 @@ def export_to_pdf(request):
     p.showPage()
     p.save()
     return response
+
+def manage_requests(request):
+   if request.user.is_authenticated:
+        requests = OrderItem.objects.filter(status='Processing')
+        return render(request,'manage_requests.html',{'requests':requests})
+    
+    
+        
+@require_POST
+def approve_request(request, request_id):
+    order_item = get_object_or_404(OrderItem, id=request_id, status="Processing")
+    
+    # Update status
+    order_item.status = "Refunded"
+    order_item.save()
+    
+    # Refund amount to the wallet
+    refund_to_wallet(
+        user=order_item.order.user,
+        amount=order_item.get_total_price(),
+        product=order_item.product,
+        description=f"Refund for {order_item.product.name}"
+    )
+    
+    # Update stock
+    variant = Variant.objects.filter(product=order_item.product).first()
+    if variant:
+        variant.stock = F("stock") + order_item.quantity
+        variant.save()
+    
+    messages.success(request, f"Request for {order_item.product.name} has been approved, and wallet updated.")
+    return redirect(manage_requests)
+
+@require_POST
+def reject_request(request, request_id):
+    order_item = get_object_or_404(OrderItem, id=request_id, status="Processing")
+    
+    # Update status
+    order_item.status = "Shipped"
+    order_item.save()
+    
+    messages.success(request, f"Request for {order_item.product.name} has been rejected.")
+    return redirect(manage_requests)

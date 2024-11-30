@@ -31,6 +31,9 @@ urlpatterns = [
     path('adminOrders/',views.adminOrders,name = 'adminOrders'),
     path('UpdateOrderStatus/<int:order_item_id>/',views.UpdateOrderStatus,name='UpdateOrderStatus'),
     path('orderSearch/',views.orderSearch,name='orderSearch'),
+    path('manage_requests/',views.manage_requests,name='manage_requests'),
+    path('approve_request/<int:request_id>/',views.approve_request,name='approve_request'),
+    path('reject_request/<int:request_id>/',views.reject_request,name='reject_request'),
     
     path('admincoupons/',views.adminCoupons,name ='adminCoupons'),
     path('addCoupon/',views.addCoupon,name='addCoupon'),

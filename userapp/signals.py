@@ -1,7 +1,8 @@
 from django.db.models.signals import post_save
 from django.dispatch import Signal,receiver
-from adminapp.models import EuphoUser,Wallet
+from adminapp.models import EuphoUser,Wallet,OrderItem
 from django.conf import settings
+
 
 # defiining a custom signal 
 
@@ -22,4 +23,9 @@ def create_user_wallet(sender,instance,created,**kwargs):
     
     if created:
         Wallet.objects.create(user=instance)
+        
+
+
+
+
         
