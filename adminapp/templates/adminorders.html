@@ -14,7 +14,7 @@
         </div>
 
         <div class="table-responsive">
-            <table class="table">
+            <table class="table table-bordered">
                 <thead id="table-head" class="custom-table-header">
                     <tr>
                         <th scope="col">Order ID</th>
@@ -49,9 +49,11 @@
                                 <a href="#" class="text-decoration-none text-primary" data-bs-toggle="modal" data-bs-target="#viewOrderModal{{ item.id }}">
                                     <i class="fa fa-eye"></i>
                                 </a>
-                                <a href="#" class="text-decoration-none" data-bs-toggle="modal" data-bs-target="#updateStatusModal{{ item.id }}">
-                                    <i class="fa fa-pencil"></i>
-                                </a>                                
+                                {% if not item.status == 'Delivered'%}
+                                    <a href="#" class="text-decoration-none" data-bs-toggle="modal" data-bs-target="#updateStatusModal{{ item.id }}">
+                                        <i class="fa fa-pencil"></i>
+                                    </a>  
+                                {% endif %}                              
                             </td>
                         </tr>
 

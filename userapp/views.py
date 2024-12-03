@@ -324,6 +324,9 @@ def productView(request, id):
     product.popularity += 1
     product.save()
     
+    if not product.is_active:
+        return redirect(shopNow)
+    
     average_rating = int(product.average_rating())
     variants = Variant.objects.filter(product=product)
     default_variant = variants.first() if variants else None
@@ -484,29 +487,6 @@ def deleteAddress(request, address_id):
 
 
 
-# def addToWishlist(request):
-#     if request.method=="POST":
-#         product_id = request.POST.get('product_id')
-#         variant_id = request.POST.get('variant_id')
-        
-#         product = get_object_or_404(Products,id=product_id)
-#         variant = get_object_or_404(Variant,id=variant_id)
-        
-#         if request.user.is_authenticated:
-#             wishlist,created = Wishlist.objects.get_or_create(user=request.user)
-        
-#             wishlist_item,item_created = WishlistItem.objects.get_or_create(wishlist=wishlist,product=product,variant=variant)    
-            
-#             if item_created:
-#                 messages.success(request,"Item added to wishlist!!!")
-#             else:
-#                 messages.info(request,"This Items is already in your wishlist")
-#             return redirect(userWishlist)
-#         else:
-#             messages.error(request,"Please Login to add items to your cart!!")
-#             return redirect(userlogin)
-        
-#     return redirect(userlogin)
 
 
 
@@ -543,6 +523,7 @@ def userWishlist(request):
         wishlist_item = wishlist.items.all() if wishlist else []
         
         return render(request,'userwishlist.html',{'wishlist_items':wishlist_item})
+    return redirect(userlogin)
     
 def removeFromWishlist(request,item_id):
     if request.user.is_authenticated:
@@ -562,39 +543,7 @@ def removeFromWishlist(request,item_id):
 
 
 
-# @login_required(login_url='userlogin')
-# def addToCart(request):
-#     if request.method=="POST":
-#         product_id = request.POST.get('product_id')       
-#         variant_id = request.POST.get('variant_id')  
-#         # variant_price = request.POST.get('variant-price')
-#         discounted_price = request.POST.get('discounted_price')
-#         quantity = request.POST.get('quantity',1)
-   
-#         product = get_object_or_404(Products,id=product_id)
-#         product.popularity+=1
-#         product.save()
-#         variant = get_object_or_404(Variant,id=variant_id)
-        
-#         if request.user.is_authenticated:
-#             cart,created = Cart.objects.get_or_create(user=request.user)
-        
-        
-#         cart_item,created = CartItem.objects.get_or_create(
-#             cart=cart,
-#             product=product,
-#             variant=variant,
-#             defaults={
-#                 'quantity':quantity,
-#                 'price':discounted_price,
-#                 })
-        
-#         if not created:
-#             cart_item.quantity += 1
-#         cart_item.price = discounted_price
-#         cart_item.save()
-#         return redirect(cartDetails)
-#     return redirect(productView)
+
 
 
 
@@ -735,18 +684,21 @@ def apply_coupon(request):
             else:
                 discount = 0
             
+            
             if cart.get_total_price() < coupon.minimum_order_amount:
                 return JsonResponse({'error': f'Minimum order amount of ₹{coupon.minimum_order_amount} is required'})
+            
+            if discount > cart.get_total_price():
+                discount = cart.get_total_price()
+                
+                
                      
             cart.discount = discount
             cart.coupon = coupon
             cart.save()
             
             return JsonResponse({
-                # "success": True,
-                # "total_amount": cart.get_total_price(),
-                # "discounted_total": cart.get_discount_price(),
-                # "discount":discount,
+               
                 "success": True,
                 "total_amount": cart.get_total_price(),
                 "discounted_total": cart.get_discount_price(),
@@ -825,10 +777,7 @@ def update_quantity(request):
                     'original_price': original_price,
                     'coupon_discount': coupon_discount,
                     'savings': savings
-                    # 'success': True,
-                    # 'new_quantity': cart_item.quantity,
-                    # 'total_amount': total_amount,
-                    # 'discounted_total':discounted_total,
+                    
                 })
             else:
                 return JsonResponse({'success': False, 'error': 'Cart item does not exist.'})
@@ -922,7 +871,11 @@ def placeOrder(request):
             total_amount = cart.get_discount_price()
             print(total_amount)
             
+            total_discount = cart.get_savings()
+            print(total_discount)
+            
             #sum(item.variant.price * item.quantity for item in cart.items.all())
+            user_counpon = cart.coupon if cart.coupon else None
             
             payment_method = get_object_or_404(PaymentMethod,id=payment_method_id)
             print(payment_method)
@@ -937,6 +890,8 @@ def placeOrder(request):
                 paymentmethod=payment_method,
                 created_at=timezone.now(),
                 address=address,
+                coupon=user_counpon,
+                total_discount=total_discount
             )
 
             for cart_item in cart.items.all():
@@ -1058,52 +1013,7 @@ def payment_success(request):
 
 
 
-# @login_required(login_url='userlogin')
-# def userYourOrder(request):
-#     user = request.user
-#     status_filter = request.GET.get('status', 'all') 
-    
-#     if status_filter == 'all':
-#         orders = OrderItem.objects.filter(order__user=user).prefetch_related('product').order_by('-last_updated')
-#     else:
-#         orders = OrderItem.objects.filter(order__user=user, status=status_filter.capitalize()).prefetch_related('product').order_by('-last_updated')
-        
-#     is_ajax_request = request.headers.get('x-requested-with') == 'XMLHttpRequest'
-#     print("Is AJAX request:", is_ajax_request)
-    
-#     if is_ajax_request:
-#         orders_html = render_to_string('partials/orders_list.html', {'orders': orders})
-#         return JsonResponse({'orders_html': orders_html})
-    
-#     return render(request, 'user_your_order.html', {
-#         'orders': orders,
-#         'status_filter': status_filter
-#     })
 
-# @login_required(login_url='userlogin')
-# def userYourOrder(request):
-#     user = request.user
-#     status_filter = request.GET.get('status', 'all')
-
-#     if status_filter == 'all':
-#         orders = Order.objects.filter(user=user).prefetch_related('order_items__product').order_by('-created_at')
-#     else:
-#         orders = Order.objects.filter(user=user, order_items__status=status_filter.capitalize()).distinct().order_by('-created_at')
-
-#     unpaid_orders = Order.objects.filter(user=user, is_paid=False).order_by('-created_at')
-    
-#     orders = (orders | unpaid_orders).distinct().order_by('-created_at')
-    
-#     is_ajax_request = request.headers.get('x-requested-with') == 'XMLHttpRequest'
-#     if is_ajax_request:
-#         orders_html = render_to_string('partials/orders_list.html', {'orders': orders,})
-#         return JsonResponse({'orders_html': orders_html})
-
-#     return render(request, 'user_your_order.html', {
-#         'orders': orders,
-#         'status_filter': status_filter,
-        
-#     })
     
 
 
@@ -1115,28 +1025,31 @@ def userYourOrder(request):
     user = request.user
     status_filter = request.GET.get('status', 'all')
 
-    # Base query for user orders
+    
     order_query = Q(user=user)
 
-    # Apply status filter if it's not 'all'
+   
     if status_filter != 'all':
         order_query &= Q(order_items__status=status_filter.capitalize())
 
-    # Include unpaid orders explicitly
+   
     order_query |= Q(user=user, is_paid=False)
 
-    # Fetch orders based on the combined query
+    
     orders = Order.objects.filter(order_query).prefetch_related('order_items__product').distinct().order_by('-created_at')
 
-    # Handle AJAX requests for filtering
+    paginator = Paginator(orders, 1)
+    page_number = request.GET.get('page', 1)
+    page_obj = paginator.get_page(page_number)
+   
     is_ajax_request = request.headers.get('x-requested-with') == 'XMLHttpRequest'
     if is_ajax_request:
-        orders_html = render_to_string('partials/orders_list.html', {'orders': orders})
+        orders_html = render_to_string('partials/orders_list.html', {'orders': page_obj})
         return JsonResponse({'orders_html': orders_html})
 
-    # Render the template
+    
     return render(request, 'user_your_order.html', {
-        'orders': orders,
+        'orders': page_obj,
         'status_filter': status_filter,
     })
 
@@ -1164,38 +1077,7 @@ def cancelUnpaidOrder(request,order_id):
 
     
 
-# @login_required(login_url='userlogin')
-# def download_invoice(request, order_id):
-#     # Fetch the order for the user
-#     order = Order.objects.filter(id=order_id, user=request.user).first()
-#     if not order:
-#         return HttpResponse("Unauthorized", status=401)
 
-#     # Create a PDF
-#     buffer = BytesIO()
-#     p = canvas.Canvas(buffer)
-#     p.setFont("Helvetica", 12)
-#     p.drawString(100, 800, f"Invoice for Order ID: {order.id}")
-#     p.drawString(100, 780, f"Date: {order.created_at.strftime('%d-%m-%Y')}")
-#     p.drawString(100, 760, f"Customer: {order.user.username}")
-#     p.drawString(100, 740, f"Payment Method: {order.paymentmethod}")
-
-#     y = 720
-#     p.drawString(100, y, "Items:")
-#     for item in order.order_items.all():
-#         y -= 20
-#         p.drawString(120, y, f"{item.product.name} - Quantity: {item.quantity} - ₹{item.get_total_price()}")
-
-#     y -= 40
-#     p.drawString(100, y, f"Total Amount: ₹{order.total_amount}")
-
-#     p.showPage()
-#     p.save()
-
-#     buffer.seek(0)
-#     return HttpResponse(buffer, content_type="application/pdf", headers={
-#         'Content-Disposition': f'attachment; filename=invoice_{order.id}.pdf',
-#     })
 
 
 @login_required(login_url='userlogin')
@@ -1204,22 +1086,36 @@ def download_invoice(request, order_id):
     order = Order.objects.filter(id=order_id, user=request.user).first()
     if not order:
         return HttpResponse("Unauthorized", status=401)
+    
+    cart = Cart.objects.filter(user=request.user).order_by('-created_at').first()
+    if not cart:
+        return HttpResponse("No cart associated with the order", status=400)
 
-    # Create a PDF
+   
+    
+
+    
     buffer = BytesIO()
     pdf = SimpleDocTemplate(buffer, pagesize=letter)
-    elements = []  # Holds the PDF components
+    elements = [] 
     styles = getSampleStyleSheet()
+    
+    website_name = Paragraph("<b><font size=16 color='blue'>Euphoria</font></b>", styles["Title"])
+    elements.append(website_name)
+    elements.append(Paragraph("<br/><br/>", styles["Normal"]))
 
-    # Title
+    
     title = Paragraph(f"<b>Invoice for Order ID: {order.id}</b>", styles["Title"])
     elements.append(title)
+    elements.append(Paragraph("<br/>", styles["Normal"]))
 
-    # Order details
+    
     order_details = [
         ["Date", order.created_at.strftime('%d-%m-%Y')],
         ["Customer", order.user.username],
         ["Payment Method", order.paymentmethod],
+        ["Discount Applied", order.total_discount],
+        ["Coupon Code", order.coupon.code if order.coupon else None],
     ]
     details_table = Table(order_details, colWidths=[150, 350])
     details_table.setStyle(
@@ -1235,7 +1131,7 @@ def download_invoice(request, order_id):
     elements.append(details_table)
     elements.append(Paragraph("<br/>", styles["Normal"]))
 
-    # Items Table
+   
     items_data = [["Item", "Quantity", "Price (Rs)", "Total (Rs)"]]  # Table Header
     for item in order.order_items.all():
         items_data.append(
@@ -1262,7 +1158,7 @@ def download_invoice(request, order_id):
 
     # Total Amount
     total_table = Table(
-        [["Total Amount", f"Rs {order.total_amount}"]],
+        [["Total Amount(After Discount)", f"Rs {order.total_amount}"]],
         colWidths=[450, 100]
     )
     total_table.setStyle(
@@ -1292,48 +1188,7 @@ def download_invoice(request, order_id):
 
 
 
-# @login_required(login_url='userlogin')
-# @require_POST
-# @csrf_exempt
-# @never_cache
-# def cancel_order_item(request, item_id):
-#     try:
-        
-#         data = json.loads(request.body)
-#         reason = data.get('reason', '')
 
-        
-#         order_item = OrderItem.objects.get(
-#         Q(status='Pending') | Q(status='Shipped'), 
-#         id=item_id, 
-#         order__user=request.user
-#         )
-        
-        
-#         order_item.status = 'Cancelled'
-#         order_item.cancellation_reason = reason
-#         order_item.save()
-        
-#         variant = Variant.objects.filter(product=order_item.product).first()
-#         if variant:                    
-#             variant.stock += order_item.quantity          
-#             variant.save()
-#         else:
-#             pritn('variant not found')
-            
-#         order = order_item.order  
-#         if order.paymentmethod.name == 'Razorpay' and order.is_paid:
-#             refund_amount = order_item.price * order_item.quantity
-#             refund_to_wallet(
-#                 user=request.user,
-#                 amount=refund_amount,
-#                 product=order_item.product,
-#                 description="Order cancellation")
-
-
-#         return JsonResponse({'success': True})
-#     except OrderItem.DoesNotExist:
-#         return JsonResponse({'success': False}, status=404)
 
 
 
@@ -1359,41 +1214,7 @@ def cancel_order_item(request, item_id):
         return JsonResponse({'success': False, 'message': 'Order item not found.'}, status=404)
     
 
-# @login_required(login_url='userlogin')
-# @require_POST
-# @csrf_exempt
-# @never_cache
-# def return_order_item(request, item_id):
-#     try:
-        
-#         data = json.loads(request.body)
-#         reason = data.get('reason', '')
 
-       
-#         order_item = OrderItem.objects.get(id=item_id, order__user=request.user, status='Delivered')
-
-        
-#         order_item.status = 'Returned'
-#         order_item.return_reason = reason
-#         order_item.save()
-        
-#         variant = Variant.objects.filter(product=order_item.product).first()
-#         if variant:
-#             variant.stock += order_item.quantity
-#             variant.save()
-#         else:
-#             print("variant not found")
-            
-#         refund_amount = order_item.price * order_item.quantity
-#         refund_to_wallet(
-#             user=request.user,
-#             amount=refund_amount, 
-#             product=order_item.product, 
-#             description="Product return")
-
-#         return JsonResponse({'success': True})
-#     except OrderItem.DoesNotExist:
-#         return JsonResponse({'success': False}, status=404)
 
 
 
@@ -1481,15 +1302,15 @@ def wallet_recharge_success(request):
             print("Session razorpay_order_id:", session_order.get('razorpay_order_id') if session_order else None)
             print("Received razorpay_order_id:", razorpay_order_id)
             
-            # Check if session data exists and matches received order ID
+            
             if not session_order or session_order.get('razorpay_order_id') != razorpay_order_id:
                 return JsonResponse({"status": "error", "message": "Order not found or mismatched"}, status=404)
 
-            # Process the payment
+            
             user = request.user
             amount = Decimal(session_order['amount'])
 
-            # Update wallet balance
+            
             wallet = Wallet.objects.get(user=user)
             wallet.credit(amount)
 
@@ -1501,7 +1322,7 @@ def wallet_recharge_success(request):
                 description='Wallet recharge via Razorpay'
             )
 
-            # Clear session to prevent duplicate transactions
+            
             del request.session['wallet_recharge_order']
 
             return JsonResponse({"status": "success", "message": "Wallet recharge successful"}, status=200)
@@ -1522,10 +1343,6 @@ def userlogout(request):
     logout(request)
     print("logout succeessfully")
     return redirect('userlogin')
-    # if request.user.is_authenticated:
-    #     logout(request)
-    #     print("sesssion destroyed")
-    #     return redirect('userlogin')
     
     
     

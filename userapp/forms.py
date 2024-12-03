@@ -194,6 +194,8 @@ class AddressForm(forms.ModelForm):
             raise forms.ValidationError('pincode cant be empty')
         if not pincode.isdigit():
             raise forms.ValidationError('Pincode must be digits ')
+        if len(pincode) > 6:
+            raise forms.ValidationError("must less than 6 charachers")
         return pincode
     def clean_phone(self):
         phone = self.cleaned_data.get('phone')

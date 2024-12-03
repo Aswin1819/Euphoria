@@ -22,6 +22,7 @@ from django.views.decorators.http import require_POST
 from django.db.models import F
 from django.db.models.functions import TruncDay, TruncWeek, TruncMonth, TruncYear
 from django.http import JsonResponse
+from .utils import superuser_required
 #imagecropping modules
 from django.core.files.base import ContentFile
 import base64
@@ -83,17 +84,16 @@ def adminLogout(request):
                                 #########           #########    
         
         
-@login_required(login_url='adminLogin')
-def adminCustomers(request):
-    if request.user.is_superuser:
-        user_list = EuphoUser.objects.all().order_by('-updated_at')
+@superuser_required
+def adminCustomers(request):   
+    user_list = EuphoUser.objects.all().order_by('-updated_at')
         
-        paginator = Paginator(user_list,5)
-        page_number = request.GET.get('page')
-        user = paginator.get_page(page_number)
+    paginator = Paginator(user_list,5)
+    page_number = request.GET.get('page')
+    user = paginator.get_page(page_number)
         
-        return render(request,'admincustomers.html',{'users':user})
-    return redirect(adminLogin)
+    return render(request,'admincustomers.html',{'users':user})
+    
 
 
 User = get_user_model()
@@ -110,7 +110,7 @@ def blockUser(request,id):
             
 
 @never_cache
-@login_required(login_url='adminLogin')
+@superuser_required
 def customerSearch(request):
     if request.method=='POST':
         search = request.POST.get('search')
@@ -126,7 +126,7 @@ def customerSearch(request):
                     #########           #########
 
 
-@login_required(login_url='adminLogin')
+@superuser_required
 def adminCategory(request):
     if request.user.is_superuser:
         category_list = Category.objects.all().order_by('-updated_date')
@@ -140,6 +140,7 @@ def adminCategory(request):
 
 
 @never_cache
+@superuser_required
 def addCategory(request):
     if request.user.is_superuser:
         if request.method == "POST":
@@ -153,6 +154,9 @@ def addCategory(request):
             if not re.match("^[A-Za-z ]*$", category) or not category.strip():
                 messages.warning(request, "Name must contain only letters and cannot be empty.")
                 return redirect(adminCategory)
+            if len(category)>20:
+                messages.warning(request,"Name must be less than 20characters")
+                return redirect(adminCategory)
             
             new_category = Category.objects.create(name=category)
             new_category.save()
@@ -161,6 +165,7 @@ def addCategory(request):
     return redirect(adminLogin)
 
 @never_cache
+@superuser_required
 def removeCategory(request,id):
     if request.user.is_superuser:
         if request.user.is_authenticated:            
@@ -173,6 +178,7 @@ def removeCategory(request,id):
 
 
 @never_cache
+@superuser_required
 def editCategory(request,id):
     if request.user.is_superuser:
         if request.method=='POST':
@@ -186,6 +192,9 @@ def editCategory(request,id):
             if not re.match("^[A-Za-z ]*$", new_name) or not new_name.strip():
                 messages.warning(request, "Name must contain only letters and cannot be empty.")
                 return redirect(adminCategory)
+            if len(new_name)>20:
+                messages.warning(request,"Name must be less than 20characters")
+                return redirect(adminCategory)
             
             item = Category.objects.get(id=id)
             item.name = new_name
@@ -196,6 +205,7 @@ def editCategory(request,id):
 
 
 @never_cache
+@superuser_required
 def categorySearch(request):
     if request.user.is_superuser:
         if request.method=='POST':
@@ -215,7 +225,7 @@ def categorySearch(request):
 
 
 @never_cache
-@login_required(login_url='userlogin')
+@superuser_required
 def adminProducts(request):
     if request.user.is_superuser:
         product_list = Products.objects.all().prefetch_related('variants').order_by('-updated_at')
@@ -230,6 +240,7 @@ def adminProducts(request):
 
 
 @never_cache
+@superuser_required
 def addProducts(request):
     if request.user.is_superuser:
         VariantFormSet = modelformset_factory(Variant,form=VariantForm,extra=1)
@@ -289,6 +300,7 @@ def addProducts(request):
 
 
 @never_cache
+@superuser_required
 def editProducts(request, id):
     if request.user.is_superuser:
         product = get_object_or_404(Products, id=id)
@@ -356,6 +368,7 @@ def editProducts(request, id):
 
 
 @never_cache
+@superuser_required
 def addVariant(request):
     if request.method == 'POST':
         form = VariantForm(request.POST)
@@ -383,6 +396,7 @@ def addVariant(request):
 
 
 @never_cache
+@superuser_required
 def productSearch(request):
     if request.user.is_superuser:
         if request.method=='POST':
@@ -396,6 +410,7 @@ def productSearch(request):
 
 
 @never_cache
+@superuser_required
 def removeProducts(request,id):
     if request.user.is_superuser:
         if request.user.is_authenticated:
@@ -416,7 +431,7 @@ def removeProducts(request,id):
                     #########           #########
 
 
-
+@superuser_required
 def adminBrands(request):
     if request.user.is_superuser:
         brand_list = Brand.objects.all().order_by('-updated_date')
@@ -429,6 +444,7 @@ def adminBrands(request):
     return redirect(adminLogin)
 
 @never_cache
+@superuser_required
 def addBrands(request):
     if request.user.is_superuser:
         if request.method=='POST':
@@ -441,7 +457,10 @@ def addBrands(request):
                 return redirect(adminBrands)
             if not re.match("^[A-Za-z ]*$", brand) or not brand.strip():
                 messages.warning(request, "Name must contain only letters and cannot be empty.")
-                return redirect(adminCategory)
+                return redirect(adminBrands)
+            if len(brand) > 20:
+                messages.warning(request,"Brand name must be less than 20 characters")
+                return redirect(adminBrands)
             
             new_brand=Brand.objects.create(name=brand)
             new_brand.save()
@@ -450,6 +469,7 @@ def addBrands(request):
 
 
 @never_cache
+@superuser_required
 def removeBrands(request,id):
     if request.user.is_superuser:
         brand = Brand.objects.get(id=id)
@@ -459,6 +479,7 @@ def removeBrands(request,id):
     return redirect(adminLogin)
 
 @never_cache
+@superuser_required
 def editBrands(request,id):
     if request.user.is_superuser:
         if request.method=='POST':
@@ -471,7 +492,10 @@ def editBrands(request,id):
                 return redirect(adminBrands)
             if not re.match("^[A-Za-z ]*$", new_name) or not new_name.strip():
                 messages.warning(request, "Name must contain only letters and cannot be empty.")
-                return redirect(adminCategory)
+                return redirect(adminBrands)
+            if len(new_name) > 20:
+                messages.warning(request,"Brand name must be less than 20 characters")
+                return redirect(adminBrands)
             
             brand = Brand.objects.get(id=id)
             brand.name=new_name
@@ -481,6 +505,7 @@ def editBrands(request,id):
         
 
 @never_cache
+@superuser_required
 def brandSearch(request):
     if request.user.is_superuser:
         if request.method=='POST':
@@ -499,7 +524,7 @@ def brandSearch(request):
 
 
 
-@login_required(login_url='adminLogin')
+@superuser_required
 def adminOrders(request):
     if request.user.is_superuser:     
         orders_list = OrderItem.objects.select_related('order', 'product').prefetch_related('order__user').order_by('-last_updated')
@@ -514,6 +539,7 @@ def adminOrders(request):
 
 
 @never_cache
+@superuser_required
 def UpdateOrderStatus(request, order_item_id):
     if request.method == 'POST':
         order_item = get_object_or_404(OrderItem, id=order_item_id)
@@ -524,6 +550,7 @@ def UpdateOrderStatus(request, order_item_id):
 
 
 @never_cache
+@superuser_required
 def orderSearch(request):
     if request.user.is_superuser:
         if request.method == 'POST':
@@ -539,40 +566,51 @@ def orderSearch(request):
             
                 
 
-
+@superuser_required
 def adminCoupons(request):
-    coupons = Coupon.objects.all()
-    
-    return render(request,'admincoupons.html',{'coupons':coupons})
+    if request.user.is_superuser:      
+        coupons_list  = Coupon.objects.all().order_by('-id')
+        
+        paginator = Paginator(coupons_list,5)
+        page_number = request.GET.get('page')
+        coupons = paginator.get_page(page_number) 
+        
+        return render(request,'admincoupons.html',{'coupons':coupons})
+    return redirect(adminLogin)
 
-
+@superuser_required
 def addCoupon(request):
-    if request.method == 'POST':
-        form = CouponForm(request.POST)
-        if form.is_valid():
-            form.save()
-            messages.success(request,"Coupon added successfully!!!")
-            return redirect('adminCoupons')  # Redirect back to the coupons list page
-    else:
-        form = CouponForm()
-    return render(request, 'adminaddcoupons.html', {'form': form})
+    if request.user.is_superuser:       
+        if request.method == 'POST':
+            form = CouponForm(request.POST)
+            if form.is_valid():
+                form.save()
+                messages.success(request,"Coupon added successfully!!!")
+                return redirect('adminCoupons')  # Redirect back to the coupons list page
+        else:
+            form = CouponForm()
+        return render(request, 'adminaddcoupons.html', {'form': form})
+    return redirect(adminLogin)
 
 
-
+@superuser_required
 def editCoupon(request,coupon_id):
-    coupon = get_object_or_404(Coupon,id=coupon_id)
-    
-    if request.method == "POST":
-        form = CouponForm(request.POST,instance=coupon)
-        if form.is_valid():
-            form.save()
-            messages.success(request,"Coupon edited Successfully!1")
-            return redirect(adminCoupons)
-    else:
-        form = CouponForm(instance=coupon)
-    return render(request,'admineditcoupons.html',{'form':form})
+    if request.user.is_superuser:      
+        coupon = get_object_or_404(Coupon,id=coupon_id)
         
-        
+        if request.method == "POST":
+            form = CouponForm(request.POST,instance=coupon)
+            if form.is_valid():
+                form.save()
+                messages.success(request,"Coupon edited Successfully!1")
+                return redirect(adminCoupons)
+        else:
+            form = CouponForm(instance=coupon)
+        return render(request,'admineditcoupons.html',{'form':form})
+    return redirect(adminLogin)
+
+   
+@superuser_required 
 def deleteCoupon(request,coupon_id):
     coupon = get_object_or_404(Coupon,id=coupon_id)
     coupon.active = not coupon.active
@@ -580,6 +618,8 @@ def deleteCoupon(request,coupon_id):
     messages.success(request,'Coupon Remove/Active Successfully!!')
     return redirect(adminCoupons)
 
+
+@superuser_required
 def searchCoupon(request):
     if request.user.is_superuser:
         if request.method == "POST":
@@ -591,48 +631,60 @@ def searchCoupon(request):
             return render(request,'admincoupons.html',{'coupons':coupons})
             
         
-
+@superuser_required
 def adminOffers(request):
-    offers = Offer.objects.all().order_by('-last_updated')
-    return render(request,'adminoffers.html',{'offers':offers})
+    if request.user.is_superuser:       
+        offers_list = Offer.objects.all().order_by('-last_updated')
+        
+        paginator = Paginator(offers_list,5)
+        page_number = request.GET.get('page')
+        offers = paginator.get_page(page_number)
+        
+        return render(request,'adminoffers.html',{'offers':offers})
+    return redirect(adminLogin)
 
+@superuser_required
 def adminAddOffers(request):
-    if request.method == 'POST':
-        form = OfferForm(request.POST)
-        if form.is_valid():
-            form.save()
-            messages.success(request,"Offers added Successfully!!!")
-            return redirect(adminOffers)
+    if request.user.is_superuser:      
+        if request.method == 'POST':
+            form = OfferForm(request.POST)
+            if form.is_valid():
+                form.save()
+                messages.success(request,"Offers added Successfully!!!")
+                return redirect(adminOffers)
+            else:
+                messages.warning(request,'Please correct the errors below')
+                
         else:
-            messages.warning(request,'Please correct the errors below')
-            
-    else:
-        form = OfferForm()
-    return render(request,'adminaddoffers.html',{'form':form})
+            form = OfferForm()
+        return render(request,'adminaddoffers.html',{'form':form})
+    return redirect(adminLogin)
 
 
+@superuser_required
 def adminEditOffers(request,offer_id):
-    
-    try:
-        offer = get_object_or_404(Offer,id=offer_id)
-    except:
-        messages.error(request,"Offer not found!")
-        return redirect(adminOffers)
-    if request.method == "POST":
-        form = OfferForm(request.POST,instance=offer)
-        if form.is_valid():
-            offer.products.clear()
-            offer.categories.clear()
-            form.save()
-            messages.success(request,"Offer Edited Successfully")
+    if request.user.is_superuser:         
+        try:
+            offer = get_object_or_404(Offer,id=offer_id)
+        except:
+            messages.error(request,"Offer not found!")
             return redirect(adminOffers)
+        if request.method == "POST":
+            form = OfferForm(request.POST,instance=offer)
+            if form.is_valid():
+                offer.products.clear()
+                offer.categories.clear()
+                form.save()
+                messages.success(request,"Offer Edited Successfully")
+                return redirect(adminOffers)
+            else:
+                messages.warning(request,"Please correct the errors below")
         else:
-            messages.warning(request,"Please correct the errors below")
-    else:
-        form = OfferForm(instance=offer)
-    return render(request,'admineditoffers.html',{'form':form,'offer':offer})
+            form = OfferForm(instance=offer)
+        return render(request,'admineditoffers.html',{'form':form,'offer':offer})
+    return redirect(adminLogin)
 
-
+@superuser_required
 def adminDeleteOffer(request,offer_id):
     if request.method=="POST":
         offer = get_object_or_404(Offer,id=offer_id)
@@ -642,7 +694,7 @@ def adminDeleteOffer(request,offer_id):
     
         
         
-
+@superuser_required
 def adminSearchOffers(request):
     if request.method=="POST":
         search = request.POST.get('search')
@@ -652,136 +704,137 @@ def adminSearchOffers(request):
             offers = Offer.objects.all()
         return render(request,'adminoffers.html',{'offers':offers})
    
-    
+@superuser_required   
 def adminDashboard(request):
-  
-    start_date = request.GET.get('start_date')
-    end_date = request.GET.get('end_date')
-    order = Order.objects.all()
-    
-    top_products = order.values('order_items__product__name').annotate(
-        total_quantity=Sum('order_items__quantity'),
-        total_revenue=Sum('total_amount')
-    ).order_by('-total_quantity')[:10]
+    if request.user.is_superuser:
+        start_date = request.GET.get('start_date')
+        end_date = request.GET.get('end_date')
+        order = Order.objects.all()
+        
+        top_products = order.values('order_items__product__name').annotate(
+            total_quantity=Sum('order_items__quantity'),
+            total_revenue=Sum('total_amount')
+        ).order_by('-total_quantity')[:10]
 
-    # Top 10 categories
-    top_categories = order.values('order_items__product__category__name').annotate(
-        total_quantity=Sum('order_items__quantity'),
-        total_revenue=Sum('total_amount')
-    ).order_by('-total_quantity')[:10]
+        # Top 10 categories
+        top_categories = order.values('order_items__product__category__name').annotate(
+            total_quantity=Sum('order_items__quantity'),
+            total_revenue=Sum('total_amount')
+        ).order_by('-total_quantity')[:10]
 
-    # Top 10 brands
-    top_brands = order.values('order_items__product__brand__name').annotate(
-        total_quantity=Sum('order_items__quantity'),
-        total_revenue=Sum('total_amount')
-    ).order_by('-total_quantity')[:10] 
-    
-   
-    if not start_date or not end_date:
-        end_date = now()
-        start_date = end_date - timedelta(days=7)
-    else:
-      
-        start_date = make_aware(datetime.strptime(start_date, "%Y-%m-%d"))
-        end_date = make_aware(datetime.strptime(end_date, "%Y-%m-%d"))
-    print(start_date)
-    print(end_date)
+        # Top 10 brands
+        top_brands = order.values('order_items__product__brand__name').annotate(
+            total_quantity=Sum('order_items__quantity'),
+            total_revenue=Sum('total_amount')
+        ).order_by('-total_quantity')[:10] 
         
     
+        if not start_date or not end_date:
+            end_date = now()
+            start_date = end_date - timedelta(days=7)
+        else:
+        
+            start_date = make_aware(datetime.strptime(start_date, "%Y-%m-%d"))
+            end_date = make_aware(datetime.strptime(end_date, "%Y-%m-%d"))
+        print(start_date)
+        print(end_date)
+            
+        
+        
+        orders = Order.objects.filter(created_at__range=[start_date, end_date])
+        
     
-    orders = Order.objects.filter(created_at__range=[start_date, end_date])
-    
-   
-    total_sales = orders.aggregate(Sum('total_amount'))['total_amount__sum'] or 0
-    total_discounts = (
-        orders.aggregate(
-            total_discount=Sum(F('order_items__price') * F('order_items__quantity'), output_field=DecimalField())
-        )['total_discount'] or 0
-    ) - total_sales if orders.exists() else 0
-    
-    total_orders = orders.count()
+        total_sales = orders.aggregate(Sum('total_amount'))['total_amount__sum'] or 0
+        total_discounts = (
+            orders.aggregate(
+                total_discount=Sum(F('order_items__price') * F('order_items__quantity'), output_field=DecimalField())
+            )['total_discount'] or 0
+        ) - total_sales if orders.exists() else 0
+        
+        total_orders = orders.count()
 
-    
-    today = now().date()
-    start_of_week = today - timedelta(days=today.weekday()) 
-    start_of_month = today.replace(day=1) 
+        
+        today = now().date()
+        start_of_week = today - timedelta(days=today.weekday()) 
+        start_of_month = today.replace(day=1) 
 
-    
-    daily_orders = Order.objects.filter(created_at__date=today)
-    daily_sales = daily_orders.aggregate(total=Sum('total_amount'))['total'] or 0
-    daily_discounts = (
-        daily_orders.aggregate(
-            discount=Sum(F('order_items__price') * F('order_items__quantity'), output_field=DecimalField())
-        )['discount'] or 0
-    ) - daily_sales if daily_orders.exists() else 0
+        
+        daily_orders = Order.objects.filter(created_at__date=today)
+        daily_sales = daily_orders.aggregate(total=Sum('total_amount'))['total'] or 0
+        daily_discounts = (
+            daily_orders.aggregate(
+                discount=Sum(F('order_items__price') * F('order_items__quantity'), output_field=DecimalField())
+            )['discount'] or 0
+        ) - daily_sales if daily_orders.exists() else 0
 
-    
-    weekly_orders = Order.objects.filter(created_at__date__gte=start_of_week, created_at__date__lte=today)
-    weekly_sales = weekly_orders.aggregate(total=Sum('total_amount'))['total'] or 0
-    weekly_discounts = (
-        weekly_orders.aggregate(
-            discount=Sum(F('order_items__price') * F('order_items__quantity'), output_field=DecimalField())
-        )['discount'] or 0
-    ) - weekly_sales if weekly_orders.exists() else 0
-    
-
-   
-    monthly_orders = Order.objects.filter(created_at__date__gte=start_of_month, created_at__date__lte=today)
-    monthly_sales = monthly_orders.aggregate(total=Sum('total_amount'))['total'] or 0
-    monthly_discounts = (
-        monthly_orders.aggregate(
-            discount=Sum(F('order_items__price') * F('order_items__quantity'), output_field=DecimalField())
-        )['discount'] or 0
-    ) - monthly_sales if monthly_orders.exists() else 0
-
-    # chart starts here
-    chart_filter = request.GET.get('filter', 'weekly')
-    if chart_filter == 'weekly':
-        chart_data = orders.annotate(period=TruncWeek('created_at')).values('period').annotate(
-            total_sales=Sum('total_amount')
-        ).order_by('period')
-    elif chart_filter == 'monthly':
-        chart_data = orders.annotate(period=TruncMonth('created_at')).values('period').annotate(
-            total_sales=Sum('total_amount')
-        ).order_by('period')
-    elif chart_filter == 'yearly':
-        chart_data = orders.annotate(period=TruncYear('created_at')).values('period').annotate(
-            total_sales=Sum('total_amount')
-        ).order_by('period')
-    elif chart_filter == 'daily':
-        chart_data = orders.annotate(period=TruncDay('created_at')).values('period').annotate(
-            total_sales=Sum('total_amount')
-        ).order_by('period')
-
-    # Extract labels and data for the chart
-    chart_labels = [data['period'].strftime('%Y-%m-%d') for data in chart_data]
-    chart_values = [float(data['total_sales']) or 0 for data in chart_data]
-
-    print("Chart Labels:", chart_labels)
-    print("Chart Data:", chart_values)
-
+        
+        weekly_orders = Order.objects.filter(created_at__date__gte=start_of_week, created_at__date__lte=today)
+        weekly_sales = weekly_orders.aggregate(total=Sum('total_amount'))['total'] or 0
+        weekly_discounts = (
+            weekly_orders.aggregate(
+                discount=Sum(F('order_items__price') * F('order_items__quantity'), output_field=DecimalField())
+            )['discount'] or 0
+        ) - weekly_sales if weekly_orders.exists() else 0
+        
 
     
-    context = {
-        'total_sales': total_sales,
-        'total_discounts': total_discounts,
-        'total_orders': total_orders,
-        'start_date': start_date.strftime('%Y-%m-%d'), 
-        'end_date': end_date.strftime('%Y-%m-%d'),  
-        'daily': {'sales': daily_sales, 'discounts': daily_discounts},
-        'weekly': {'sales': weekly_sales, 'discounts': weekly_discounts},
-        'monthly': {'sales': monthly_sales, 'discounts': monthly_discounts},
-        'top_products': top_products,
-        'top_categories': top_categories,
-        'top_brands': top_brands,
-        'chart_labels': json.dumps(chart_labels),  # Pass as JSON
-        'chart_data': json.dumps(chart_values),
-    }
-    
-    return render(request, 'admindashboard.html', context)
+        monthly_orders = Order.objects.filter(created_at__date__gte=start_of_month, created_at__date__lte=today)
+        monthly_sales = monthly_orders.aggregate(total=Sum('total_amount'))['total'] or 0
+        monthly_discounts = (
+            monthly_orders.aggregate(
+                discount=Sum(F('order_items__price') * F('order_items__quantity'), output_field=DecimalField())
+            )['discount'] or 0
+        ) - monthly_sales if monthly_orders.exists() else 0
+
+        # chart starts here
+        chart_filter = request.GET.get('filter', 'weekly')
+        if chart_filter == 'weekly':
+            chart_data = orders.annotate(period=TruncWeek('created_at')).values('period').annotate(
+                total_sales=Sum('total_amount')
+            ).order_by('period')
+        elif chart_filter == 'monthly':
+            chart_data = orders.annotate(period=TruncMonth('created_at')).values('period').annotate(
+                total_sales=Sum('total_amount')
+            ).order_by('period')
+        elif chart_filter == 'yearly':
+            chart_data = orders.annotate(period=TruncYear('created_at')).values('period').annotate(
+                total_sales=Sum('total_amount')
+            ).order_by('period')
+        elif chart_filter == 'daily':
+            chart_data = orders.annotate(period=TruncDay('created_at')).values('period').annotate(
+                total_sales=Sum('total_amount')
+            ).order_by('period')
+
+        # Extract labels and data for the chart
+        chart_labels = [data['period'].strftime('%Y-%m-%d') for data in chart_data]
+        chart_values = [float(data['total_sales']) or 0 for data in chart_data]
+
+        print("Chart Labels:", chart_labels)
+        print("Chart Data:", chart_values)
 
 
+        
+        context = {
+            'total_sales': total_sales,
+            'total_discounts': total_discounts,
+            'total_orders': total_orders,
+            'start_date': start_date.strftime('%Y-%m-%d'), 
+            'end_date': end_date.strftime('%Y-%m-%d'),  
+            'daily': {'sales': daily_sales, 'discounts': daily_discounts},
+            'weekly': {'sales': weekly_sales, 'discounts': weekly_discounts},
+            'monthly': {'sales': monthly_sales, 'discounts': monthly_discounts},
+            'top_products': top_products,
+            'top_categories': top_categories,
+            'top_brands': top_brands,
+            'chart_labels': json.dumps(chart_labels),  # Pass as JSON
+            'chart_data': json.dumps(chart_values),
+        }
+        
+        return render(request, 'admindashboard.html', context)
+    return redirect(adminLogin)
 
+
+@superuser_required
 def admin_dashboard_chart(request):
     filter_type = request.GET.get('filter', 'weekly')
     today = now().date()
@@ -816,13 +869,12 @@ def admin_dashboard_chart(request):
 
 
     
-    
+@superuser_required
 def export_to_excel(request):
     
     start_date_str = request.GET.get('start_date')
     end_date_str = request.GET.get('end_date')
 
-   
     try:
         start_date = datetime.strptime(start_date_str, "%b. %d, %Y")  
     except ValueError:
@@ -836,23 +888,35 @@ def export_to_excel(request):
     start_date = make_aware(start_date)
     end_date = make_aware(end_date)
 
+    # Get orders within the date range
     orders = Order.objects.filter(created_at__range=[start_date, end_date])
 
-    
+    # Calculate total sales, total discounts, and total orders
+    total_sales = sum(order.total_amount for order in orders)
+    total_discounts = sum(order.total_discount for order in orders if order.total_discount)
+    total_orders = len(orders)
+
+    # Create Excel Workbook
     wb = Workbook()
     ws = wb.active
     ws.title = "Sales Report"
-    
-    
+
+    # Adding total sales, total discounts, and total orders
+    ws.append([f"Total Sales: Rs.{total_sales:.2f}"])
+    ws.append([f"Total Discounts: Rs.{total_discounts:.2f}"])
+    ws.append([f"Total Orders: {total_orders}"])
+    ws.append([])  # Empty row to separate from the headers
+
+    # Add headers for the orders
     headers = ["Order ID", "Customer", "Total Amount", "Total Discount", "Order Date"]
     ws.append(headers)
 
-    
+    # Add the order details
     for order in orders:
         total_discount = sum(item.get_total_price() for item in order.order_items.all())  
         ws.append([order.id, order.user.username, order.total_amount, total_discount, order.created_at.strftime('%Y-%m-%d')])
 
-    
+    # Adjust column widths
     for col_num in range(1, len(headers) + 1):
         column = get_column_letter(col_num)
         max_length = 0
@@ -866,22 +930,24 @@ def export_to_excel(request):
         adjusted_width = (max_length + 2)
         ws.column_dimensions[column].width = adjusted_width
 
-    
+    # Prepare the response to send the Excel file
     response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
     response['Content-Disposition'] = f'attachment; filename=Sales_Report_{start_date.strftime("%Y-%m-%d")}_to_{end_date.strftime("%Y-%m-%d")}.xlsx'
+    
+    # Save the Excel file to the response
     wb.save(response)
     return response
+
     
 
 
 
-
+@superuser_required
 def export_to_pdf(request):
    
     start_date_str = request.GET.get('start_date')
     end_date_str = request.GET.get('end_date')
 
-   
     try:
         start_date = datetime.strptime(start_date_str, "%b. %d, %Y")  
     except ValueError:
@@ -895,77 +961,121 @@ def export_to_pdf(request):
     start_date = make_aware(start_date)
     end_date = make_aware(end_date)
     
+    
     orders = Order.objects.filter(created_at__range=[start_date, end_date])
+
+    
+    total_sales = sum(order.total_amount for order in orders)
+    total_discounts = sum(order.total_discount for order in orders if order.total_discount)
+    total_orders = len(orders)
 
     
     response = HttpResponse(content_type='application/pdf')
     response['Content-Disposition'] = f'attachment; filename=Sales_Report_{start_date.strftime("%Y-%m-%d")}_to_{end_date.strftime("%Y-%m-%d")}.pdf'
 
-    
     p = canvas.Canvas(response, pagesize=letter)
     width, height = letter
 
-   
+    
     p.setFont("Helvetica", 14)
     p.drawString(100, height - 40, f"Sales Report from {start_date.strftime('%Y-%m-%d')} to {end_date.strftime('%Y-%m-%d')}")
 
-   
+    
     p.setFont("Helvetica", 10)
-    p.drawString(100, height - 80, "Order ID")
-    p.drawString(200, height - 80, "Customer")
-    p.drawString(400, height - 80, "Discount Amount")
-    p.drawString(300, height - 80, "Total Amount")
-    p.drawString(500, height - 80, "Order Date")
+    p.drawString(100, height - 60, f"Total Sales: Rs.{total_sales:.2f}")
+    p.drawString(100, height - 80, f"Total Discounts: Rs.{total_discounts:.2f}")
+    p.drawString(100, height - 100, f"Total Orders: {total_orders}")
 
-   
-    y_position = height - 100
+    
+    p.drawString(100, height - 120, "Order ID")
+    p.drawString(200, height - 120, "Customer")
+    p.drawString(300, height - 120, "Total Amount")
+    p.drawString(400, height - 120, "Discount Amount")
+    p.drawString(500, height - 120, "Order Date")
+
+    
+    y_position = height - 140
     for order in orders:
-        total_discount = sum(item.get_total_price() for item in order.order_items.all()) 
+        total_discount = sum(item.get_total_price() for item in order.order_items.all())
         p.drawString(100, y_position, str(order.id))
         p.drawString(200, y_position, order.user.username)
-        p.drawString(300, y_position, f"Rs.{total_discount}")
-        p.drawString(400, y_position, f"Rs.{order.total_amount}")
+        p.drawString(300, y_position, f"Rs.{order.total_amount:.2f}")
+        p.drawString(400, y_position, f"Rs.{total_discount:.2f}")
         p.drawString(500, y_position, order.created_at.strftime('%Y-%m-%d'))
-        y_position -= 20  
+        y_position -= 20  # Move to the next line
 
     
     p.showPage()
     p.save()
+    
     return response
 
-def manage_requests(request):
-   if request.user.is_authenticated:
+
+
+@superuser_required
+def manage_requests(request):           
+    if request.user.is_authenticated:
         requests = OrderItem.objects.filter(status='Processing')
         return render(request,'manage_requests.html',{'requests':requests})
+     
     
     
-        
+
+
+
+
+
 @require_POST
+@superuser_required
 def approve_request(request, request_id):
     order_item = get_object_or_404(OrderItem, id=request_id, status="Processing")
+
     
-    # Update status
+    order = order_item.order
+    
+    
+    total_order_price = sum(item.get_total_price() for item in order.order_items.all())
+    total_discount = order.total_discount or 0
+
+    
+    if total_order_price > 0:
+        discount_per_unit = total_discount / total_order_price
+    else:
+        discount_per_unit = 0
+
+    
+    item_total_price = order_item.get_total_price()
+    discounted_refund_amount = item_total_price - (item_total_price * discount_per_unit)
+
+    
     order_item.status = "Refunded"
     order_item.save()
+
     
-    # Refund amount to the wallet
     refund_to_wallet(
         user=order_item.order.user,
-        amount=order_item.get_total_price(),
+        amount=discounted_refund_amount,
         product=order_item.product,
-        description=f"Refund for {order_item.product.name}"
+        description=f"Refund for {order_item.product.name} (discounted)"
     )
+
     
-    # Update stock
     variant = Variant.objects.filter(product=order_item.product).first()
     if variant:
         variant.stock = F("stock") + order_item.quantity
         variant.save()
-    
-    messages.success(request, f"Request for {order_item.product.name} has been approved, and wallet updated.")
-    return redirect(manage_requests)
+
+    messages.success(
+        request, 
+        f"Request for {order_item.product.name} has been approved, and a discounted amount of Rs. {discounted_refund_amount:.2f} has been refunded to the wallet."
+    )
+    return redirect(adminlogin)
+
+
+
 
 @require_POST
+@superuser_required
 def reject_request(request, request_id):
     order_item = get_object_or_404(OrderItem, id=request_id, status="Processing")
     

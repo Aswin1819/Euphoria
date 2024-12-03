@@ -47,6 +47,8 @@ class VariantForm(forms.ModelForm):
         weight = self.cleaned_data.get('weight')
         if weight is not None and weight < 0:
             raise forms.ValidationError('Enter a Valid weight')
+        if weight > 1000:
+            raise forms.ValidationError('weight must be less than 1000g')
         return weight
     
     def clean_price(self):
@@ -59,6 +61,8 @@ class VariantForm(forms.ModelForm):
         stock = self.cleaned_data.get('stock')
         if stock is not None and stock < 0:  
             raise forms.ValidationError("Stock must be a non-negative number.")
+        if stock > 1000:
+            raise forms.ValidationError("Stock must be less than 1000")
         return stock
     
     

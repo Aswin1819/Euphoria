@@ -291,6 +291,8 @@ class Order(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     paymentmethod = models.ForeignKey(PaymentMethod,on_delete=models.SET_NULL,null=True,default=1)
     address = models.ForeignKey(Address,on_delete=models.PROTECT,null=True,blank=True)
+    coupon = models.ForeignKey(Coupon,on_delete=models.SET_NULL,null=True,blank=True)
+    total_discount = models.DecimalField(max_digits=10, decimal_places=2,null=True,blank=True)
     
     #razorpay_fieldss
     razorpay_payment_id = models.CharField(max_length=100,blank=True,null=True)

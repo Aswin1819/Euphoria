@@ -18,7 +18,7 @@
     <!-- Header -->
     <nav class="navbar navbar-expand-lg admin-navbar">
         <div class="container-fluid">
-            <a class="navbar-brand" href="#">Euphoria</a>
+            <a class="navbar-brand" href="{% url 'adminDashboard' %}">Euphoria</a>
             <div class="d-flex">
                 <a class="nav-link" href="{% url 'adminLogout' %}">Logout <i class="bi bi-box-arrow-right"></i></a>
             </div>
@@ -63,14 +63,15 @@
                     </div>
                     <div class="offcanvas-body">
                         <nav class="nav flex-column">
-                            <a class="nav-link" href="#">Dashboard</a>
+                            <a class="nav-link {% if request.resolver_match.url_name == 'adminDashboard' %}active{% endif %}" href="{% url 'adminDashboard' %}" >Dashboard</a>
                             <a class="nav-link {% if request.resolver_match.url_name == 'adminProducts' %}active{% endif %}" href="{% url 'adminProducts' %}">Products</a>
                             <a class="nav-link {% if request.resolver_match.url_name == 'adminCategory'%} active {% endif %}" href="{% url 'adminCategory' %}">Category</a>
                             <a class="nav-link {% if request.resolver_match.url_name == 'adminBrands'%} active {% endif %}" href="{% url 'adminBrands' %}">Brands</a>
                             <a class="nav-link {% if request.resolver_match.url_name == 'adminCustomers' %}active{% endif %}" href="{% url 'adminCustomers' %}">Customers</a>
                             <a class="nav-link {% if request.resolver_match.url_name == 'adminOrders' %}active{% endif %}" href="{% url 'adminOrders' %}">Orders</a>
                             <a class="nav-link {% if request.resolver_match.url_name == 'adminCoupons'%} active {% endif %}" href="{% url 'adminCoupons' %}">Coupons</a>
-                            <a class="nav-link" href="#">Banners</a>
+                            <a class="nav-link {% if request.resolver_match.url_name == 'adminOffers' %}active{% endif %}" href="{% url 'adminOffers' %}" >Offers</a>
+                            <a class="nav-link {% if request.resolver_match.url_name == 'manage_requests' %}active{% endif %}" href="{% url 'manage_requests' %}" >Requests</a>
                         </nav>
                     </div>
                 </div>
