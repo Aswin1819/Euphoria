@@ -48,4 +48,5 @@ urlpatterns = [
     path("wallet_recharge_success/", views.wallet_recharge_success, name="wallet_recharge_success"),
 
     path('categoryProducts/<int:category_id>/',views.categoryProducts,name='categoryProducts'),
+    path('aboutUs/',views.aboutUs,name='aboutUs'),
 ]

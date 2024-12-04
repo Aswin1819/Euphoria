@@ -83,8 +83,6 @@ def usersignup(request):
 
 
 
-
-@never_cache
 def otpValidation(request):
     if request.method == 'POST':
         email = request.POST.get('email')
@@ -108,8 +106,8 @@ def otpValidation(request):
         except OTP.DoesNotExist:
             messages.warning(request,"Invalid Otp")
                 
-    
-        return render(request,'otp_validation.html',{'email':email})
+    email = request.POST.get('email', '')
+    return render(request,'otp_validation.html',{'email':email})
 
 
 @never_cache
@@ -165,13 +163,16 @@ def otpValidationForPass(request):
         otp4 = request.POST.get('otp4')
         otp = otp1 + otp2 + otp3 + otp4
 
-        # Ensure all OTP parts are present
+        
         if not all([otp1, otp2, otp3, otp4]):
             messages.warning(request, "OTP is incomplete")
-            return render(request, 'forg_pass_otp.html', {'email': email})
+            return render(request, 'forg_pass_otp.html', {
+                'email': email, 
+                'timer_remaining': 60  
+            })
 
         try:
-            otpRecord = OTP.objects.get(email=email,otp=otp)
+            otpRecord = OTP.objects.get(email=email, otp=otp)
          
             if otpRecord.is_valid(): 
                 userOtpVerified.send(sender=OTP, email=email)
@@ -184,9 +185,15 @@ def otpValidationForPass(request):
         except OTP.DoesNotExist:
             messages.warning(request, "Invalid OTP")
 
-        return render(request, 'forg_pass_otp.html', {'email': email})
+        return render(request, 'forg_pass_otp.html', {
+            'email': email, 
+            'timer_remaining': 60  
+        })
 
-    return render(request, 'forg_pass_otp.html')
+   
+    return render(request, 'forg_pass_otp.html', {
+        'timer_remaining': 60
+    })
 
 
 @never_cache
@@ -1333,6 +1340,11 @@ def wallet_recharge_success(request):
             return JsonResponse({"status": "error", "message": f"Recharge failed: {str(e)}"}, status=500)
 
     return JsonResponse({"status": "error", "message": "Invalid request"}, status=400)
+
+
+
+def aboutUs(request):
+    return render(request,'aboutus.html')
 
 
 

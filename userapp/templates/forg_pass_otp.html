@@ -33,39 +33,73 @@
                             <button id="resend" class="decoration-none" style="color: gray; cursor: not-allowed; display: inline;" disabled>Resend</button>
                         </form>
                     </p>
-                    
-                    
                 </div>
             </div>
         </div>
     </div>
 </div>
 
-<!-- Optional: Script to handle countdown timer -->
 <script>
-    var timeLeft = 60; // Time in seconds
-    var timer = setInterval(function() {
-        var minutes = Math.floor(timeLeft / 60);
-        var seconds = timeLeft % 60;
-        if (seconds < 10) seconds = '0' + seconds;
-        document.getElementById('time').textContent = minutes + ':' + seconds;
-
-        // Enable or disable the resend button based on time left
+    document.addEventListener('DOMContentLoaded', function() {
+        
+        var initialTimerValue = {{ timer_remaining|default:60 }};
+        var timerDisplay = document.getElementById('time');
         var resendButton = document.getElementById('resend');
-        if (timeLeft <= 0) {
-            clearInterval(timer);
-            resendButton.style.color = 'blue'; // Change color to indicate it's clickable
-            resendButton.style.cursor = 'pointer'; // Change cursor to pointer
-            resendButton.removeAttribute('disabled'); // Enable the resend button
-        } else {
-            resendButton.style.color = 'gray'; // Set color to gray
-            resendButton.style.cursor = 'not-allowed'; // Change cursor to not-allowed
-            resendButton.setAttribute('disabled', true); // Disable the resend button
+
+        
+        var timeLeft = localStorage.getItem('otp_timer_end_pass') 
+            ? Math.max(0, Math.ceil((parseInt(localStorage.getItem('otp_timer_end_pass')) - Date.now()) / 1000)) 
+            : initialTimerValue;
+
+        function updateTimerDisplay() {
+            var minutes = Math.floor(timeLeft / 60);
+            var seconds = timeLeft % 60;
+            if (seconds < 10) seconds = '0' + seconds; 
+            if (minutes < 10) minutes = '0' + minutes;
+            timerDisplay.textContent = minutes + ':' + seconds; 
         }
 
-        timeLeft--;
-    }, 1000);
-</script>
+        function enableResendButton() {
+            resendButton.style.color = 'blue'; 
+            resendButton.style.cursor = 'pointer'; 
+            resendButton.removeAttribute('disabled'); 
+            localStorage.removeItem('otp_timer_end_pass');
+        }
 
+        function startTimer() {
+            
+            if (!localStorage.getItem('otp_timer_end_pass')) {
+                localStorage.setItem('otp_timer_end_pass', Date.now() + (timeLeft * 1000));
+            }
+
+            var timer = setInterval(function () {
+                
+                timeLeft = Math.max(0, Math.ceil((parseInt(localStorage.getItem('otp_timer_end_pass')) - Date.now()) / 1000));
+
+                if (timeLeft <= 0) {
+                    clearInterval(timer); 
+                    enableResendButton();
+                    localStorage.removeItem('otp_timer_end_pass'); 
+                    timerDisplay.textContent = '00:00';
+                } else {
+                    updateTimerDisplay(); 
+                }
+            }, 1000);
+        }
+
+        
+        updateTimerDisplay();
+
+        
+        if (timeLeft > 0) {
+            startTimer();
+        }
+
+        
+        window.addEventListener('beforeunload', function () {
+           
+        });
+    });
+</script>
 
 {% endblock %}

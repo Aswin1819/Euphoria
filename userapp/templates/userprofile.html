@@ -44,7 +44,7 @@
                             <ul class="list-unstyled ms-3 mt-2">    
                                 <li><a class="text-dark text-decoration-none {% if request.resolver_match.url_name == 'userProfileInformation' %}active{% endif %}" href="{% url 'userProfileInformation' %}">Profile Information</a></li>
                                 <li><a class="text-dark text-decoration-none {% if request.resolver_match.url_name == 'userManageAddress' %}active{% endif %}" href="{% url 'userManageAddress' %}">Manage Addresses</a></li>
-                                <li><a href="#" class="text-dark text-decoration-none">PAN Card Information</a></li>
+                                {% comment %} <li><a href="#" class="text-dark text-decoration-none">PAN Card Information</a></li> {% endcomment %}
                             </ul>
                         </li>
                         <hr class="my-0">
@@ -57,14 +57,14 @@
                             </div>
                             <ul class="list-unstyled ms-3 mt-2">
                                 <li><a href="{% url 'wallet_view' %}" class="text-dark text-decoration-none">Wallet</a></li>
-                                <li><a href="#" class="text-dark text-decoration-none">Saved UPI</a></li>
-                                <li><a href="#" class="text-dark text-decoration-none">Saved Cards</a></li>
+                                {% comment %} <li><a href="#" class="text-dark text-decoration-none">Saved UPI</a></li>
+                                <li><a href="#" class="text-dark text-decoration-none">Saved Cards</a></li> {% endcomment %}
                             </ul>
                         </li>
                         <hr class="my-0">
         
                         <!-- My Stuff Section -->
-                        <li class="py-2 px-3 bg-white">
+                        {% comment %} <li class="py-2 px-3 bg-white">
                             <div class="d-flex align-items-center">
                                 <i class="bi bi-folder-fill me-2"></i>
                                 <span class="d-block text-muted">MY STUFF</span>
@@ -74,7 +74,7 @@
                                 <li><a href="#" class="text-dark text-decoration-none">Review and Ratings</a></li>
                                 <li><a href="#" class="text-dark text-decoration-none">Wishlist</a></li>
                             </ul>
-                        </li>
+                        </li> {% endcomment %}
                         <li class="py-2 px-3 ">
                             <div class="d-flex align-items-center">
                                 <i class="fa-solid fa-right-from-bracket"></i>

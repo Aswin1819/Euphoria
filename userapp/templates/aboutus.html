@@ -1,0 +1,63 @@
+{% extends 'userbase.html' %}
+{% block content %}
+<div class="container-fluid py-5">
+    <!-- Heading -->
+    <div class="text-center mb-5">
+        <h1 class="display-1 text-dark ">Euphoria</h1>
+        <p class="text-secondary">Experience the ultimate chocolate journey.</p>
+    </div>
+
+    <!-- Description Section -->
+    <div class="row mb-5">
+        <div class="col-md-6">
+            <img src="/media/product_Images/chocolateforaboutus.png" alt="Chocolates" class="img-fluid rounded">
+        </div>
+        <div class="col-md-6 d-flex align-items-center">
+            <div>
+                <h2>About Our Chocolates</h2>
+                <p class="lead">
+                    At Euphoria, we craft premium chocolates made from the finest ingredients. From luscious dark chocolate to creamy milk chocolate, every bite is a piece of happiness. Whether it's for gifting or indulgence, our chocolates bring joy to every moment.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Goal Section -->
+    <div class="row mb-5">
+        <div class="col">
+            <h2 class="text-center text-success">Our Goal</h2>
+            <p class="text-center lead">
+                To spread happiness through the art of chocolate-making and create a brand that people trust for quality and taste.
+            </p>
+        </div>
+    </div>
+
+    <!-- Contact Form -->
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <h2 class="text-center text-info">Contact Us</h2>
+            <form class="contact-form" action="https://api.web3forms.com/submit" method="POST">
+                {% csrf_token %}
+                <input type="hidden" name="access_key" value="bd407532-abb8-4411-8ad9-12d73d729624" />
+                <div class="mb-3">
+                    <label for="name" class="form-label">Your Name</label>
+                    <input type="text" class="form-control" id="name" name="name" placeholder="Enter your name" required>
+                </div>
+                <div class="mb-3">
+                    <label for="email" class="form-label">Your Email</label>
+                    <input type="email" class="form-control" id="email" name="email" placeholder="Enter your email" required>
+                </div>
+                <div class="mb-3">
+                    <label for="message" class="form-label">Message</label>
+                    <textarea class="form-control" id="message" name="message" rows="5" placeholder="Write your message" required></textarea>
+                </div>
+                <div class="text-center">
+                    <button type="submit" class="btn btn-primary btn-lg">Send Message</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+
+{% endblock %}
