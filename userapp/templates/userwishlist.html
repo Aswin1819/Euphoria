@@ -11,8 +11,8 @@
         {% endfor %}
     </div>
 {% endif %}
-<div class="container ">
-    <div class="row">
+<div class="container-fluid">
+    <div class="row ps-4">
         <div class="text-center display-4 mb-5">MY WISHLIST</div>
         {% for item in wishlist_items %}
             {% if item.product.is_active %}

@@ -2,10 +2,37 @@
 
 {% block content %}
 
-    <div class="text-center p-4 bg-white rounded shadow-lg">
-        <h2 class="mb-4 text-primary">Complete Payment</h2>
-        <button id="pay-now-btn" class="btn btn-success btn-lg px-4 py-2">Pay Now</button>
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <!-- Bill Card -->
+        <div class="col-md-6">
+            <div class="card shadow-lg">
+                <div class="card-header bg-primary text-white text-center">
+                    <h3>Order Summary</h3>
+                </div>
+                <div class="card-body bg-light">
+                    <p><strong>Order ID:</strong> {{ order.id }}</p>
+                    <p><strong>User:</strong> {{ order.user.username }}</p>
+                    <p><strong>Order Date:</strong> {{ order.created_at|date:"d M Y, H:i A" }}</p>
+                    <p><strong>Address:</strong> {{ order.address.address}},{{order.address.city }}</p>
+                    <p><strong>Coupon Applied:</strong> {{ order.coupon.code}}</p>
+                    <hr>
+                    {% comment %} <p><strong>Total Amount:</strong> ₹{{ order.total_amount }}</p> {% endcomment %}
+                    <p><strong>Total Discount:</strong> ₹{{ order.total_discount|default:0 }}</p>
+                    <p class="text-danger"><strong>Payable Amount:</strong> ₹{{ order.total_amount|floatformat:2 }}</p>
+                </div>
+            </div>
+        </div>
     </div>
+
+    <!-- Payment Button -->
+    <div class="row justify-content-center mt-4">
+        <div class="col-md-6 text-center">
+            <button id="pay-now-btn" class="btn btn-success btn-lg px-4 py-2">Pay Now</button>
+        </div>
+    </div>
+</div>
+
 
     <form id="razorpay-form" style="display:none;">
         <script 

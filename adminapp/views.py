@@ -1,6 +1,6 @@
+from django.contrib import messages
 from django.shortcuts import render,redirect,get_object_or_404
 from django.contrib.auth import login,logout,authenticate
-from django.contrib import messages
 from django.contrib.auth import get_user_model
 from .models import EuphoUser,Category,Products,Images,Brand,Variant,Order,OrderItem,Coupon,UserCoupon,Offer
 from .forms import ProductForm, VariantForm,CouponForm,OfferForm
@@ -888,35 +888,35 @@ def export_to_excel(request):
     start_date = make_aware(start_date)
     end_date = make_aware(end_date)
 
-    # Get orders within the date range
+    
     orders = Order.objects.filter(created_at__range=[start_date, end_date])
 
-    # Calculate total sales, total discounts, and total orders
+    
     total_sales = sum(order.total_amount for order in orders)
     total_discounts = sum(order.total_discount for order in orders if order.total_discount)
     total_orders = len(orders)
 
-    # Create Excel Workbook
+    
     wb = Workbook()
     ws = wb.active
     ws.title = "Sales Report"
 
-    # Adding total sales, total discounts, and total orders
+    
     ws.append([f"Total Sales: Rs.{total_sales:.2f}"])
     ws.append([f"Total Discounts: Rs.{total_discounts:.2f}"])
     ws.append([f"Total Orders: {total_orders}"])
-    ws.append([])  # Empty row to separate from the headers
+    ws.append([])  
 
-    # Add headers for the orders
+    
     headers = ["Order ID", "Customer", "Total Amount", "Total Discount", "Order Date"]
     ws.append(headers)
 
-    # Add the order details
+    
     for order in orders:
         total_discount = sum(item.get_total_price() for item in order.order_items.all())  
         ws.append([order.id, order.user.username, order.total_amount, total_discount, order.created_at.strftime('%Y-%m-%d')])
 
-    # Adjust column widths
+    
     for col_num in range(1, len(headers) + 1):
         column = get_column_letter(col_num)
         max_length = 0
@@ -930,11 +930,11 @@ def export_to_excel(request):
         adjusted_width = (max_length + 2)
         ws.column_dimensions[column].width = adjusted_width
 
-    # Prepare the response to send the Excel file
+   
     response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
     response['Content-Disposition'] = f'attachment; filename=Sales_Report_{start_date.strftime("%Y-%m-%d")}_to_{end_date.strftime("%Y-%m-%d")}.xlsx'
     
-    # Save the Excel file to the response
+    
     wb.save(response)
     return response
 
@@ -1069,7 +1069,7 @@ def approve_request(request, request_id):
         request, 
         f"Request for {order_item.product.name} has been approved, and a discounted amount of Rs. {discounted_refund_amount:.2f} has been refunded to the wallet."
     )
-    return redirect(adminlogin)
+    return redirect(adminLogin)
 
 
 

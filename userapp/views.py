@@ -659,10 +659,7 @@ def apply_coupon(request):
             cart.coupon = None
             cart.save()
             return JsonResponse({
-                # "success": True,
-                # "total_amount": cart.get_total_price(),
-                # "discounted_total": cart.get_discount_price(),
-                # "discount": 0,
+                
                 "success": True,
                 "total_amount": cart.get_total_price(),
                 "discounted_total": cart.get_discount_price(),
@@ -1347,6 +1344,9 @@ def aboutUs(request):
     return render(request,'aboutus.html')
 
 
+
+def custom_404_view(request, exception):
+    return render(request, '404.html', status=404)
 
 
 @never_cache

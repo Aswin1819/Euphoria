@@ -30,12 +30,12 @@
         <div class="carousel-inner">
             {% for product_chunk in products|slice:":12"|chunkify:4 %}
             <div class="carousel-item {% if forloop.first %}active{% endif %}">
-                <div class="row">
+                <div class="row ps-4">
                     {% for product in product_chunk %}
                     {% if product.is_active %}
-                    <div class="col-sm-6 col-md-4 col-lg-3">
-                        <a href="{% url 'productView' product.id %}" class="productatag">
-                            <div class="card h-100 product-card" style="width: 100%; max-width: 300px;">
+                    <div class="col-12 col-sm-6 col-md-4 col-lg-3 mb-3">
+                        <div class="card h-100 product-card" style="width: 100%; max-width: 300px;">
+                                <a href="{% url 'productView' product.id %}" class="productatag">
                                 {% if product.product_images.all %}
                                     <img src="{{ product.product_images.first.images.url }}" class="card-img-top img-fluid" alt="{{ product.product_images.first.alt_text }}" style="height: 200px; object-fit: cover;">
                                 {% else %}
@@ -45,8 +45,8 @@
                                     <h5 class="card-title">{{ product.name }}</h5>
                                     <p class="card-text">Price: &#8377; {{ product.variants.first.price }}</p>
                                 </div>
-                            </div>
-                        </a>
+                            </a>
+                        </div>
                     </div>
                     {% endif %}
                     {% endfor %}
@@ -71,12 +71,12 @@
     <div class="text-center my-5">
         <h1>LATEST PRODUCTS</h1>
     </div>
-    <div class="row">
+    <div class="row ps-4">
         {% for product in latest_products %}
         {% if product.is_active %}
         <div class="col-sm-6 col-md-4 col-lg-3 mb-4">
-            <a href="{% url 'productView' product.id %}" class="productatag">
-                <div class="card h-100 product-card" style="width: 100%; max-width: 300px;">
+            <div class="card h-100 product-card" style="width: 100%; max-width: 300px;">
+                <a href="{% url 'productView' product.id %}" class="productatag">
                     {% if product.product_images.all %}
                         <img src="{{ product.product_images.first.images.url }}" class="card-img-top img-fluid" alt="{{ product.product_images.first.alt_text }}" style="height: 200px; object-fit: cover;">
                     {% else %}
@@ -89,8 +89,8 @@
                             
                         </p>
                     </div>
-                </div>
-            </a>
+                </a>
+            </div>
         </div>
         {% endif %}
         {% endfor %}
@@ -105,13 +105,13 @@
      <div class="text-center my-5">
         <h1>FEATURED PRODUCTS</h1>
     </div>
-     <div class="row">
+     <div class="row ps-4">
         {% for product in featured_products %}
         {% if product.is_active %}
         {% if product.is_featured %}
         <div class="col-sm-6 col-md-4 col-lg-3 mb-4">
-            <a href="{% url 'productView' product.id %}" class="productatag">
-                <div class="card h-100 product-card" style="width: 100%; max-width: 300px;">
+            <div class="card h-100 product-card" style="width: 100%; max-width: 300px;">
+                <a href="{% url 'productView' product.id %}" class="productatag">
                     {% if product.product_images.all %}
                         <img src="{{ product.product_images.first.images.url }}" class="card-img-top img-fluid" alt="{{ product.product_images.first.alt_text }}" style="height: 200px; object-fit: cover;">
                     {% else %}
@@ -121,8 +121,8 @@
                         <h5 class="card-title">{{ product.name }}</h5>
                         <p class="card-text">Price: &#8377; {{ product.variants.first.price }}</p>
                     </div>
-                </div>
-            </a>
+                </a>
+            </div>
         </div>
         {% endif %}
         {% endif %}

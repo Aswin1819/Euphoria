@@ -7,7 +7,7 @@
         <img src="/media/product_Images/banner2.jpg" alt="Banner" class="img-fluid banner-img">
     </div>
     <div class="text-center display-5 mb-5">{{ category.name }}</div>
-    <div class="row">
+    <div class="row ps-4">
         {% for product in products %}
             <div class="col-sm-6 col-md-4 col-lg-3 mb-4">
                 <a href="{% url 'productView' product.id %}" class="productatag">

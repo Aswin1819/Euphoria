@@ -1,5 +1,6 @@
 from django.urls import path
 from .import views
+from django.conf.urls import handler404
 
 urlpatterns = [
     path('userlogin/', views.userlogin, name = 'userlogin'),
@@ -50,3 +51,4 @@ urlpatterns = [
     path('categoryProducts/<int:category_id>/',views.categoryProducts,name='categoryProducts'),
     path('aboutUs/',views.aboutUs,name='aboutUs'),
 ]
+handler404 = 'userapp.views.custom_404_view'
