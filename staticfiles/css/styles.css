@@ -1,0 +1,149 @@
+/* user navbar start here  */
+.custom-navbar {
+    background-color:#e4d2b9;
+    padding: 1rem;
+}
+.navbar-nav .nav-item {
+    margin: 0 5px;
+}
+.navbar-brand {
+    font-family: 'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif;
+    font-size: 3rem;
+}
+.nav-components {
+    font-family: Cambria, Cochin, Georgia, Times, 'Times New Roman', serif;
+    font-size: 1.5rem;
+}
+@media (max-width: 768px) {
+    .navbar-nav {
+        text-align: center;
+    }
+    
+    /* Center icons below navbar links */
+    .navbar-nav.ms-auto {
+        justify-content: center;
+        margin-top: 10px;
+    }
+    
+    /* Adjusting padding for smaller screens */
+    .nav-item.nav-components {
+        padding: 5px 0;
+    }
+}
+
+
+
+/* user login starts here  */
+.login-card {
+    background-color: #EAD8C0;
+}
+.decoration-none {
+    text-decoration: none;
+}
+.btn-login {
+    background-color: #ffff;
+}
+.btn-login:hover {
+    background-color: #e2c39a;
+}
+
+/* user footer starts here  */
+
+.footer {
+    background-color:#e4d2b9 ;
+}
+.row li,a {
+    color: black;
+    text-decoration: none;
+}
+.footer-divider {
+    border: none;
+    border-top: 1px solid #ccc; /* Customize the line's color */
+    /* margin: 10px 0; Adjust the space around the line */
+    width: 100%; /* Make it full width */
+  }
+  
+/* otp page styles!!!!!!!!!!!!!! */
+
+.otp-input {
+    width: 50px;
+    text-align: center;
+    font-size: 24px;
+    padding: 10px;
+}
+
+
+/* .banner-container {
+    width: 100%;
+    position: relative;
+}
+
+.banner-img {
+    width: 100%;
+    height: auto;
+    object-fit: cover;
+} */
+
+
+/* .product-card {
+    transition: transform 0.3s ease;
+    position : relative;
+    border-radius: 30px;
+
+} */
+
+.product-card{
+    transition: transform 0.2s ease-in-out;
+
+}
+.product-card:hover{
+    transform: scale(1.05);
+}
+.product-main-img{
+    height: 400px;
+    max-height: 400px;
+    /* text-align: center; */
+}
+.sub-img{
+    height: 80px;
+    max-height: 80px;
+}
+
+
+/* zoomimage */
+#main-product-img {
+    transition: transform 0.3s ease; /* Smooth zoom transition */
+    cursor: zoom-in;
+}
+
+#zoom-container {
+    position: relative;
+    overflow: hidden;
+}
+
+#main-product-img:hover {
+    cursor: zoom-out;
+}
+
+
+/* profile name */
+
+.stock-out{
+    cursor: not-allowed;
+}
+
+/*modal search modal */
+/* Modal Header */
+.modal-header {
+    background-color: #EAD8C0; /* Dark background color to match header */
+    color: #141010; /* White text color */
+    border-bottom: 1px solid #444; /* Optional border for separation */
+}
+
+/* Modal Body */
+.modal-body {
+    background-color: #e4e1dc; /* Light background for body */
+    color: #333; /* Text color */
+    padding: 20px; /* Padding for readability */
+}
+
