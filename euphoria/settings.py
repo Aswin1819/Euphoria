@@ -20,6 +20,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'adminapp.apps.AdminappConfig',  
+    'whitenoise.runserver_nostatic',
     'userapp',
     # Required for Google authentication
     'django.contrib.sites',
@@ -35,6 +36,7 @@ AUTH_USER_MODEL = 'adminapp.EuphoUser'
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -123,7 +125,7 @@ SOCIALACCOUNT_PROVIDERS = {
 }
 
 # Static files configuration
-STATIC_URL = 'static/'
+STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR,'staticfiles')
 STATICFILES_DIRS = [
     os.path.join(BASE_DIR, "adminapp", "static"),
