@@ -279,7 +279,7 @@ def addProducts(request):
                     variant.save()
  
                 messages.success(request, "Product and variants added successfully")
-                return redirect('adminproducts')
+                return redirect('adminProducts')
             else: 
                 print("Product Form Errors:", product_form.errors)
                 print("Variant Formset Errors:", variant_formset.errors)
