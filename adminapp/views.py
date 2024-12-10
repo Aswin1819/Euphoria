@@ -118,7 +118,7 @@ def customerSearch(request):
             user = User.objects.filter(username__icontains=search).order_by('username')
         else:
             user = User.objects.all()
-        return render(request,'adminCustomers.html',{'users':user})
+        return render(request,'admincustomers.html',{'users':user})
 
 
                     #########           #########
@@ -279,7 +279,7 @@ def addProducts(request):
                     variant.save()
  
                 messages.success(request, "Product and variants added successfully")
-                return redirect('adminProducts')
+                return redirect('adminproducts')
             else: 
                 print("Product Form Errors:", product_form.errors)
                 print("Variant Formset Errors:", variant_formset.errors)
@@ -358,7 +358,7 @@ def editProducts(request, id):
             product_form = ProductForm(instance=product)
             variant_formset = VariantFormSet(queryset=product.variants.all())
 
-        return render(request, 'editproducts.html', {
+        return render(request, 'editProducts.html', {
             'product_form': product_form,
             'variant_formset': variant_formset,
             'product': product,
@@ -387,7 +387,7 @@ def addVariant(request):
         else:
             print("form is not valid")
             messages.warning(request,'The Price and Weight must be postive numbers')
-            return redirect('adminProducts')
+            return redirect('adminproducts')
     else:
         form = VariantForm()  # Create a new form instance for a GET request
 
