@@ -124,7 +124,7 @@ SOCIALACCOUNT_PROVIDERS = {
         },
         'AUTH_PARAMS': {
             'access_type': 'online',
-        },
+        }
     }
 }
 
@@ -159,3 +159,13 @@ AWS_DEFAULT_ACL =  None
 AWS_S3_VERITY = True
 DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
 
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+
+CSRF_TRUSTED_ORIGINS = [
+    'https://eupho.site',
+    'http://52.70.160.35',
+    'https://www.eupho.site',
+]
+
+USE_X_FORWARDED_HOST = True
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
