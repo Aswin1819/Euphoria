@@ -11,7 +11,7 @@ class CustomSocialAccountAdapter(DefaultSocialAccountAdapter):
         if user.id:
             return
         try:
-            user = EuphoUser.objects.get(email=user.email)
+            user = EuphoUser.objects.filter(email=user.email).first()
             sociallogin.connect(request, user)
             login(request, user, backend='django.contrib.auth.backends.ModelBackend')
             messages.success(request, 'Your Google account has been connected to your existing account.')
