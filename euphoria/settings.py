@@ -118,6 +118,10 @@ SOCIALACCOUNT_PROVIDERS = {
             'profile',
             'email',
         ],
+        'APP': {
+            'client_id': config('GOOGLE_CLIENT_ID'),
+            'secret': config('GOOGLE_CLIENT_SECRET'),
+        },
         'AUTH_PARAMS': {
             'access_type': 'online',
         }
