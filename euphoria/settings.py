@@ -98,7 +98,7 @@ AUTHENTICATION_BACKENDS = [
 ]
 
 # Sites framework
-SITE_ID = 1
+SITE_ID = 2
 
 # Auth settings
 LOGIN_REDIRECT_URL = '/'
