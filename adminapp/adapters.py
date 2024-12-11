@@ -4,6 +4,7 @@ from django.shortcuts import redirect
 from django.contrib import messages
 from .models import EuphoUser
 from django.contrib.auth import login
+from django.core.exceptions import MultipleObjectsReturned
 
 class CustomSocialAccountAdapter(DefaultSocialAccountAdapter):
     def pre_social_login(self, request, sociallogin):
@@ -11,10 +12,22 @@ class CustomSocialAccountAdapter(DefaultSocialAccountAdapter):
         if user.id:
             return
         try:
-            user = EuphoUser.objects.filter(email=user.email).first()
-            sociallogin.connect(request, user)
-            login(request, user, backend='django.contrib.auth.backends.ModelBackend')
-            messages.success(request, 'Your Google account has been connected to your existing account.')
-            raise ImmediateHttpResponse(redirect('userhome'))
+            users = EuphoUser.objects.filter(email=user.email)
+            if users.count() > 1:
+                # Handle the case where multiple users have the same email
+                messages.error(request, "Multiple accounts found with the same email. Please contact support.")
+                raise ImmediateHttpResponse(redirect('userlogin'))  # Redirect to an error page
+            elif users.exists():
+                # If exactly one user exists, connect the social account
+                existing_user = users.first()
+                sociallogin.connect(request, existing_user)
+                login(request, existing_user, backend='django.contrib.auth.backends.ModelBackend')
+                messages.success(request, 'Your Google account has been connected to your existing account.')
+                raise ImmediateHttpResponse(redirect('userhome'))
         except EuphoUser.DoesNotExist:
-            pass
+            pass  # No action if the user doesn't exist, just continue
+        except MultipleObjectsReturned:
+            # Handle the case where multiple users with the same email exist
+            messages.error(request, "Multiple accounts found with the same email. Please contact support.")
+            raise ImmediateHttpResponse(redirect('userlogin'))
+
