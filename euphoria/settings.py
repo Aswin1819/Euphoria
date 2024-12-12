@@ -113,7 +113,8 @@ ACCOUNT_USERNAME_REQUIRED = False  # Since you're using email as primary
 
 # Google OAuth2 settings
 
-'SOCIALACCOUNT_PROVIDERS': {
+
+SOCIALACCOUNT_PROVIDERS = {
     'google': {
         'SCOPE': [
             'profile',
@@ -125,23 +126,25 @@ ACCOUNT_USERNAME_REQUIRED = False  # Since you're using email as primary
         },
         'AUTH_PARAMS': {
             'access_type': 'online',
-        }
+        },
+        'VERIFIED_EMAIL': True  # Ensure email is verified
     }
 }
 
 
+
 # Static files configuration
-STATIC_URL = '/static/'
-STATIC_ROOT = os.path.join(BASE_DIR,'staticfiles')
+STATIC_URL = '/static/'STATIC_ROOT = os.path.join(BASE_DIR,'staticfiles')
 STATICFILES_DIRS = [
     os.path.join(BASE_DIR, "adminapp", "static"),
     os.path.join(BASE_DIR, "userapp", "static"),
 ]
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
-# Add this line to use the custom social adapter
-#SOCIALACCOUNT_ADAPTER = 'adminapp.adapters.CustomSocialAccountAdapter'
-SOCIALACCOUNT_ADAPTER = "allauth.socialaccount.adapter.DefaultSocialAccountAdapter"
+#
+ Add this line to use the custom social adapter
+SOCIALACCOUNT_ADAPTER = 'adminapp.adapters.CustomSocialAccountAdapter'
+#SOCIALACCOUNT_ADAPTER = "allauth.socialaccount.adapter.DefaultSocialAccountAdapter"
 
 # image uploading
 MEDIA_URL = '/media/'
