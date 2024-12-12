@@ -120,14 +120,14 @@ ACCOUNT_USERNAME_REQUIRED = False  # Since you're using email as primary
             'email',
         ],
         'APP': {
-            'client_id': config('GOOGLE_CLIENT_ID', default=''),
-            'secret': config('GOOGLE_CLIENT_SECRET', default=''),
+            'client_id': config('GOOGLE_CLIENT_ID'),
+            'secret': config('GOOGLE_CLIENT_SECRET'),
         },
         'AUTH_PARAMS': {
             'access_type': 'online',
-        },
-    },
-},
+        }
+    }
+}
 
 
 # Static files configuration
