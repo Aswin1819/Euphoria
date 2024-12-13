@@ -6,7 +6,7 @@ from decouple import config
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = 'django-insecure-yy8-vl*u^ak%iav0cvnqp36f9_%#3s39rk3blp+i2qdcxtyzso'
-DEBUG = True
+DEBUG = False
 ALLOWED_HOSTS = ['eupho.site','52.70.160.35','localhost','127.0.0.1']
 
 ROOT_URLCONF = 'euphoria.urls'
