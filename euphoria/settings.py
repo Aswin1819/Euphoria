@@ -114,24 +114,6 @@ ACCOUNT_USERNAME_REQUIRED = False  # Since you're using email as primary
 # Google OAuth2 settings
 
 
-SOCIALACCOUNT_PROVIDERS = {
-    'google': {
-        'SCOPE': [
-            'profile',
-            'email',
-        ],
-        'APP': {
-            'client_id': config('GOOGLE_CLIENT_ID'),
-            'secret': config('GOOGLE_CLIENT_SECRET'),
-        },
-        'AUTH_PARAMS': {
-            'access_type': 'online',
-        },
-        'VERIFIED_EMAIL': True  # Ensure email is verified
-    }
-}
-
-
 
 # Static files configuration
 STATIC_URL = '/static/'
