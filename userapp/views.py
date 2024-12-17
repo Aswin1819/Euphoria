@@ -450,14 +450,14 @@ def userManageAddress(request):
         else:
             messages.warning(request,'ERROR!!. Kindly please check the add address form')
             print(form.errors)
-	    collapse_open = True
+            collapse_open = True
     else:
         form = AddressForm()
         
     context = {
         'form': form,
         'addresses':user_address,
-	'collapse_open':collapse_open,
+        'collapse_open':collapse_open,
     }
     return render(request,'usermanageaddress.html',context)
 
