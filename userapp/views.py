@@ -498,10 +498,9 @@ def deleteAddress(request, address_id):
 
 
 def addToWishlist(request):
+    if not request.user.is_authenticated:
+        return JsonResponse({"authenticated":False,"success": False, "message": "Please login to add items to your wishlist!"})
     if request.method == "POST":
-        if not request.user.is_authenticated:
-            return JsonResponse({"authenticated":False,"success": False, "message": "Please login to add items to your wishlist!"})
-        
         try:
             data = json.loads(request.body)  # Parse JSON payload
             product_id = data.get('product_id')
