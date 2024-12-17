@@ -498,9 +498,9 @@ def deleteAddress(request, address_id):
 
 
 def addToWishlist(request):
-    if not request.user.is_authenticated:
-        return JsonResponse({"authenticated":False,"success": False, "message": "Please login to add items to your wishlist!"})
     if request.method == "POST":
+	if not request.user.is_authenticated:
+            return JsonResponse({"authenticated":False,"success": False, "message": "Please login to add items to your wishlist!"})
         try:
             data = json.loads(request.body)  # Parse JSON payload
             product_id = data.get('product_id')
@@ -556,16 +556,16 @@ def removeFromWishlist(request,item_id):
 
 def addToCart(request):
     if not request.user.is_authenticated:
-	return JsonResponse({"authenticated":False,"Success":False,"message":"Login to add item to cart"})
+        return JsonResponse({"authenticated":False,"Success":False,"message":"Please login to add item to cart"})
 
     if request.method == "POST" and request.headers.get('x-requested-with') == 'XMLHttpRequest':
         try:
             data = json.loads(request.body)  # Parse JSON data
-            product_id = data.get('product_id')       
-            variant_id = data.get('variant_id')  
+            product_id = data.get('product_id')
+            variant_id = data.get('variant_id')
             discounted_price = data.get('discounted_price')
             quantity = data.get('quantity', 1)
-       
+	    
             product = get_object_or_404(Products, id=product_id)
             product.popularity += 1
             product.save()
@@ -595,7 +595,6 @@ def addToCart(request):
             return JsonResponse({"authenticated":True,"success": True, "message": "Product added to cart successfully!"})
         except Exception as e:
             return JsonResponse({"authenticated":True,"success": False, "message": str(e)}, status=400)
-    
     return JsonResponse({"authenticated":True,"success": False, "message": "Invalid request method or headers"}, status=400)
 
 
