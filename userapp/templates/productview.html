@@ -312,7 +312,9 @@ document.addEventListener("DOMContentLoaded", () => {
             })
             .then(response => response.json())
             .then(data => {
-                if (data.success) {
+		if (data.authenticated === false){
+		    window.location.href = "{% url 'userlogin' %}";
+                }else if (data.success) {
                     Swal.fire("Success", data.message, "success");
                 } else {
                     Swal.fire("Info", data.message, "info");
@@ -355,7 +357,9 @@ document.addEventListener("DOMContentLoaded", () => {
             })
             .then(response => response.json())
             .then(data => {
-                if (data.success) {
+		if (data.authenticated === false){
+		    window.location.href = "{% url 'userlogin' %}";
+                }else if (data.success) {
                     Swal.fire("Success", data.message, "success");
                 } else {
                     Swal.fire("Error", data.message, "error");

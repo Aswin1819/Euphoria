@@ -500,7 +500,7 @@ def deleteAddress(request, address_id):
 def addToWishlist(request):
     if request.method == "POST":
         if not request.user.is_authenticated:
-            return JsonResponse({"success": False, "message": "Please login to add items to your wishlist!"})
+            return JsonResponse({"authenticated":False,"success": False, "message": "Please login to add items to your wishlist!"})
         
         try:
             data = json.loads(request.body)  # Parse JSON payload
@@ -514,12 +514,12 @@ def addToWishlist(request):
             wishlist_item, item_created = WishlistItem.objects.get_or_create(wishlist=wishlist, product=product, variant=variant)
 
             if item_created:
-                return JsonResponse({"success": True, "message": "Item added to wishlist!"})
+                return JsonResponse({"authenticated":True,"success": True, "message": "Item added to wishlist!"})
             else:
-                return JsonResponse({"success": False, "message": "This item is already in your wishlist!"})
+                return JsonResponse({"authenticated":True,"success": False, "message": "This item is already in your wishlist!"})
         except json.JSONDecodeError:
-            return JsonResponse({"success": False, "message": "Invalid data!"})
-    return JsonResponse({"success": False, "message": "Invalid request!"})
+            return JsonResponse({"authenticated":True,"success": False, "message": "Invalid data!"})
+    return JsonResponse({"authenticated":True,"success": False, "message": "Invalid request!"})
 
 
             
@@ -554,8 +554,11 @@ def removeFromWishlist(request,item_id):
 
 
 
-@login_required(login_url='userlogin')
+
 def addToCart(request):
+    if not request.user.is_authenticated:
+	return JsonResponse({"authenticated":False,"Success":False,"message":"Login to add item to cart"})
+
     if request.method == "POST" and request.headers.get('x-requested-with') == 'XMLHttpRequest':
         try:
             data = json.loads(request.body)  # Parse JSON data
@@ -583,18 +586,18 @@ def addToCart(request):
                 })
             
             if cart_item.quantity >=4:
-                return JsonResponse({"success":False,"message":"Cart limit 4 is reached"},status=400)
+                return JsonResponse({"authenticated":True,"success":False,"message":"Cart limit 4 is reached"},status=400)
             if not created:
                 cart_item.quantity += 1
             
             cart_item.price = discounted_price
             cart_item.save()
             
-            return JsonResponse({"success": True, "message": "Product added to cart successfully!"})
+            return JsonResponse({"authenticated":True,"success": True, "message": "Product added to cart successfully!"})
         except Exception as e:
-            return JsonResponse({"success": False, "message": str(e)}, status=400)
+            return JsonResponse({"authenticated":True,"success": False, "message": str(e)}, status=400)
     
-    return JsonResponse({"success": False, "message": "Invalid request method or headers"}, status=400)
+    return JsonResponse({"authenticated":True,"success": False, "message": "Invalid request method or headers"}, status=400)
 
 
 
@@ -728,6 +731,10 @@ def removeCartItems(request,product_id,variant_id):
     if cart:
         cart_item = get_object_or_404(CartItem,cart=cart,product_id=product_id,variant_id=variant_id)
         cart_item.delete()
+	if cart.coupon and not cart.items.exists():
+		cart.discount = 0
+		cart.coupon = None
+		cart.save()
         return redirect(cartDetails)
     
 

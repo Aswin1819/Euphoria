@@ -66,11 +66,11 @@
                         heartIcon.classList.toggle('text-danger');
                         
                        
-                        Swal.fire("Product added to Wishlist!!");
+                        Swal.fire("Success",data.message,"success");
                     } else {
                         
                         
-                        Swal.fire(data.message);
+                        Swal.fire("Info",data.message,"info");
                     }
                 })
                 .catch(error => {
