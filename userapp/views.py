@@ -496,11 +496,11 @@ def deleteAddress(request, address_id):
 
 
 
-
 def addToWishlist(request):
     if request.method == "POST":
-	if not request.user.is_authenticated:
+        if not request.user.is_authenticated:
             return JsonResponse({"authenticated":False,"success": False, "message": "Please login to add items to your wishlist!"})
+        
         try:
             data = json.loads(request.body)  # Parse JSON payload
             product_id = data.get('product_id')
@@ -521,8 +521,14 @@ def addToWishlist(request):
     return JsonResponse({"authenticated":True,"success": False, "message": "Invalid request!"})
 
 
-            
-            
+
+
+
+
+
+
+
+
 def userWishlist(request):
     if request.user.is_authenticated:
         wishlist = Wishlist.objects.filter(user=request.user).first()
@@ -729,10 +735,10 @@ def removeCartItems(request,product_id,variant_id):
     if cart:
         cart_item = get_object_or_404(CartItem,cart=cart,product_id=product_id,variant_id=variant_id)
         cart_item.delete()
-	if cart.coupon and not cart.items.exists():
-		cart.discount = 0
-		cart.coupon = None
-		cart.save()
+        if cart.coupon and not cart.items.exists():
+            cart.discount = 0
+            cart.coupon = None
+            cart.save()
         return redirect(cartDetails)
     
 
