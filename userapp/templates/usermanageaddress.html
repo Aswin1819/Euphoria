@@ -8,28 +8,40 @@
             <h5 class="card-title">Manage Addresses</h5>
 
             <!-- Button to Trigger Collapse Form for Adding New Address -->
-            <button class="btn btn-outline-dark mb-3" type="button" data-bs-toggle="collapse" data-bs-target="#addAddressForm" aria-expanded="false" aria-controls="addAddressForm">
+            <button class="btn btn-outline-dark mb-3" type="button" data-bs-toggle="collapse" data-bs-target="#addAddressForm" aria-expanded="{{ collapse_open|yesno:'true,false' }}" aria-controls="addAddressForm">
                 + Add a New Address
             </button>
 
             <!-- Collapsible Form for Adding New Address -->
-            <div class="collapse" id="addAddressForm">
+            <div class="collapse {% if collapse_open %}show{% endif %}" id="addAddressForm">
                 <div class="card card-body">
                     <form method="POST" action="{% url 'userManageAddress' %}">
                         {% csrf_token %}
                         {{ form.address_type }}
                         {{ form.address }}
-                        {{form.address.errors}}
+                        {% for error in form.address.errors %}
+                            <span class="text-danger">{{ error }}</span>
+                        {% endfor %}
                         {{ form.city }}
-                        {{form.city.errors}}
+                        {% for error in form.city.errors %}
+                            <span class="text-danger">{{ error }}</span>
+                        {% endfor %}
                         {{ form.place }}
-                        {{form.place.errors}}
+                        {% for error in form.place.errors %}
+                            <span class="text-danger">{{ error }}</span>
+                        {% endfor %}
                         {{ form.landmark }}
-                        {{form.landmark.errors}}
+                        {% for error in form.landmark.errors %}
+                            <span class="text-danger">{{ error }}</span>
+                        {% endfor %}
                         {{ form.pincode }}
-                        {{form.pincode.errors}}
+                        {% for error in form.pincode.errors %}
+                            <span class="text-danger">{{ error }}</span>
+                        {% endfor %}
                         {{ form.phone }}
-                        {{form.phone.errors}}
+                        {% for error in form.phone.errors %}
+                            <span class="text-danger">{{ error }}</span>
+                        {% endfor %}
                         <div class="d-flex justify-content-end">
                             <button type="submit" class="btn btn-dark">Save Address</button>
                         </div>

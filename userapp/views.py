@@ -437,6 +437,7 @@ def userProfileInformation(request):
 def userManageAddress(request):
     
     user_address = Address.objects.filter(user=request.user,is_deleted=False)
+    collapse_open = False
     
     if request.method == 'POST':
         form = AddressForm(request.POST)
@@ -449,12 +450,14 @@ def userManageAddress(request):
         else:
             messages.warning(request,'ERROR!!. Kindly please check the add address form')
             print(form.errors)
+	    collapse_open = True
     else:
         form = AddressForm()
         
     context = {
         'form': form,
         'addresses':user_address,
+	'collapse_open':collapse_open,
     }
     return render(request,'usermanageaddress.html',context)
 
