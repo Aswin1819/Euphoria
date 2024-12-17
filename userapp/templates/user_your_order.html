@@ -6,12 +6,22 @@
 {% block profile %}
 <div class="col-md-9">
     <!-- Filters for Order Status -->
-    <div class="d-flex justify-content-start mb-3">
-        <button class="btn btn-outline-secondary me-2" onclick="filterOrders('all')">All Orders</button>
-        <button class="btn btn-outline-secondary me-2" onclick="filterOrders('refunded')">Refunded</button>
-        <button class="btn btn-outline-secondary me-2" onclick="filterOrders('shipped')">Shipped</button>
-        <button class="btn btn-outline-secondary me-2" onclick="filterOrders('cancelled')">Cancelled</button>
-        <button class="btn btn-outline-secondary me-2" onclick="filterOrders('delivered')">Delivered</button>
+    <div class="row mb-3">
+        <div class="col-12 col-md-6 col-lg-auto mb-2">
+            <button class="btn btn-outline-secondary w-100" onclick="filterOrders('all')">All Orders</button>
+        </div>
+        <div class="col-12 col-md-6 col-lg-auto mb-2">
+            <button class="btn btn-outline-secondary w-100" onclick="filterOrders('refunded')">Refunded</button>
+        </div>
+        <div class="col-12 col-md-6 col-lg-auto mb-2">
+            <button class="btn btn-outline-secondary w-100" onclick="filterOrders('shipped')">Shipped</button>
+        </div>
+        <div class="col-12 col-md-6 col-lg-auto mb-2">
+            <button class="btn btn-outline-secondary w-100" onclick="filterOrders('cancelled')">Cancelled</button>
+        </div>
+        <div class="col-12 col-md-6 col-lg-auto mb-2">
+            <button class="btn btn-outline-secondary w-100" onclick="filterOrders('delivered')">Delivered</button>
+        </div>
     </div>
 
     <!-- Orders List -->
