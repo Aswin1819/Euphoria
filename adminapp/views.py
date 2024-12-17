@@ -1069,7 +1069,7 @@ def approve_request(request, request_id):
         request, 
         f"Request for {order_item.product.name} has been approved, and a discounted amount of Rs. {discounted_refund_amount:.2f} has been refunded to the wallet."
     )
-    return redirect(adminLogin)
+    return redirect(manage_requests)
 
 
 
