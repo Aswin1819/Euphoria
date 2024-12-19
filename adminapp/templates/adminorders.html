@@ -49,7 +49,7 @@
                                 <a href="#" class="text-decoration-none text-primary" data-bs-toggle="modal" data-bs-target="#viewOrderModal{{ item.id }}">
                                     <i class="fa fa-eye"></i>
                                 </a>
-                                {% if not item.status == 'Delivered'%}
+                                {% if not item.status == 'Delivered' and not item.status == 'Refunded'%}
                                     <a href="#" class="text-decoration-none" data-bs-toggle="modal" data-bs-target="#updateStatusModal{{ item.id }}">
                                         <i class="fa fa-pencil"></i>
                                     </a>  

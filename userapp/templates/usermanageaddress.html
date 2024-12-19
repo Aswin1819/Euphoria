@@ -42,6 +42,7 @@
                         {% for error in form.phone.errors %}
                             <span class="text-danger">{{ error }}</span>
                         {% endfor %}
+                        <input type="hidden" name="next" value="{{ request.GET.next }}">
                         <div class="d-flex justify-content-end">
                             <button type="submit" class="btn btn-dark">Save Address</button>
                         </div>

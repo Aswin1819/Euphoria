@@ -1060,7 +1060,7 @@ def approve_request(request, request_id):
     )
 
     
-    variant = Variant.objects.filter(product=order_item.product).first()
+    variant = order_item.variant
     if variant:
         variant.stock = F("stock") + order_item.quantity
         variant.save()

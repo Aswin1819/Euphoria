@@ -45,7 +45,11 @@
                                 </div>
                             
                                 <div class="d-flex justify-content-between">
-                                    <p class="card-text mb-1">Status: {{ item.status }}</p>
+                                    {% if item.status == "Processing" %}
+                                        <p class="card-text mb-1">Cancellation Status: {{ item.status }}</p>
+                                    {% else %}
+                                        <p class="card-text mb-1">Status: {{ item.status }}</p>
+                                    {% endif %}
                                     <p class="card-text mb-1">
                                         {% if item.status == 'Delivered' %}
                                             Delivered on: {{ item.last_updated|date:"d-m-y" }}
@@ -102,7 +106,7 @@
                                 </div>
                                 
                                 <!-- Action Button for Cancel or Return based on OrderItem status -->
-                                {% if item.status == 'Shipped' %}
+                                {% if item.status == 'Shipped' or item.status == 'Pending' %}
                                     <button class="btn btn-danger" onclick="cancelOrder('{{ item.id }}')">Cancel Item</button>
                                 {% elif item.status == 'Delivered' %}
                                     <button class="btn btn-warning" onclick="returnOrder('{{ item.id }}')">Return Order</button>
@@ -230,7 +234,7 @@
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                alert("Order item cancelled successfully!");
+                alert("request send successfully!");
                 //Swal.fire(data.message);
                 location.reload();
             } else {

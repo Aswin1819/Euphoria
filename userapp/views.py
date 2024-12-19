@@ -313,16 +313,57 @@ def shopNow(request):
     })
 
 
-def categoryProducts(request,category_id):
+def categoryProducts(request, category_id):
     try:        
-        category = get_object_or_404(Category,id=category_id,is_active=True)
+        category = get_object_or_404(Category, id=category_id, is_active=True)
     except:
         return redirect(shopNow)
-    
-    products = Products.objects.filter(category=category,is_active=True)
-    return render(request,'categoryproductsview.html',{
-        'category':category,
-        'products':products})
+
+    sort_option = request.GET.get('sort', 'popularity')
+    page_number = request.GET.get('page')
+    search_query = request.GET.get('query', '').strip()
+
+    products = Products.objects.filter(category=category, is_active=True).annotate(
+        min_variant_price=Min('variants__price'),
+        average_rating=Avg('reviews__rating'),
+    )
+
+    if search_query:
+        products = products.filter(
+            Q(name__icontains=search_query) | Q(brand__name__icontains=search_query)
+        )
+
+    # Apply sorting
+    if sort_option == 'price_low_to_high':
+        products = products.order_by('min_variant_price')
+    elif sort_option == 'price_high_to_low':
+        products = products.order_by('-min_variant_price')
+    elif sort_option == 'average_rating':
+        products = products.order_by('-average_rating')
+    elif sort_option == 'new_arrivals':
+        products = products.order_by('-created_at')
+    elif sort_option == 'a_to_z':
+        products = products.order_by('name')
+    elif sort_option == 'z_to_a':
+        products = products.order_by('-name')
+    else:  # Default is popularity
+        products = products.order_by('-popularity')
+
+    # Pagination
+    paginator = Paginator(products, 20)  # 20 products per page
+    page_obj = paginator.get_page(page_number)
+
+    # AJAX response for pagination or filtering
+    if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+        html = render_to_string('partials/product_list.html', {'page_obj': page_obj})
+        return JsonResponse({'html': html})
+
+    return render(request, 'categoryproductsview.html', {
+        'category': category,
+        'page_obj': page_obj,
+        'sort_option': sort_option,
+        'search_query': search_query,
+    })
 
 
 
@@ -446,6 +487,10 @@ def userManageAddress(request):
             address.user=request.user
             address.save()
             messages.success(request,"Address added successfully")
+            next_url = request.POST.get('next', None)
+            print(next_url) 
+            if next_url:
+                return redirect(next_url)
             return redirect(userManageAddress)
         else:
             messages.warning(request,'ERROR!!. Kindly please check the add address form')
@@ -917,6 +962,7 @@ def placeOrder(request):
                     order=order,
                     product=cart_item.product,
                     quantity=cart_item.quantity,
+                    variant=cart_item.variant,
                     status="Pending",
                     price=cart_item.variant.price
                 )

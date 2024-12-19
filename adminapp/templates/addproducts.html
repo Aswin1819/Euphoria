@@ -141,6 +141,7 @@
             variantsContainer.insertAdjacentHTML('beforeend', newForm);
     
             formIdx++;
+            document.getElementById('id_form-TOTAL_FORMS').value = formIdx;
     
             attachRemoveVariantEvent();
         });

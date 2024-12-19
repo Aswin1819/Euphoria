@@ -29,7 +29,7 @@
                 {% endif %}
             </div>
             <div>
-                <a href="{% url 'userManageAddress' %}" class="btn btn-outline-dark " type="button">
+                <a href="{% url 'userManageAddress' %}?next={% url 'cartDetails' %}" class="btn btn-outline-dark " type="button">
                     + Add
                 </a>
                 <!-- Change button triggers collapse -->
