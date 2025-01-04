@@ -646,6 +646,12 @@ def addToCart(request):
             cart_item.price = discounted_price
             cart_item.save()
             
+            wishlist = Wishlist.objects.filter(user=request.user).first()
+            if wishlist:
+                wishlist_item = wishlist.items.filter(product=product, variant=variant).first()
+                if wishlist_item:
+                    wishlist_item.delete()
+                    messages.info(request, f"{product.name} was removed from your wishlist as it has been added to your cart.")            
             return JsonResponse({"authenticated":True,"success": True, "message": "Product added to cart successfully!"})
         except Exception as e:
             return JsonResponse({"authenticated":True,"success": False, "message": str(e)}, status=400)
@@ -660,6 +666,11 @@ def addToCart(request):
 def cartDetails(request):
     if request.user.is_authenticated:
         cart = Cart.objects.filter(user=request.user).first() 
+        deleted_cart_items = cart.items.filter(product__is_active=False)
+        if deleted_cart_items.exists():
+            for item in deleted_cart_items:
+                item.delete()
+            messages.warning(request, "Some items in your cart were removed as they are no longer available.")
         cart_items = cart.items.select_related('product').prefetch_related('product__variants') if cart else []
         user_addresses = request.user.addresses.filter(is_deleted=False)
         applied_coupon = cart.coupon if cart and cart.coupon else None
